@@ -11,34 +11,30 @@ Sub Class_Globals
 	Dim commandList As List 'ignore
 	Dim CallerObject As Object 'ignore
 	Dim Appduration As Int 'ignore
-	
-	Private AppName As String = "twitch" 'change plugin name (unique)
-	Private AppVersion As String="1.2"
-	Private tickInterval As Int= 65
-	Private needDownloads As Int = 2
-	Private updateInterval As Int = 0 'force update after X seconds. 0 for systeminterval
-	Private lockApp As Boolean=False
 
+	Private AppName As String = "wetterdienst" 'plugin name (must be unique)
+	Private AppVersion As String="1.0"
+	Private tickInterval As Int= 65 'tick rate in ms
+	Private needDownloads As Int = 1 'how many dowloadhandlers should be generated
+	Private updateInterval As Int = 0 'force update after X seconds. 0 for systeminterval
+	Private lockApp As Boolean =True
 
 	Private description As String= $"
-	Shows your Twitch subscriber count or your live viewers while youre streaming<br />
+	Displays weather-warnings of Deutscher Wetterdienst<br/> 
+	Only appears if there is at least one warning<br/> 
 	<small>Created by AWTRIX</small>
 	"$
 	
 	Private setupInfos As String= $"
-	<b>ClientID:</b>  To get a client ID, register your application on the Twitch dev portal (https://glass.twitch.tv/console/apps/create).
-	<b>Profile:</b>  Your Twitch profile name.
+	<b>CellID:</b> Warncell-ID von https://www.dwd.de/DE/leistungen/opendata/help/warnungen/cap_warncellids_csv.csv/<br/><br/> 
 	"$
 	
-	Private appSettings As Map = CreateMap("Profile":Null,"ClientID":Null) 'needed Settings for this Plugin
+	Private appSettings As Map = CreateMap("CellID":"806435019") 'needed Settings for this Plugin
 	
-	Dim icon() As Int = Array As Int(0x0, 0x49af, 0x49af, 0x49af, 0x49af, 0x49af, 0x49af, 0x49af, 0x49af, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0x49af, 0x49af, 0xffff, 0xffff, 0x49af, 0xffff, 0x49af, 0xffff, 0x49af, 0x49af, 0xffff, 0xffff, 0x49af, 0xffff, 0x49af, 0xffff, 0x49af, 0x49af, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0x49af, 0x49af, 0x49af, 0x49af, 0xffff, 0xffff, 0x49af, 0x49af, 0x49af, 0x0, 0x0, 0x49af, 0xffff, 0x49af, 0x0, 0x0, 0x0, 0x0, 0x0, 0x49af, 0x49af, 0x0, 0x0, 0x0, 0x0)
-	Dim icon2() As Int= Array As Int(0, 33593, 33593, 33593, 33593, 33593, 63488, 63488, 33593, 65535, 65535, 65535, 65535, 65535, 63488, 63488, 33593, 65535, 65535, 33593, 65535, 33593, 65535, 33593, 33593, 65535, 65535, 33593, 65535, 33593, 65535, 33593, 33593, 65535, 65535, 65535, 65535, 65535, 65535, 33593, 33593, 33593, 33593, 65535, 65535, 33593, 33593, 33593, 0, 0, 33593, 65535, 33593, 0, 0, 0, 0, 0, 33593, 33593, 0, 0, 0, 0)
-	Dim Profile As String
-	Dim clientID As String
-	Dim followers As String = "0"
-	Dim viewers As String = "0"
-	Dim isStreaming As Boolean
+	Dim sb As StringBuilder
+	Dim warningAvailable As Boolean
+	Dim CellID As String = "806435019"
+	Dim icon() As Int = Array As Int(12915, 12915, 12915, 65535, 65535, 65535, 12915, 12915, 12915, 12915, 65535, 12915, 12915, 12915, 65535, 12915, 12915, 65535, 12915, 65535, 65535, 12915, 12915, 65535, 12915, 65535, 12915, 65535, 12915, 65535, 12915, 65535, 12915, 12915, 65535, 12915, 12915, 65535, 12915, 65535, 65535, 12915, 12915, 65535, 65535, 12915, 12915, 65535, 12915, 65535, 12915, 12915, 12915, 12915, 65535, 12915, 12915, 12915, 65535, 65535, 65535, 65535, 12915, 12915)
 End Sub
 
 ' ignore
@@ -57,13 +53,15 @@ public Sub GetNiceName() As String
 End Sub
 
 ' ignore
-public Sub Run(Tag As String, Params As Map) As Object
+public Sub Run(Tag As String, Params As Map) As Object 'ignore
 	Select Case Tag
 		Case "start" 													'wird bei jedem start des Plugins aufgerufen und übergibt seine Settings an Awtrix
 			If Params.ContainsKey("AppDuration") Then
 				Appduration = Params.Get("AppDuration") 						'Kann zur berechnung von Zeiten verwendet werden 'ignore
 			End If
 			scrollposition=32
+			MainSettings.Put("show",warningAvailable)
+			If lockApp Then MainSettings.Put("hold",True)
 			Return MainSettings
 		Case "downloadCount"
 			Return needDownloads
@@ -78,25 +76,25 @@ public Sub Run(Tag As String, Params As Map) As Object
 			Dim infos As Map
 			infos.Initialize
 			Dim data() As Byte
-				If File.Exists(File.Combine(File.DirApp,"plugins"),AppName&".png") Then
+			If File.Exists(File.Combine(File.DirApp,"plugins"),AppName&".png") Then
 				Dim in As InputStream
 				in = File.OpenInput(File.Combine(File.DirApp,"plugins"),AppName&".png")
 				Dim out As OutputStream
 				out.InitializeToBytesArray(1000)
 				File.Copy2(in, out)
 				data = out.ToBytesArray
-			out.Close
+				out.Close
 			End If
 			infos.Put("pic",data)
 			Dim isconfigured As Boolean=True
 			If File.Exists(File.Combine(File.DirApp,"plugins"),AppName&".ax") Then
-			Dim m As Map = File.ReadMap(File.Combine(File.DirApp,"plugins"),AppName&".ax")
+				Dim m As Map = File.ReadMap(File.Combine(File.DirApp,"plugins"),AppName&".ax")
 				For Each v As Object In m.Values
-				If v="null" Then
-					isconfigured=False
-						End If
-					Next
-				End If
+					If v="null" Then
+						isconfigured=False
+					End If
+				Next
+			End If
 			infos.Put("isconfigured",isconfigured)
 			infos.Put("AppVersion",AppVersion)
 			infos.Put("description",description)
@@ -122,86 +120,71 @@ Sub setSettings As Boolean
 		File.WriteMap(File.Combine(File.DirApp,"plugins"),AppName&".ax",m)
 		updateInterval=m.Get("updateInterval")
 		'You need just change the following lines to get the values into your variables
-		Profile=m.Get("Profile")
-		clientID=m.Get("ClientID")
+		CellID=m.Get("CellID")
 	Else
 		Dim m As Map
 		m.Initialize
 		m.Put("updateInterval",updateInterval)
 		For Each k As String In appSettings.Keys
-			m.Put(k,appSettings.Get(k))
-		Next
+		m.Put(k,appSettings.Get(k))
+			Next
 		File.WriteMap(File.Combine(File.DirApp,"plugins"),AppName&".ax",m)
-	End If
+		End If
 	Return True
+	
 End Sub
 
-'Called with every update from Awtrix,
 Sub startDownload(nr As Int) As String
 	Dim URL As String
 	Select nr
 		Case 1
-			URL=("https://api.twitch.tv/kraken/streams/"&Profile&"?client_id="&clientID)
-			
-		Case 2
-			URL=("https://api.twitch.tv/kraken/channels/"&Profile&"?client_id="&clientID&"&callback=null")
+			URL="https://www.dwd.de/DWD/warnungen/warnapp/json/warnings.json"
 	End Select
 	Return URL
 End Sub
-
 
 Sub evalJobResponse(nr As Int,success As Boolean,response As String,InputStream As InputStream) As Boolean
 	If success=False Then Return False
 	Select nr
 		Case 1
-			isStreaming=False
 			Try
+				sb.Initialize
 				Dim parser As JSONParser
-				Dim res As String =response
-				Dim s As String=res.SubString(res.IndexOf("(")+1).Replace(")","")
-				parser.Initialize(s)
+				parser.Initialize(response.Replace(");","").Replace("warnWetter.loadWarnings(",""))
 				Dim root As Map = parser.NextObject
-				
-				If root.Get("stream") Is Map Then
-					isStreaming=True
-					Dim stream As Map = root.Get("stream")
-					viewers = stream.Get("viewers")
+				Dim warnings As Map = root.Get("warnings")
+				If warnings.ContainsKey(CellID) Then
+					warningAvailable=True
+					Dim weather As List = warnings.Get(CellID)
+					For Each col As Map In weather
+						sb.Append(col.Get("headline")).Append(": ").Append(col.Get("description")).Append("       ")
+					Next
+					Else
+					warningAvailable=False
 				End If
 				
-				
 				Return True
 			Catch
 				Log("Error in: "& AppName & CRLF & LastException)
-				Log("API response: " & CRLF & LastException)
+				Log("API response: " & CRLF & response)
+				Return False
 			End Try
-		Case 2
-			Try
-				Dim parser As JSONParser
-				Dim res As String =response
-				Dim s As String=res.SubString(res.IndexOf("(")+1).Replace(")","")
-				parser.Initialize(s)
-				Dim root As Map = parser.NextObject
-				followers= root.Get("followers")
-				Return True
-			Catch
-				Log("Error in: "& AppName & CRLF & LastException)
-					Log("API response: " & CRLF & LastException)
-			End Try		
-		
-			
 	End Select
 	Return False
 End Sub
 
 Sub genFrame As List
-If isStreaming Then
-		commandList.Add(genText(viewers))			'Fügt einen Befehl der Liste hinzu
-		commandList.Add(CreateMap("type":"bmp","x":0,"y":0,"bmp":icon2,"width":8,"height":8))
-	Else
-		commandList.Add(genText(followers))			'Fügt einen Befehl der Liste hinzu
+	commandList.Add(genText(sb.ToString))
+	
+	If scrollposition>9 Then
 		commandList.Add(CreateMap("type":"bmp","x":0,"y":0,"bmp":icon,"width":8,"height":8))
-End If
-
+	Else
+		If scrollposition>-8 Then
+				commandList.Add(CreateMap("type":"bmp","x":scrollposition-9,"y":0,"bmp":icon,"width":8,"height":8))
+		End If
+	
+	End If
+	
 	Return commandList
 End Sub
 
@@ -209,7 +192,7 @@ Sub genText(s As String) As Map
 	If s.Length>5 Then
 		Dim command As Map=CreateMap("type":"text","text":s,"x":scrollposition,"y":1,"font":"auto")
 		scrollposition=scrollposition-1
-		If scrollposition< 0-(s.Length*4)  Then
+		If scrollposition< 0-(s.Length*3.6)  Then
 			If lockApp Then
 				Dim command As Map=CreateMap("type":"finish")
 				Return command
