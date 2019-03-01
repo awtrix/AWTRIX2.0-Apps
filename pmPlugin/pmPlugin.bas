@@ -11,14 +11,17 @@ Sub Class_Globals
 	Dim commandList As List 'ignore
 	Dim CallerObject As Object 'ignore
 	Dim Appduration As Int 'ignore
+	Dim iconTimer As Timer'ignore
+	Dim iconList As List'ignore
+	Dim animCount As Int'ignore
 	
 	Private AppName As String = "pm" 'plugin name (must be unique)
-	Private AppVersion As String="1.1"
+	Private AppVersion As String="1.2"
 	Private tickInterval As Int= 60 'tick rate in ms (FPS)
 	Private needDownloads As Int = 1 'how many dowloadhandlers should be generated
 	Private updateInterval As Int = 0 'force update after X seconds. 0 for systeminterval
  	Private lockApp As Boolean=False
-	
+	Private iconID as Int = 2
 	
 	Private description As String= $"
 	Shows the atmospheric particulate matter (PM2.5)<br />
@@ -35,14 +38,18 @@ Sub Class_Globals
 	Dim loaction As String
 	Dim scrollposition As Int
 	Dim pm As String ="0"
-	Dim icon() As Int = Array As Int(0x0, 0x9cd3, 0x0, 0x0, 0x0, 0x0, 0x0, 0x9cd3, 0x0, 0x0, 0x0, 0xe73c, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x4a69, 0x0, 0xf800, 0xf800, 0xf800, 0x0, 0x0, 0xf800, 0xf800, 0xf800, 0x0, 0x0, 0xe269, 0x0, 0x0, 0xe269, 0x0, 0x0, 0xfc10, 0xfc10, 0xfc10, 0x0, 0x0, 0xfc10, 0xfc10, 0xfc10, 0xfd96, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xfd96, 0xfe79, 0xfe79, 0xfe79, 0x0, 0x8410, 0xfe79, 0xfe79, 0xfe79)
+	Dim icon() As Int
+
 End Sub
 
 
 ' ignore
 Public Sub Initialize() As String
 	commandList.Initialize
+	iconTimer.Initialize("iconTimer",1000)
+	iconList.Initialize
 	MainSettings.Initialize
+	MainSettings.Put("icon",iconID)
 	MainSettings.Put("interval",tickInterval) 										'übergibt AWTRIX die gewünschte tick-rate in ms. bei 0 wird der Tick nur einmalig aufgerufen
 	MainSettings.Put("needDownload",needDownloads)
 	setSettings
@@ -55,12 +62,31 @@ public Sub GetNiceName() As String
 End Sub
 
 ' ignore
+Sub IconTimer_Tick
+	Try
+		Dim parse As JSONParser
+		If animCount>iconList.Size-1 Then animCount=0
+		parse.Initialize(iconList.Get(animCount))
+		Dim bmproot As List = parse.NextArray
+		Dim bpm(bmproot.Size) As Int
+		For bm=0 To bmproot.Size-1
+			bpm(bm)=bmproot.Get(bm)
+		Next
+		icon=bpm
+	Catch
+		Log(LastException)
+	End Try
+	animCount=animCount+1
+End Sub
+
+' ignore
 public Sub Run(Tag As String, Params As Map) As Object
 	Select Case Tag
 		Case "start" 													'wird bei jedem start des Plugins aufgerufen und übergibt seine Settings an Awtrix
 			If Params.ContainsKey("AppDuration") Then
 				Appduration = Params.Get("AppDuration") 						'Kann zur berechnung von Zeiten verwendet werden 'ignore
 			End If
+			animCount=0
 			scrollposition=32
 			Return MainSettings
 		Case "downloadCount"
@@ -104,6 +130,18 @@ public Sub Run(Tag As String, Params As Map) As Object
 			Return setSettings
 		Case "getUpdateInterval"
 			Return updateInterval
+		Case "stop"
+			iconTimer.Enabled=False
+		Case "icon"
+			If Params.ContainsKey("tick") Then
+				iconList=Params.Get("data")
+				iconTimer.Interval=Params.Get("tick")
+				iconTimer.Enabled=True
+				IconTimer_Tick
+			Else
+				icon=Params.Get("data")
+	
+			End If
 	End Select
 	Return True
 End Sub
