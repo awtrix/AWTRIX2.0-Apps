@@ -14,6 +14,7 @@ Sub Class_Globals
 	Dim iconTimer As Timer'ignore
 	Dim iconList As List'ignore
 	Dim animCount As Int'ignore
+	Dim isAnimated As Boolean'ignore
 	
 	Private AppName As String = "pm" 'plugin name (must be unique)
 	Private AppVersion As String="1.2"
@@ -21,7 +22,7 @@ Sub Class_Globals
 	Private needDownloads As Int = 1 'how many dowloadhandlers should be generated
 	Private updateInterval As Int = 0 'force update after X seconds. 0 for systeminterval
  	Private lockApp As Boolean=False
-	Private iconID as Int = 2
+	Private iconID As Int = 2
 	
 	Private description As String= $"
 	Shows the atmospheric particulate matter (PM2.5)<br />
@@ -95,6 +96,11 @@ public Sub Run(Tag As String, Params As Map) As Object
 			Return startDownload(Params.Get("jobNr"))
 		Case "httpResponse"
 			Return evalJobResponse(Params.Get("jobNr"),Params.Get("success"),Params.Get("response"),Params.Get("InputStream"))
+		Case "running"
+			If isAnimated Then
+				iconTimer.Enabled=True
+				IconTimer_Tick
+			End If
 		Case "tick"
 			commandList.Clear											'Wird in der eingestellten Tickrate aufgerufen
 			Return genFrame
@@ -136,11 +142,10 @@ public Sub Run(Tag As String, Params As Map) As Object
 			If Params.ContainsKey("tick") Then
 				iconList=Params.Get("data")
 				iconTimer.Interval=Params.Get("tick")
-				iconTimer.Enabled=True
-				IconTimer_Tick
-			Else
-				icon=Params.Get("data")
-	
+				isAnimated=True
+				Else
+			icon=Params.Get("data")
+				isAnimated=False
 			End If
 	End Select
 	Return True
