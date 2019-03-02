@@ -11,14 +11,18 @@ Sub Class_Globals
 	Dim commandList As List 'ignore
 	Dim CallerObject As Object 'ignore
 	Dim Appduration As Int 'ignore
+	Dim iconTimer As Timer'ignore
+	Dim iconList As List'ignore
+	Dim animCount As Int'ignore
+	Dim isAnimated As Boolean'ignore
 	
 	Private AppName As String = "twitch" 'change plugin name (unique)
-	Private AppVersion As String="1.2"
+	Private AppVersion As String="1.3"
 	Private tickInterval As Int= 65
 	Private needDownloads As Int = 2
 	Private updateInterval As Int = 0 'force update after X seconds. 0 for systeminterval
 	Private lockApp As Boolean=False
-
+	Private iconID As Int = 141
 
 	Private description As String= $"
 	Shows your Twitch subscriber count or your live viewers while youre streaming<br />
@@ -33,7 +37,7 @@ Sub Class_Globals
 	Private appSettings As Map = CreateMap("Profile":Null,"ClientID":Null) 'needed Settings for this Plugin
 	
 	Dim icon() As Int = Array As Int(0x0, 0x49af, 0x49af, 0x49af, 0x49af, 0x49af, 0x49af, 0x49af, 0x49af, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0x49af, 0x49af, 0xffff, 0xffff, 0x49af, 0xffff, 0x49af, 0xffff, 0x49af, 0x49af, 0xffff, 0xffff, 0x49af, 0xffff, 0x49af, 0xffff, 0x49af, 0x49af, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0x49af, 0x49af, 0x49af, 0x49af, 0xffff, 0xffff, 0x49af, 0x49af, 0x49af, 0x0, 0x0, 0x49af, 0xffff, 0x49af, 0x0, 0x0, 0x0, 0x0, 0x0, 0x49af, 0x49af, 0x0, 0x0, 0x0, 0x0)
-	Dim icon2() As Int= Array As Int(0, 33593, 33593, 33593, 33593, 33593, 63488, 63488, 33593, 65535, 65535, 65535, 65535, 65535, 63488, 63488, 33593, 65535, 65535, 33593, 65535, 33593, 65535, 33593, 33593, 65535, 65535, 33593, 65535, 33593, 65535, 33593, 33593, 65535, 65535, 65535, 65535, 65535, 65535, 33593, 33593, 33593, 33593, 65535, 65535, 33593, 33593, 33593, 0, 0, 33593, 65535, 33593, 0, 0, 0, 0, 0, 33593, 33593, 0, 0, 0, 0)
+'	Dim liveIcon() As Int= Array As Int(0, 33593, 33593, 33593, 33593, 33593, 63488, 63488, 33593, 65535, 65535, 65535, 65535, 65535, 63488, 63488, 33593, 65535, 65535, 33593, 65535, 33593, 65535, 33593, 33593, 65535, 65535, 33593, 65535, 33593, 65535, 33593, 33593, 65535, 65535, 65535, 65535, 65535, 65535, 33593, 33593, 33593, 33593, 65535, 65535, 33593, 33593, 33593, 0, 0, 33593, 65535, 33593, 0, 0, 0, 0, 0, 33593, 33593, 0, 0, 0, 0)
 	Dim Profile As String
 	Dim clientID As String
 	Dim followers As String = "0"
@@ -47,6 +51,8 @@ Public Sub Initialize() As String
 	MainSettings.Initialize
 	MainSettings.Put("interval",tickInterval) 										'übergibt AWTRIX die gewünschte tick-rate in ms. bei 0 wird der Tick nur einmalig aufgerufen
 	MainSettings.Put("needDownload",needDownloads)
+	iconTimer.Initialize("iconTimer",1000)
+	iconList.Initialize
 	setSettings
 	Return "MyKey"
 End Sub
@@ -57,6 +63,24 @@ public Sub GetNiceName() As String
 End Sub
 
 ' ignore
+Sub IconTimer_Tick
+	Try
+		Dim parse As JSONParser
+		If animCount>iconList.Size-1 Then animCount=0
+		parse.Initialize(iconList.Get(animCount))
+		Dim bmproot As List = parse.NextArray
+		Dim bpm(bmproot.Size) As Int
+		For bm=0 To bmproot.Size-1
+			bpm(bm)=bmproot.Get(bm)
+		Next
+		icon=bpm
+	Catch
+		Log(LastException)
+	End Try
+	animCount=animCount+1
+End Sub
+
+' ignore
 public Sub Run(Tag As String, Params As Map) As Object
 	Select Case Tag
 		Case "start" 													'wird bei jedem start des Plugins aufgerufen und übergibt seine Settings an Awtrix
@@ -64,6 +88,8 @@ public Sub Run(Tag As String, Params As Map) As Object
 				Appduration = Params.Get("AppDuration") 						'Kann zur berechnung von Zeiten verwendet werden 'ignore
 			End If
 			scrollposition=32
+			animCount=0
+			MainSettings.Put("icon",iconID)
 			Return MainSettings
 		Case "downloadCount"
 			Return needDownloads
@@ -71,6 +97,11 @@ public Sub Run(Tag As String, Params As Map) As Object
 			Return startDownload(Params.Get("jobNr"))
 		Case "httpResponse"
 			Return evalJobResponse(Params.Get("jobNr"),Params.Get("success"),Params.Get("response"),Params.Get("InputStream"))
+		Case "running"
+			If isAnimated Then
+				iconTimer.Enabled=True
+				IconTimer_Tick
+			End If
 		Case "tick"
 			commandList.Clear											'Wird in der eingestellten Tickrate aufgerufen
 			Return genFrame
@@ -78,25 +109,25 @@ public Sub Run(Tag As String, Params As Map) As Object
 			Dim infos As Map
 			infos.Initialize
 			Dim data() As Byte
-				If File.Exists(File.Combine(File.DirApp,"plugins"),AppName&".png") Then
+			If File.Exists(File.Combine(File.DirApp,"plugins"),AppName&".png") Then
 				Dim in As InputStream
 				in = File.OpenInput(File.Combine(File.DirApp,"plugins"),AppName&".png")
 				Dim out As OutputStream
 				out.InitializeToBytesArray(1000)
 				File.Copy2(in, out)
 				data = out.ToBytesArray
-			out.Close
+				out.Close
 			End If
 			infos.Put("pic",data)
 			Dim isconfigured As Boolean=True
 			If File.Exists(File.Combine(File.DirApp,"plugins"),AppName&".ax") Then
-			Dim m As Map = File.ReadMap(File.Combine(File.DirApp,"plugins"),AppName&".ax")
+				Dim m As Map = File.ReadMap(File.Combine(File.DirApp,"plugins"),AppName&".ax")
 				For Each v As Object In m.Values
-				If v="null" Then
-					isconfigured=False
-						End If
-					Next
-				End If
+					If v="null" Then
+						isconfigured=False
+					End If
+				Next
+			End If
 			infos.Put("isconfigured",isconfigured)
 			infos.Put("AppVersion",AppVersion)
 			infos.Put("description",description)
@@ -106,6 +137,17 @@ public Sub Run(Tag As String, Params As Map) As Object
 			Return setSettings
 		Case "getUpdateInterval"
 			Return updateInterval
+		Case "stop"
+			iconTimer.Enabled=False
+		Case "icon"
+			If Params.ContainsKey("tick") Then
+				iconList=Params.Get("data")
+				iconTimer.Interval=Params.Get("tick")
+				isAnimated=True
+			Else
+				icon=Params.Get("data")
+				isAnimated=False
+			End If
 	End Select
 	Return True
 End Sub
@@ -155,6 +197,7 @@ Sub evalJobResponse(nr As Int,success As Boolean,response As String,InputStream 
 	Select nr
 		Case 1
 			isStreaming=False
+			
 			Try
 				Dim parser As JSONParser
 				Dim res As String =response
@@ -164,8 +207,11 @@ Sub evalJobResponse(nr As Int,success As Boolean,response As String,InputStream 
 				
 				If root.Get("stream") Is Map Then
 					isStreaming=True
+					iconID=339
 					Dim stream As Map = root.Get("stream")
 					viewers = stream.Get("viewers")
+				Else
+					iconID=141
 				End If
 				
 				
@@ -185,22 +231,21 @@ Sub evalJobResponse(nr As Int,success As Boolean,response As String,InputStream 
 				Return True
 			Catch
 				Log("Error in: "& AppName & CRLF & LastException)
-					Log("API response: " & CRLF & LastException)
-			End Try		
-		
-			
+				Log("API response: " & CRLF & LastException)
+			End Try
+
 	End Select
 	Return False
 End Sub
 
 Sub genFrame As List
-If isStreaming Then
+	If isStreaming Then
 		commandList.Add(genText(viewers))			'Fügt einen Befehl der Liste hinzu
-		commandList.Add(CreateMap("type":"bmp","x":0,"y":0,"bmp":icon2,"width":8,"height":8))
+		commandList.Add(CreateMap("type":"bmp","x":0,"y":0,"bmp":icon,"width":8,"height":8))
 	Else
 		commandList.Add(genText(followers))			'Fügt einen Befehl der Liste hinzu
 		commandList.Add(CreateMap("type":"bmp","x":0,"y":0,"bmp":icon,"width":8,"height":8))
-End If
+	End If
 
 	Return commandList
 End Sub
