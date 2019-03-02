@@ -140,13 +140,15 @@ public Sub Run(Tag As String, Params As Map) As Object
 		Case "stop"
 			iconTimer.Enabled=False
 		Case "icon"
-			If Params.ContainsKey("tick") Then
-				iconList=Params.Get("data")
-				iconTimer.Interval=Params.Get("tick")
-				isAnimated=True
-			Else
-				icon=Params.Get("data")
-				isAnimated=False
+			If Not(Params.ContainsKey("noIcon")) Then
+				If Params.ContainsKey("tick") Then
+					iconList=Params.Get("data")
+					iconTimer.Interval=Params.Get("tick")
+					isAnimated=True
+				Else
+					icon=Params.Get("data")
+					isAnimated=False
+				End If
 			End If
 	End Select
 	Return True
