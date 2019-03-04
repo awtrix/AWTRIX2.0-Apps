@@ -2,7 +2,7 @@
 *.zip
 *.class
 *.java
-*.java
 *.class
-*.java
-*.class
+/AutoBackups
+/Files
+/Objects
