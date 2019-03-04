@@ -11,9 +11,8 @@ Sub Class_Globals
 	Dim commandList As List 'ignore
 	Dim CallerObject As Object 'ignore
 	Dim Appduration As Int 'ignore
-	
 	Dim icon() As Int = Array As Int(0x3ad3, 0x3ad3, 0x3ad3, 0x3ad3, 0x3ad3, 0x3ad3, 0x3ad3, 0x3ad3, 0x3ad3, 0x3ad3, 0x3ad3, 0x3ad3, 0x3ad3, 0xffff, 0x3ad3, 0x3ad3, 0x3ad3, 0x3ad3, 0x3ad3, 0x3ad3, 0xffff, 0x3ad3, 0x3ad3, 0x3ad3, 0x3ad3, 0x3ad3, 0x3ad3, 0x3ad3, 0xffff, 0x3ad3, 0x3ad3, 0x3ad3, 0x3ad3, 0x3ad3, 0x3ad3, 0xffff, 0xffff, 0xffff, 0x3ad3, 0x3ad3, 0x3ad3, 0x3ad3, 0x3ad3, 0x3ad3, 0xffff, 0x3ad3, 0x3ad3, 0x3ad3, 0x3ad3, 0x3ad3, 0x3ad3, 0x3ad3, 0xffff, 0x3ad3, 0x3ad3, 0x3ad3, 0x3ad3, 0x3ad3, 0x3ad3, 0x3ad3, 0xffff, 0x3ad3, 0x3ad3, 0x3ad3)
-	Private AppVersion As String="1.1"
+	Private AppVersion As String="1.3"
 	Private AppName As String = "facebook" 'plugin name (must be unique)
 	Private tickInterval As Int= 60 'tick rate in ms (FPS)
 	Private needDownloads As Int = 1 'how many dowloadhandlers should be generated
@@ -25,36 +24,14 @@ Sub Class_Globals
 	"$
 	
 	Private setupInfos As String= $"
-	<b>PageID:</b>  Get your facebook PageID from https://findmyfbid.com/.<br/><br/>
-	<b>AppID & AppSecret:</b> <small>Infos from https://goldplugins.com/documentation/wp-social-pro-documentation/how-to-get-an-app-id-and-secret-key-from-facebook/</small><br/>
-	
-	<p>In order to get an App ID and Secret Key from Facebook, you&#8217;ll need to register a new application. Don&#8217;t worry &#8211; its very easy, and your application doesn&#8217;t need to do anything. We only need the keys.</p>
-<p>There are 4 simple steps to creating a Facebook App, which we&#8217;ve outlined below.</p>
-<h3>Step One: Visit The Facebook Developers Page</h3>
-<p>To start with, navigate your browser to the <a title="Facebook Developers" href="https://developers.facebook.com/" target="_blank">Facebook Developers page</a>. You&#8217;ll need to login to your Facebook account.</p>
-<p>Once logged in, you&#8217;ll see a screen similar to this:</p>
-<figure id="attachment_11139" style="width: 1280px" class="wp-caption alignnone"><img class="img-fluid" src="https://goldplugins.com/wp-content/uploads/2013/07/add-a-new-app.png" alt="Screenshot of developers.facebook.com" width="1280" height="984" srcset="https://goldplugins.com/wp-content/uploads/2013/07/add-a-new-app.png 1280w, https://goldplugins.com/wp-content/uploads/2013/07/add-a-new-app-300x231.png 300w, https://goldplugins.com/wp-content/uploads/2013/07/add-a-new-app-768x590.png 768w, https://goldplugins.com/wp-content/uploads/2013/07/add-a-new-app-1024x787.png 1024w" sizes="(max-width: 1280px) 100vw, 1280px" /><figcaption class="wp-caption-text">Click the &#8220;Add a New App&#8221; link to get started.</figcaption></figure>
-<p>To begin, click the green &#8220;Add a New App&#8221; link in the top right menu.</p>
-<h3>Step Two: Input Your New App&#8217;s Information</h3>
-<p>Once you&#8217;ve clicked &#8220;Add a New App&#8221;, a box will appear asking you for your new App&#8217;s Display Name, Contact E-Mail Address, and Category. Since this App won&#8217;t be published, just pick a name that is easy for you to remember.</p>
-<img class="wp-image-11140 img-fluid" src="https://goldplugins.com/wp-content/uploads/2013/07/create-a-new-app-screen-e1487868371560.png" alt="Screenshot of Add a New App modal." width="1280" height="979" srcset="https://goldplugins.com/wp-content/uploads/2013/07/create-a-new-app-screen-e1487868371560.png 1280w, https://goldplugins.com/wp-content/uploads/2013/07/create-a-new-app-screen-e1487868371560-300x229.png 300w, https://goldplugins.com/wp-content/uploads/2013/07/create-a-new-app-screen-e1487868371560-768x587.png 768w, https://goldplugins.com/wp-content/uploads/2013/07/create-a-new-app-screen-e1487868371560-1024x783.png 1024w" sizes="(max-width: 1280px) 100vw, 1280px" /><figcaption class="wp-caption-text">These are the fields you will see after clicking Add a New App. They are the Display name, Contact E-Mail, and Category.</figcaption></figure>
-<p>You will be asked to choose a Category for your App &#8212; choose Apps for Pages.</p>
-<img class="img-fluid" src="https://goldplugins.com/wp-content/uploads/2013/07/new-app-fields-filled-out.png" alt="Screenshot of Add a New App Category drop down." width="1280" height="984" srcset="https://goldplugins.com/wp-content/uploads/2013/07/new-app-fields-filled-out.png 1280w, https://goldplugins.com/wp-content/uploads/2013/07/new-app-fields-filled-out-300x231.png 300w, https://goldplugins.com/wp-content/uploads/2013/07/new-app-fields-filled-out-768x590.png 768w, https://goldplugins.com/wp-content/uploads/2013/07/new-app-fields-filled-out-1024x787.png 1024w" sizes="(max-width: 1280px) 100vw, 1280px" /><figcaption class="wp-caption-text">Once you&#8217;ve filled out the required fields, be sure you&#8217;ve selected Apps for Pages in the category drop down.</figcaption></figure>
-<h3>Step Three: Locate and Copy your App ID and Secret Key</h3>
-<p>After you&#8217;ve filled out the required fields and clicked Create a New App ID, you&#8217;ll be taken to your new App&#8217;s dashboard. From here, you&#8217;ll need to click on the Settings link to view your App ID and Secret Key.</p>
-<img class="img-fluid" src="https://goldplugins.com/wp-content/uploads/2013/07/app-dashboard-settings-link.png" alt="Screenshot of new App's Dashboard." width="1260" height="888" srcset="https://goldplugins.com/wp-content/uploads/2013/07/app-dashboard-settings-link.png 1260w, https://goldplugins.com/wp-content/uploads/2013/07/app-dashboard-settings-link-300x211.png 300w, https://goldplugins.com/wp-content/uploads/2013/07/app-dashboard-settings-link-768x541.png 768w, https://goldplugins.com/wp-content/uploads/2013/07/app-dashboard-settings-link-1024x722.png 1024w" sizes="(max-width: 1260px) 100vw, 1260px" /><figcaption class="wp-caption-text">This is the new App&#8217;s Dashboard. Click the Settings link on the left to proceed to your App ID and Secret Key.</figcaption></figure>
-<p>Your Secret Key will be hidden from view until you click the Show button.</p>
-<img class="img-fluid" src="https://goldplugins.com/wp-content/uploads/2013/07/app-dashboard-show-app-secret-button.png" alt="Screenshot of new App's Settings" width="1280" height="893" srcset="https://goldplugins.com/wp-content/uploads/2013/07/app-dashboard-show-app-secret-button.png 1280w, https://goldplugins.com/wp-content/uploads/2013/07/app-dashboard-show-app-secret-button-300x209.png 300w, https://goldplugins.com/wp-content/uploads/2013/07/app-dashboard-show-app-secret-button-768x536.png 768w, https://goldplugins.com/wp-content/uploads/2013/07/app-dashboard-show-app-secret-button-1024x714.png 1024w" sizes="(max-width: 1280px) 100vw, 1280px" /><figcaption class="wp-caption-text">Your Secret Key is hidden from view until you click the Show button.</figcaption></figure>
-<p>Once you&#8217;ve done this, we recommend copying both fields to a text file for easy access later.</p>
-<img class="img-fluid" src="https://goldplugins.com/wp-content/uploads/2013/07/facebook-developer-app-id-and-secret-key.png" alt="Screenshot of new App's Settings with Secret Key revealed." width="1280" height="894" srcset="https://goldplugins.com/wp-content/uploads/2013/07/facebook-developer-app-id-and-secret-key.png 1280w, https://goldplugins.com/wp-content/uploads/2013/07/facebook-developer-app-id-and-secret-key-300x210.png 300w, https://goldplugins.com/wp-content/uploads/2013/07/facebook-developer-app-id-and-secret-key-768x536.png 768w, https://goldplugins.com/wp-content/uploads/2013/07/facebook-developer-app-id-and-secret-key-1024x715.png 1024w" sizes="(max-width: 1280px) 100vw, 1280px" /><figcaption class="wp-caption-text">After clicking Show, your Secret Key will be visible to copy.</figcaption></figure>
-<p>You&#8217;re finished! That&#8217;s all there is to generating an App ID and Secret Key from Facebook. You can ignore the other settings.</p>
+	<b>PageID:</b><br/>Get your facebook PageID from https://findmyfbid.com/<br/><br/>
+	<b>AccessToken:</b><br/>Follow tutorial (to step 16) at https://www.sociablekit.com/how-to-get-a-facebook-page-access-token/<br/>
 	"$
-	Private appSettings As Map = CreateMap("AppID":Null,"AppSecret":Null,"PageID":Null) 'needed Settings for this Plugin
+	Private appSettings As Map = CreateMap("AccessToken":Null,"PageID":Null) 'needed Settings for this Plugin
 
 
 	'necessary variable declaration
-	Dim AppID As String
-	Dim AppSecret As String
+	Dim AccessToken As String
 	Dim PageID As String
 	Dim likes As String ="="
 	
@@ -138,11 +115,12 @@ Sub setSettings As Boolean
 		For Each k As String In appSettings.Keys
 			If Not(m.ContainsKey(k)) Then m.Put(k,appSettings.Get(k))
 		Next
+		m.Remove("AppSecret")
+		m.Remove("AppID")
 		File.WriteMap(File.Combine(File.DirApp,"plugins"),AppName&".ax",m)
 		updateInterval=m.Get("updateInterval")
 		'You need just change the following lines to get the values into your variables
-		AppID=m.Get("AppID")
-		AppSecret=m.Get("AppSecret")
+		AccessToken=m.Get("AccessToken")
 		PageID=m.Get("PageID")
 	Else
 		Dim m As Map
@@ -161,7 +139,7 @@ Sub startDownload(nr As Int) As String
 	Dim URL As String
 	Select nr
 		Case 1
-			URL=("https://graph.facebook.com/"&PageID&"/?access_token="&AppID&"|"&AppSecret&"&fields=fan_count")
+			URL=("https://graph.facebook.com/v3.2/?ids="&PageID&"&fields=fan_count&access_token="&AccessToken)
 	End Select
 	Return URL
 End Sub
@@ -175,8 +153,10 @@ Sub evalJobResponse(nr As Int,success As Boolean,response As String,InputStream 
 			Try
 					Dim parser As JSONParser
 				parser.Initialize(response)
-					Dim root As Map = parser.NextObject
-					likes = root.Get("fan_count")
+				Dim root As Map = parser.NextObject
+				Dim api As Map = root.Get(PageID)
+				likes = api.Get("fan_count")
+				
 					Return True
 				Catch
 					Log("Error in: "& AppName & CRLF & LastException)
