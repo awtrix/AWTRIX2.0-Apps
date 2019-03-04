@@ -28,7 +28,7 @@ Sub Class_Globals
 	
 		
 	Private setupInfos As String= $"
-	<b>APIKey:</b> get yours at https://www.apixu.com/my/<br/>
+	<b>APIKey:</b> get yours at https://www.apixu.com/my/<br/><br/>
 	<b>Fahrenheit:</b> shows the temperature in Fahrenheit (true/false)<br/>
 	"$
 	
