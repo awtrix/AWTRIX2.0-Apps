@@ -11,10 +11,10 @@ Sub Class_Globals
 	Dim scrollposition As Int 'ignore
 	Dim commandList As List 'ignore
 	Dim CallerObject As Object 'ignore
-	Dim Appduration As Int 
+	Dim Appduration As Int 'ignore
 	
-	Private AppName As String = "Feierabend" 'change plugin name (unique)
-	Private AppVersion As String="1.0"
+	Private AppName As String = "weather" 'change plugin name (unique)
+	Private AppVersion As String="1.5"
 	Private tickInterval As Int= 250
 	Private needDownloads As Int = 1
 	Private updateInterval As Int = 0 'force update after X seconds. 0 for systeminterval
@@ -22,16 +22,17 @@ Sub Class_Globals
 	
 	
 	Private description As String= $"
-	Zeigt die verbleibende Zeit bis zum wohlverdienten Feierbabend.<br/>
+	Shows the current temperature of your location.<br/>
 	<small>Created by AWTRIX</small>
 	"$
 	
 		
 	Private setupInfos As String= $"
-	<b>Feierabend:</b> Diie Uhrzeit an dem du endlich Feierabend machen kannst.<br/>
+	<b>APIKey:</b> get yours at https://www.apixu.com/my/<br/>
+	<b>Fahrenheit:</b> shows the temperature in Fahrenheit (true/false)<br/>
 	"$
 	
-	Private appSettings As Map = CreateMap("APIKey":Null,"Location":"Frankfurt") 'needed Settings for this Plugin
+	Private appSettings As Map = CreateMap("APIKey":Null,"Fahrenheit":False,"Location":"Frankfurt") 'needed Settings for this Plugin
 
 	
 	'###### nötige Variablen deklarieren ######
@@ -40,6 +41,7 @@ Sub Class_Globals
 	Dim loaction As String
 	Dim ticks As Int
 	Dim icon As String
+	Dim Fahrenheit As Boolean ="false"
 '	Dim i116() As Int= Array As Int(0x0, 0xffe9, 0x0, 0x0, 0x0, 0x0, 0xffe9, 0x0, 0x0, 0x0, 0xffe9, 0xffe9, 0xffe9, 0xffe9, 0x0, 0x0, 0xffe9, 0xffe9, 0xffe9, 0xffe9, 0xffe9, 0xffe9, 0xffe9, 0xffe9, 0x0, 0xffe9, 0xffe9, 0xffff, 0xffff, 0xffe9, 0xffe9, 0x0, 0x0, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffe9, 0x0, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffe9, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff)
 
 	
@@ -128,6 +130,7 @@ Sub setSettings As Boolean
 		'You need just change the following lines to get the values into your variables
 		loaction=m.Get("Location")
 		key=m.Get("APIKey")
+		Fahrenheit=m.Get("Fahrenheit")
 	Else
 		Dim m As Map
 		m.Initialize
@@ -150,8 +153,6 @@ Sub startDownload(nr As Int) As String
 	Return URL
 End Sub
 
-
-
 Sub evalJobResponse(nr As Int,success As Boolean,response As String,InputStream As InputStream) As Boolean
 	If success=False Then Return False
 	Select nr
@@ -161,8 +162,11 @@ Sub evalJobResponse(nr As Int,success As Boolean,response As String,InputStream 
 				parser.Initialize(response)
 				Dim root As Map = parser.NextObject
 				Dim current As Map = root.Get("current")
-'			icon  = condition.Get("icon")
-				temp  = current.Get("temp_c")
+				If Fahrenheit Then
+					temp  = current.Get("temp_f")
+					Else
+					temp  = current.Get("temp_c")
+				End If
 				temp=temp.Replace(".0","")
 				temp=temp&"°"
 				Dim condition As Map = current.Get("condition")
