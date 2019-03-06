@@ -14,7 +14,7 @@ Sub Class_Globals
 	Dim weekday As Int
 	
 	Private AppName As String = "time" 'change plugin name (unique)
-	Private AppVersion As String="1.5"
+	Private AppVersion As String="1.6"
 	Private tickInterval As Int= 60
 	Private needDownloads As Int = 0
 	Private updateInterval As Int = 0 'force update after X seconds. 0 for systeminterval
@@ -29,9 +29,10 @@ Sub Class_Globals
 	<b>showSeconds:</b>  Whether the seconds should be displayed or not (true/false).<br />
 	<b>showDate:</b>  Whether the date should be displayed or not (true/false).<br />
 	<b>12hrFormat:</b>  Switch from 24hr to 24h timeformat (true/false).<br />
+	<b>dateformat:</b>  Set date format (DD/MM or MM/DD) .<br />
 	"$
 	
-	Private appSettings As Map = CreateMap("showSeconds":False,"showWeekday":True,"showDate":True,"12hrFormat":False) 'needed Settings for this Plugin
+	Private appSettings As Map = CreateMap("showSeconds":False,"showWeekday":True,"showDate":True,"12hrFormat":False,"dateFormat":"MM/DD") 'needed Settings for this Plugin
 
 	Dim startat As Long
 	Dim showWeekDay As Boolean =True
@@ -39,6 +40,7 @@ Sub Class_Globals
 	Dim showSeconds As Boolean =False
 	Dim hrFormat As Boolean=False
 	Dim scroll As Int
+	Dim dateFormat As String
 End Sub
 
 'Initializes the object. You can NOT add parameters to this method!
@@ -128,6 +130,7 @@ Sub setSettings As Boolean
 		showDate=m.Get("showDate")
 		showSeconds=m.Get("showSeconds")
 		hrFormat=m.Get("12hrFormat")
+		dateFormat=m.Get("dateFormat")
 	Else
 		Dim m As Map
 		m.Initialize
@@ -217,9 +220,16 @@ Sub genFrame As List
 End Sub
 
 Sub renderDate
+																						'Add Date Format Option
 	Dim day As String=NumberFormat( DateTime.GetDayOfMonth(DateTime.Now),2,0)
 	Dim month As String=NumberFormat(DateTime.GetMonth(DateTime.Now),2,0)
-	commandList.add(CreateMap("type":"text","text":day&"."& month&".","x":7,"y":scroll-8,"font":"tiny"))
+	If dateFormat= "MM/DD" Then
+		commandList.add(CreateMap("type":"text","text":month&"."& day&".","x":7,"y":scroll-8,"font":"tiny"))
+	Else
+		commandList.add(CreateMap("type":"text","text":day&"."& month&".","x":7,"y":scroll-8,"font":"tiny"))
+	End If
+	
+
 End Sub
 
 Sub renderWeekDay
