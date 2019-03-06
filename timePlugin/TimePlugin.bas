@@ -223,6 +223,7 @@ Sub renderDate
 																						'Add Date Format Option
 	Dim day As String=NumberFormat( DateTime.GetDayOfMonth(DateTime.Now),2,0)
 	Dim month As String=NumberFormat(DateTime.GetMonth(DateTime.Now),2,0)
+											'Sets the Date Format
 	If dateFormat= "MM/DD" Then
 		commandList.add(CreateMap("type":"text","text":month&"."& day&".","x":7,"y":scroll-8,"font":"tiny"))
 	Else
