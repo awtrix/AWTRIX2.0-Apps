@@ -88,6 +88,7 @@ public Sub Run(Tag As String, Params As Map) As Object
 				Appduration = Params.Get("AppDuration") 						'Kann zur berechnung von Zeiten verwendet werden 'ignore
 			End If
 			scrollposition=32
+			animCount=0
 			MainSettings.Put("icon",IconID)
 			Return MainSettings
 		Case "downloadCount"
