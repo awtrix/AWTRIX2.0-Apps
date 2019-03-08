@@ -33,14 +33,14 @@ Sub Class_Globals
 	
 	Private setupInfos As String= $"
 	<b>Date:</b>  Target date (Format: dd.mm.yyyy).<br />
-	<b>IconID:</b>  Choose your desired IconID.<br />
+	<b>IconID:</b>  Choose your desired IconID from AWTRIXER.<br />
 	<b>Identifier:</b>  Enter your desired translation for "days,day" Example: Tage,Tag.<br />
 	"$
 	
 	Private appSettings As Map = CreateMap("Date":"01.01.1970", "Identifier":"Days,Day", "IconID":62) 'needed Settings for this Plugin
 
 	'declare needed variables
-	Dim Date As String
+	Dim Date As String = "01.01.1970"
 	Dim Identifier As String
 End Sub
 
