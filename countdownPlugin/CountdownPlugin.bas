@@ -20,28 +20,28 @@ Sub Class_Globals
 	Dim icon() As Int
 
 	Private AppName As String = "Countdown" 'plugin name (must be unique)
-	Private AppVersion As String="1.0"
+	Private AppVersion As String="1.1"
 	Private tickInterval As Int= 65 'tick rate in ms
 	Private needDownloads As Int = 0 'how many dowloadhandlers should be generated
 	Private updateInterval As Int = 0 'force update after X seconds. 0 for systeminterval (configurable)
 	Private IconID As Int = 62
 	
 	Private description As String= $"
-	Day counter, displays the remaining days from now to a target date <br/>
+	Shows the remaining days from now to a target date <br/>
 	<small>Created by 0o.y.o0</small> 
 	"$
 	
 	Private setupInfos As String= $"
 	<b>Date:</b>  Target date (Format: dd.mm.yyyy).<br />
-	<b>Days:</b>  Enter your desired translation for "days".<br />
 	<b>IconID:</b>  Choose your desired IconID.<br />
+	<b>Identifier:</b>  Enter your desired translation for "days,day" Example: Tage,Tag.<br />
 	"$
 	
-	Private appSettings As Map = CreateMap("Date":Null, "Days":Null, "IconID":62) 'needed Settings for this Plugin
+	Private appSettings As Map = CreateMap("Date":"01.01.1970", "Identifier":"Days,Day", "IconID":62) 'needed Settings for this Plugin
 
 	'declare needed variables
 	Dim Date As String
-	Dim Days As String
+	Dim Identifier As String
 End Sub
 
 #Region ignore
@@ -166,8 +166,8 @@ Sub setSettings As Boolean
 		updateInterval=m.Get("updateInterval")
 		'You need just change the following lines to get the values into your variables
 		Date=m.Get("Date")
-		Days=m.Get("Days")
 		IconID=m.Get("IconID")
+		Identifier=m.Get("Identifier")
 	Else
 		Dim m As Map
 		m.Initialize
@@ -222,22 +222,35 @@ Sub genText(s As String) As Map
 	Return command
 End Sub
 
-
-
 Sub CountedDays As String
 	Dim AmountOfDays As String
 	Dim Diff As Int
 	Dim PerDiff As Period
+
+	'----------------separate identifiers ------------------------
+	Dim separatedIdentifier() As String
+	separatedIdentifier=Regex.split(",",Identifier)
 	
+	'----------------calculate difference ------------------------
 	DateTime.DateFormat = "dd.MM.yyyy"
-	PerDiff = DateUtils.PeriodBetweenInDays(DateTime.Now, DateTime.Dateparse(Date))
-	
+	PerDiff = DateUtils.PeriodBetweenInDays(DateTime.now, DateTime.Dateparse(Date))
 	Diff= PerDiff.Days
-	Diff = Diff + 1 'we have to add one day since the current day is missing
 	
-	AmountOfDays = Diff
+	'----------------process result ------------------------
+	If Diff >=0 Then AmountOfDays = Diff +1 'we have to add one day since the current day is missing
+		
+	If Diff < 0 Then AmountOfDays = "0"	'we set the amount of days to zero here too
+		
+	If Date = DateTime.Date(DateTime.now) Then AmountOfDays = Diff 'we set the amount of days to zero because the target date is today
+
+	'----------------select identifier ------------------------
+	Dim IdentifierId As Int
 	
-	AmountOfDays = AmountOfDays & " " & Days
+	If AmountOfDays > 1	Then IdentifierId = 0
+	If AmountOfDays = 1 Then IdentifierId = 1
+	If AmountOfDays = 0	Then IdentifierId = 0
+	
+	AmountOfDays = AmountOfDays & " " & separatedIdentifier(IdentifierId)
+	
 	Return AmountOfDays
-	
 End Sub
