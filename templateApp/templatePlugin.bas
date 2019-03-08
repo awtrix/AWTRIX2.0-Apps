@@ -25,7 +25,6 @@ Sub Class_Globals
 	Private updateInterval As Int = 0 'force update after X seconds. 0 for systeminterval
 	Private lockApp As Boolean=False 'If set to true AWTRIX will wait for the " finish" command before switch wo the next app.
 	Private iconID As Int = 141 'default Icon from AWTRIXER.
-
 	
 	Private description As String= $"
 	This is a template for a native AWTRIX app<br />
@@ -160,12 +159,15 @@ Sub setSettings As Boolean
 	If File.Exists(File.Combine(File.DirApp,"plugins"),AppName&".ax") Then
 		Dim m As Map = File.ReadMap(File.Combine(File.DirApp,"plugins"),AppName&".ax")
 		For Each k As String In appSettings.Keys
-			If Not(m.ContainsKey(k)) Then m.Put(k,appSettings.Get(k))
+			If Not(m.ContainsKey(k)) Then
+				 m.Put(k,appSettings.Get(k))
+				 Else
+				appSettings.Put(k,m.Get("k"))
+			End If
 		Next
 		File.WriteMap(File.Combine(File.DirApp,"plugins"),AppName&".ax",m)
 		updateInterval=m.Get("updateInterval")
 		'You need just change the following lines to get the values into your variables
-		Text=m.Get("Text")
 	Else
 		Dim m As Map
 		m.Initialize
@@ -196,8 +198,8 @@ End Sub
 
 'Generate your Frame. This Sub is called with every Tick
 Sub genFrame As List
-		commandList.Add(genText(Text))			'Fügt einen Befehl der Liste hinzu
-		commandList.Add(CreateMap("type":"bmp","x":0,"y":0,"bmp":icon,"width":8,"height":8))
+	commandList.Add(genText(appSettings.Get("Text")))			'Fügt einen Befehl der Liste hinzu
+	commandList.Add(CreateMap("type":"bmp","x":0,"y":0,"bmp":icon,"width":8,"height":8))
 	Return commandList
 End Sub
 

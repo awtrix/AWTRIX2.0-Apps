@@ -39,9 +39,6 @@ Sub Class_Globals
 	
 	Private appSettings As Map = CreateMap("Date":"01.01.1970", "Identifier":"Days,Day", "IconID":62) 'needed Settings for this Plugin
 
-	'declare needed variables
-	Dim Date As String = "01.01.1970"
-	Dim Identifier As String
 End Sub
 
 #Region ignore
@@ -50,7 +47,7 @@ Public Sub Initialize() As String
 	commandList.Initialize
 	MainSettings.Initialize
 	MainSettings.Put("interval",tickInterval)
-	MainSettings.Put("needDownload",needDownloads) 								
+	MainSettings.Put("needDownload",needDownloads)
 	iconTimer.Initialize("iconTimer",1000)
 	iconList.Initialize
 	setSettings
@@ -142,8 +139,8 @@ public Sub Run(Tag As String, Params As Map) As Object
 				If Params.ContainsKey("tick") Then
 					iconList=Params.Get("data")
 					iconTimer.Interval=Params.Get("tick")
-				isAnimated=True
-					Else
+					isAnimated=True
+				Else
 					icon=Params.Get("data")
 					isAnimated=False
 				End If
@@ -155,20 +152,19 @@ public Sub Run(Tag As String, Params As Map) As Object
 End Sub
 #End Region
 
-'Get settings from the settings file
-'You only need to set your variables
+'ignore
 Sub setSettings As Boolean
 	If File.Exists(File.Combine(File.DirApp,"plugins"),AppName&".ax") Then
 		Dim m As Map = File.ReadMap(File.Combine(File.DirApp,"plugins"),AppName&".ax")
 		For Each k As String In appSettings.Keys
-			If Not(m.ContainsKey(k)) Then m.Put(k,appSettings.Get(k))
+			If Not(m.ContainsKey(k)) Then
+				m.Put(k,appSettings.Get(k))
+			Else
+				appSettings.Put(k,m.Get(k))
+			End If
 		Next
 		File.WriteMap(File.Combine(File.DirApp,"plugins"),AppName&".ax",m)
 		updateInterval=m.Get("updateInterval")
-		'You need just change the following lines to get the values into your variables
-		Date=m.Get("Date")
-		IconID=m.Get("IconID")
-		Identifier=m.Get("Identifier")
 	Else
 		Dim m As Map
 		m.Initialize
@@ -230,11 +226,11 @@ Sub CountedDays As String
 
 	'----------------separate identifiers ------------------------
 	Dim separatedIdentifier() As String
-	separatedIdentifier=Regex.split(",",Identifier)
+	separatedIdentifier=Regex.split(",",appSettings.Get("Identifier"))
 	
 	'----------------calculate difference ------------------------
 	DateTime.DateFormat = "dd.MM.yyyy"
-	PerDiff = DateUtils.PeriodBetweenInDays(DateTime.now, DateTime.Dateparse(Date))
+	PerDiff = DateUtils.PeriodBetweenInDays(DateTime.now, DateTime.Dateparse(appSettings.Get("Date")))
 	Diff= PerDiff.Days
 	
 	'----------------process result ------------------------
@@ -242,7 +238,7 @@ Sub CountedDays As String
 		
 	If Diff < 0 Then AmountOfDays = "0"	'we set the amount of days to zero here too
 		
-	If Date = DateTime.Date(DateTime.now) Then AmountOfDays = Diff 'we set the amount of days to zero because the target date is today
+	If appSettings.Get("Date") = DateTime.Date(DateTime.now) Then AmountOfDays = Diff 'we set the amount of days to zero because the target date is today
 
 	'----------------select identifier ------------------------
 	Dim IdentifierId As Int
