@@ -11,27 +11,33 @@ Sub Class_Globals
 	Dim commandList As List 'ignore
 	Dim CallerObject As Object 'ignore
 	Dim Appduration As Int 'ignore
+	Dim iconTimer As Timer'ignore
+	Dim iconList As List'ignore
+	Dim animCount As Int'ignore
+	Dim isAnimated As Boolean'ignore
 	
 	Dim lockapp As Boolean=False
-	Dim icon() As Int = Array As Int(0, 65535, 0, 65535, 0, 65535, 0, 0, 12918, 65535, 12918, 65535, 12918, 65535, 12918, 0, 12918, 12918, 12918, 12918, 12918, 12918, 12918, 34015, 12918, 12678, 12678, 12678, 12678, 12678, 12918, 34015, 12918, 12918, 12918, 12918, 12918, 12918, 12918, 34015, 12918, 12678, 12678, 12678, 12678, 12678, 12918, 34015, 12918, 12918, 12918, 12918, 12918, 12918, 12918, 34015, 0, 34015, 34015, 34015, 34015, 34015, 34015, 34015)
+	Dim icon() As Int
 
 	Private AppName As String = "Countdown" 'plugin name (must be unique)
 	Private AppVersion As String="1.0"
 	Private tickInterval As Int= 65 'tick rate in ms
-	Private needDownloads As Int = 1 'how many dowloadhandlers should be generated
+	Private needDownloads As Int = 0 'how many dowloadhandlers should be generated
 	Private updateInterval As Int = 0 'force update after X seconds. 0 for systeminterval (configurable)
-
+	Private IconID As Int = 62
+	
 	Private description As String= $"
-	Day counter, displays the remaining days from now to a target date <br />
-	<small>Created by 0o.y.o0 </small> 
+	Day counter, displays the remaining days from now to a target date <br/>
+	<small>Created by 0o.y.o0</small> 
 	"$
 	
 	Private setupInfos As String= $"
 	<b>Date:</b>  Target date (Format: dd.mm.yyyy).<br />
 	<b>Days:</b>  Enter your desired translation for "days".<br />
+	<b>IconID:</b>  Choose your desired IconID.<br />
 	"$
 	
-	Private appSettings As Map = CreateMap("Date":Null, "Days":Null) 'needed Settings for this Plugin
+	Private appSettings As Map = CreateMap("Date":Null, "Days":Null, "IconID":62) 'needed Settings for this Plugin
 
 	'declare needed variables
 	Dim Date As String
@@ -43,7 +49,10 @@ End Sub
 Public Sub Initialize() As String
 	commandList.Initialize
 	MainSettings.Initialize
-	MainSettings.Put("interval",tickInterval) 										'übergibt AWTRIX die gewünschte tick-rate in ms. bei 0 wird der Tick nur einmalig aufgerufen
+	MainSettings.Put("interval",tickInterval)
+	MainSettings.Put("needDownload",needDownloads) 								
+	iconTimer.Initialize("iconTimer",1000)
+	iconList.Initialize
 	setSettings
 	Return "MyKey"
 End Sub
@@ -54,6 +63,24 @@ public Sub GetNiceName() As String
 End Sub
 
 ' ignore
+Sub IconTimer_Tick
+	Try
+		Dim parse As JSONParser
+		If animCount>iconList.Size-1 Then animCount=0
+		parse.Initialize(iconList.Get(animCount))
+		Dim bmproot As List = parse.NextArray
+		Dim bpm(bmproot.Size) As Int
+		For bm=0 To bmproot.Size-1
+			bpm(bm)=bmproot.Get(bm)
+		Next
+		icon=bpm
+	Catch
+		Log(LastException)
+	End Try
+	animCount=animCount+1
+End Sub
+
+' ignore
 public Sub Run(Tag As String, Params As Map) As Object
 	Select Case Tag
 		Case "start" 													'wird bei jedem start des Plugins aufgerufen und übergibt seine Settings an Awtrix
@@ -61,6 +88,7 @@ public Sub Run(Tag As String, Params As Map) As Object
 				Appduration = Params.Get("AppDuration") 						'Kann zur berechnung von Zeiten verwendet werden 'ignore
 			End If
 			scrollposition=32
+			MainSettings.Put("icon",IconID)
 			Return MainSettings
 		Case "downloadCount"
 			Return needDownloads
@@ -68,6 +96,11 @@ public Sub Run(Tag As String, Params As Map) As Object
 			Return startDownload(Params.Get("jobNr"))
 		Case "httpResponse"
 			Return evalJobResponse(Params.Get("jobNr"),Params.Get("success"),Params.Get("response"),Params.Get("InputStream"))
+		Case "running"
+			If isAnimated Then
+				iconTimer.Enabled=True
+				IconTimer_Tick
+			End If
 		Case "tick"
 			commandList.Clear											'Wird in der eingestellten Tickrate aufgerufen
 			Return genFrame
@@ -103,12 +136,23 @@ public Sub Run(Tag As String, Params As Map) As Object
 			Return setSettings
 		Case "getUpdateInterval"
 			Return updateInterval
+		Case "icon"
+			If Not(Params.ContainsKey("noIcon")) Then
+				If Params.ContainsKey("tick") Then
+					iconList=Params.Get("data")
+					iconTimer.Interval=Params.Get("tick")
+				isAnimated=True
+					Else
+					icon=Params.Get("data")
+					isAnimated=False
+				End If
+			End If
+		Case "stop"
+			iconTimer.Enabled=False
 	End Select
 	Return True
 End Sub
-
 #End Region
-
 
 'Get settings from the settings file
 'You only need to set your variables
@@ -123,6 +167,7 @@ Sub setSettings As Boolean
 		'You need just change the following lines to get the values into your variables
 		Date=m.Get("Date")
 		Days=m.Get("Days")
+		IconID=m.Get("IconID")
 	Else
 		Dim m As Map
 		m.Initialize
