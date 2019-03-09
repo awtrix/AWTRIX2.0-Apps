@@ -37,9 +37,7 @@ Sub Class_Globals
 	
 	Private appSettings As Map = CreateMap("Text":Null) 'needed Settings for this Plugin, parse Null if this setting should entered bny the user in the Apps Setup
 	
-
-	'Create the needed variables
-	Dim Text As String
+	
 End Sub
 
 ' ignore
@@ -153,21 +151,28 @@ public Sub Run(Tag As String, Params As Map) As Object
 	Return True
 End Sub
 
-'Get settings from the settings file
-'You only need to set your variables
+'ignore
 Sub setSettings As Boolean
+	Log("setSettings")
 	If File.Exists(File.Combine(File.DirApp,"plugins"),AppName&".ax") Then
 		Dim m As Map = File.ReadMap(File.Combine(File.DirApp,"plugins"),AppName&".ax")
+	
 		For Each k As String In appSettings.Keys
 			If Not(m.ContainsKey(k)) Then
-				 m.Put(k,appSettings.Get(k))
-				 Else
-				appSettings.Put(k,m.Get("k"))
+				m.Put(k,appSettings.Get(k))
+			Else
+				appSettings.Put(k,m.Get(k))
 			End If
 		Next
-		File.WriteMap(File.Combine(File.DirApp,"plugins"),AppName&".ax",m)
+		For Counter = m.Size -1 To 0 Step -1
+			Dim SettingsKey As String = m.GetKeyAt(Counter)
+			Log(SettingsKey)
+			If Not(SettingsKey="updateInterval") Then
+				If Not(appSettings.ContainsKey(SettingsKey)) Then m.Remove(SettingsKey)
+			End If
+		Next
 		updateInterval=m.Get("updateInterval")
-		'You need just change the following lines to get the values into your variables
+		File.WriteMap(File.Combine(File.DirApp,"plugins"),AppName&".ax",m)
 	Else
 		Dim m As Map
 		m.Initialize
