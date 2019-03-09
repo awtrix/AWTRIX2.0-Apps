@@ -18,7 +18,7 @@ Sub Class_Globals
 	Private needDownloads As Int = 1
 	Private updateInterval As Int = 0 'force update after X seconds. 0 for systeminterval
 	Private lockApp As Boolean=True
-
+	Dim icon() As Int = Array As Int(12678, 12678, 65535, 65535, 65535, 65535, 12678, 12678, 30774, 30774, 65535, 65535, 65535, 65535, 30774, 30774, 30774, 30774, 65535, 65535, 30774, 30774, 30774, 30774, 30774, 30774, 65535, 65535, 65535, 30774, 30774, 30774, 30774, 30774, 65535, 65535, 65535, 30774, 30774, 30774, 30774, 30774, 65535, 65535, 30774, 30774, 30774, 30774, 30774, 30774, 65535, 65535, 30774, 30774, 30774, 30774, 12678, 12678, 65535, 65535, 12678, 12678, 12678, 12678)
 
 	Private description As String= $"
 	Shows your Kills, Wins, Wins% and K/D <br/>
@@ -26,7 +26,7 @@ Sub Class_Globals
 	"$
 	
 	Private setupInfos As String= $"
-	<b>apikey:</b>  https://fortnitetracker.com/site-api<br/>
+	<b>APIkey:</b>  https://fortnitetracker.com/site-api<br/>
 	<b>Profile:</b>  Your fortnite nickname<br/>
 	<b>Platform:</b>  pc, xbl or psn<br/>
 	<b>Stats:</b>  solo, duo or squad<br/>
@@ -34,16 +34,7 @@ Sub Class_Globals
 	"$
 	
 	Private appSettings As Map = CreateMap("Platform":"pc","Profile":Null,"APIkey":Null,"Stats":"solo", "Season":False) 'needed Settings for this Plugin
-	
-	Dim icon() As Int = Array As Int(12678, 12678, 65535, 65535, 65535, 65535, 12678, 12678, 30774, 30774, 65535, 65535, 65535, 65535, 30774, 30774, 30774, 30774, 65535, 65535, 30774, 30774, 30774, 30774, 30774, 30774, 65535, 65535, 65535, 30774, 30774, 30774, 30774, 30774, 65535, 65535, 65535, 30774, 30774, 30774, 30774, 30774, 65535, 65535, 30774, 30774, 30774, 30774, 30774, 30774, 65535, 65535, 30774, 30774, 30774, 30774, 12678, 12678, 65535, 65535, 12678, 12678, 12678, 12678)
-	
-	Dim Profile As String
-	Dim apikey As String
-	Dim Platform As String
-	
-	Dim wichStats As String = "solo"
-	Dim Season As Boolean = False
-	
+			
 	Dim win As String
 	Dim winProz As String
 	Dim kdRatio As String
@@ -120,23 +111,28 @@ public Sub Run(Tag As String, Params As Map) As Object
 	Return True
 End Sub
 
-
-'Get settings from the settings file
-'You only need to set your variables
+'ignore
 Sub setSettings As Boolean
+	Log("setSettings")
 	If File.Exists(File.Combine(File.DirApp,"plugins"),AppName&".ax") Then
 		Dim m As Map = File.ReadMap(File.Combine(File.DirApp,"plugins"),AppName&".ax")
+	
 		For Each k As String In appSettings.Keys
-			If Not(m.ContainsKey(k)) Then m.Put(k,appSettings.Get(k))
+			If Not(m.ContainsKey(k)) Then
+				m.Put(k,appSettings.Get(k))
+			Else
+				appSettings.Put(k,m.Get(k))
+			End If
 		Next
-		File.WriteMap(File.Combine(File.DirApp,"plugins"),AppName&".ax",m)
+		For Counter = m.Size -1 To 0 Step -1
+			Dim SettingsKey As String = m.GetKeyAt(Counter)
+			Log(SettingsKey)
+			If Not(SettingsKey="updateInterval") Then 
+				If Not(appSettings.ContainsKey(SettingsKey)) Then m.Remove(SettingsKey)
+			End If
+		Next
 		updateInterval=m.Get("updateInterval")
-		'You need just change the following lines to get the values into your variables
-		Profile=m.Get("Profile")
-		apikey=m.Get("APIkey")
-		Season=m.Get("Season")
-		wichStats=m.Get("Stats")
-		Platform=m.Get("Platform")
+		File.WriteMap(File.Combine(File.DirApp,"plugins"),AppName&".ax",m)
 	Else
 		Dim m As Map
 		m.Initialize
@@ -149,12 +145,13 @@ Sub setSettings As Boolean
 	Return True
 End Sub
 
+
 'Called with every update from Awtrix,
 Sub startDownload(nr As Int) As String
 	Dim URL As String
 	Select nr
 		Case 1
-			URL=("https://api.fortnitetracker.com/v1/profile/"&Platform&"/"&Profile & CRLF & "TRN-Api-Key: "& apikey)
+			URL=("https://api.fortnitetracker.com/v1/profile/"&appSettings.Get("Platform")&"/"&appSettings.Get("Profile") & CRLF & "TRN-Api-Key: "& appSettings.Get("APIkey"))
 	End Select
 	Return URL
 End Sub
@@ -175,12 +172,12 @@ Sub evalJobResponse(nr As Int,success As Boolean,response As String,InputStream 
 '					Dim key As String = collifeTimeStats.Get("key")
 '				Next
 '				Dim platformNameLong As String = root.Get("platformNameLong")
-				Dim Stats As Map = root.Get("stats")
+				Dim FortniteStats As Map = root.Get("stats")
 		
-				If Not(Season) Then
-					Select wichStats
+				If Not(appSettings.Get("Season")) Then
+					Select appSettings.Get("Stats")
 						Case "solo"
-							Dim Solo As Map = Stats.Get("p2")
+							Dim Solo As Map = FortniteStats.Get("p2")
 							Dim SoloWins As Map = Solo.Get("top1")
 							win = SoloWins.Get("value")
 							Dim kills As Map = Solo.Get("kills")
@@ -190,7 +187,7 @@ Sub evalJobResponse(nr As Int,success As Boolean,response As String,InputStream 
 							Dim kd As Map = Solo.Get("kd")
 							kdRatio = kd.Get("value")
 						Case "duo"
-							Dim Duo As Map = Stats.Get("p10")
+							Dim Duo As Map = FortniteStats.Get("p10")
 							Dim DuoWins As Map = Duo.Get("top1")
 							win = DuoWins.Get("value")
 							Dim kills As Map = Duo.Get("kills")
@@ -200,7 +197,7 @@ Sub evalJobResponse(nr As Int,success As Boolean,response As String,InputStream 
 							Dim kd As Map = Duo.Get("kd")
 							kdRatio = kd.Get("value")
 						Case "squad"
-							Dim Squad As Map = Stats.Get("p9")
+							Dim Squad As Map = FortniteStats.Get("p9")
 							Dim SquadWins As Map = Squad .Get("top1")
 							win = SquadWins.Get("value")
 							Dim kills As Map = Squad.Get("kills")
@@ -211,9 +208,9 @@ Sub evalJobResponse(nr As Int,success As Boolean,response As String,InputStream 
 							kdRatio = kd.Get("value")
 					End Select
 				Else
-					Select wichStats
+					Select appSettings.Get("Stats")
 						Case "solo"
-							Dim SeasonSolo As Map = Stats.Get("curr_p2")
+							Dim SeasonSolo As Map = FortniteStats.Get("curr_p2")
 							Dim SeasonSoloWins As Map = SeasonSolo .Get("top1")
 							win = SeasonSoloWins.Get("value")
 							Dim kills As Map = SeasonSolo.Get("kills")
@@ -223,7 +220,7 @@ Sub evalJobResponse(nr As Int,success As Boolean,response As String,InputStream 
 							Dim kd As Map = SeasonSolo.Get("kd")
 							kdRatio = kd.Get("value")
 						Case "duo"
-							Dim SeasonDuo As Map = Stats.Get("curr_p10")
+							Dim SeasonDuo As Map = FortniteStats.Get("curr_p10")
 							Dim SeasonDuoWins As Map = SeasonDuo .Get("top1")
 							win = SeasonDuoWins.Get("value")
 							Dim kills As Map = SeasonDuo.Get("kills")
@@ -233,7 +230,7 @@ Sub evalJobResponse(nr As Int,success As Boolean,response As String,InputStream 
 							Dim kd As Map = SeasonDuo.Get("kd")
 							kdRatio = kd.Get("value")
 						Case "squad"
-							Dim SeasonSquad As Map = Stats.Get("curr_p9")
+							Dim SeasonSquad As Map = FortniteStats.Get("curr_p9")
 							Dim toSeasonSquadWins As Map = SeasonSquad .Get("top1")
 							win = toSeasonSquadWins.Get("value")
 							Dim kills As Map = SeasonSquad.Get("kills")
@@ -259,10 +256,6 @@ Sub genFrame As List
 	commandList.Add(CreateMap("type":"bmp","x":0,"y":0,"bmp":icon,"width":8,"height":8))
 
 	Return commandList
-End Sub
-
-Sub genscrollScreen(infos As List)
-	
 End Sub
 
 Sub genText(s As String) As Map

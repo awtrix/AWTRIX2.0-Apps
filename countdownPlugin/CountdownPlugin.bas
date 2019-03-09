@@ -154,8 +154,10 @@ End Sub
 
 'ignore
 Sub setSettings As Boolean
+	Log("setSettings")
 	If File.Exists(File.Combine(File.DirApp,"plugins"),AppName&".ax") Then
 		Dim m As Map = File.ReadMap(File.Combine(File.DirApp,"plugins"),AppName&".ax")
+	
 		For Each k As String In appSettings.Keys
 			If Not(m.ContainsKey(k)) Then
 				m.Put(k,appSettings.Get(k))
@@ -163,8 +165,15 @@ Sub setSettings As Boolean
 				appSettings.Put(k,m.Get(k))
 			End If
 		Next
-		File.WriteMap(File.Combine(File.DirApp,"plugins"),AppName&".ax",m)
+		For Counter = m.Size -1 To 0 Step -1
+			Dim SettingsKey As String = m.GetKeyAt(Counter)
+			Log(SettingsKey)
+			If Not(SettingsKey="updateInterval") Then
+				If Not(appSettings.ContainsKey(SettingsKey)) Then m.Remove(SettingsKey)
+			End If
+		Next
 		updateInterval=m.Get("updateInterval")
+		File.WriteMap(File.Combine(File.DirApp,"plugins"),AppName&".ax",m)
 	Else
 		Dim m As Map
 		m.Initialize
