@@ -32,7 +32,7 @@ Sub Class_Globals
 	<b>dateformat:</b>  Set date format (DD/MM or MM/DD) .<br />
 	"$
 	
-	Private appSettings As Map = CreateMap("showSeconds":False,"showWeekday":True,"showDate":True,"12hrFormat":False,"dateFormat":"MM/DD") 'needed Settings for this Plugin
+	Private appSettings As Map = CreateMap("showSeconds":False,"showWeekday":True,"showDate":True,"12hrFormat":False,"dateFormat":"DD/MM") 'needed Settings for this Plugin
 
 	Dim startat As Long
 	Dim showWeekDay As Boolean =True
@@ -220,10 +220,10 @@ Sub genFrame As List
 End Sub
 
 Sub renderDate
-																						'Add Date Format Option
+	'Add Date Format Option
 	Dim day As String=NumberFormat( DateTime.GetDayOfMonth(DateTime.Now),2,0)
 	Dim month As String=NumberFormat(DateTime.GetMonth(DateTime.Now),2,0)
-											'Sets the Date Format
+	'Sets the Date Format
 	If dateFormat= "MM/DD" Then
 		commandList.add(CreateMap("type":"text","text":month&"."& day&".","x":7,"y":scroll-8,"font":"tiny"))
 	Else
