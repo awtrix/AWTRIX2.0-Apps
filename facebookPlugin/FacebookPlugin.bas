@@ -12,8 +12,8 @@ Sub Class_Globals
 	Dim CallerObject As Object 'ignore
 	Dim Appduration As Int 'ignore
 	Dim icon() As Int = Array As Int(0x3ad3, 0x3ad3, 0x3ad3, 0x3ad3, 0x3ad3, 0x3ad3, 0x3ad3, 0x3ad3, 0x3ad3, 0x3ad3, 0x3ad3, 0x3ad3, 0x3ad3, 0xffff, 0x3ad3, 0x3ad3, 0x3ad3, 0x3ad3, 0x3ad3, 0x3ad3, 0xffff, 0x3ad3, 0x3ad3, 0x3ad3, 0x3ad3, 0x3ad3, 0x3ad3, 0x3ad3, 0xffff, 0x3ad3, 0x3ad3, 0x3ad3, 0x3ad3, 0x3ad3, 0x3ad3, 0xffff, 0xffff, 0xffff, 0x3ad3, 0x3ad3, 0x3ad3, 0x3ad3, 0x3ad3, 0x3ad3, 0xffff, 0x3ad3, 0x3ad3, 0x3ad3, 0x3ad3, 0x3ad3, 0x3ad3, 0x3ad3, 0xffff, 0x3ad3, 0x3ad3, 0x3ad3, 0x3ad3, 0x3ad3, 0x3ad3, 0x3ad3, 0xffff, 0x3ad3, 0x3ad3, 0x3ad3)
-	Private AppVersion As String="1.3"
-	Private AppName As String = "facebook" 'plugin name (must be unique)
+	Private AppVersion As String="1.4"
+	Private AppName As String = "Facebook" 'plugin name (must be unique)
 	Private tickInterval As Int= 60 'tick rate in ms (FPS)
 	Private needDownloads As Int = 1 'how many dowloadhandlers should be generated
 	Private updateInterval As Int = 0 'force update after X seconds. 0 for systeminterval
@@ -25,7 +25,17 @@ Sub Class_Globals
 	
 	Private setupInfos As String= $"
 	<b>PageID:</b><br/>Get your facebook PageID from https://findmyfbid.com/<br/><br/>
-	<b>AccessToken:</b><br/>Follow tutorial (to step 16) at https://www.sociablekit.com/how-to-get-a-facebook-page-access-token/<br/>
+	<b>AccessToken:</b><br/><br/>
+	<iframe width="560" height="315" src="https://www.youtube.com/embed/rjyfDRjUCMw?rel=0" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>  <br/><br/>
+	Links:<br/>
+	Facebook Developer<br/>
+	https://developers.facebook.com/<br/>
+<br/>
+	Graph API Explorer<br/>
+	https://developers.facebook.com/tools/explorer/<br/>
+<br/>
+	Token Converter<br/>
+	https://www.displaysocialmedia.com/app-dev/get_page_token.php<br/>					
 	"$
 	Private appSettings As Map = CreateMap("AccessToken":Null,"PageID":Null) 'needed Settings for this Plugin
 
