@@ -13,7 +13,7 @@ Sub Class_Globals
 	Dim Appduration As Int 'ignore
 
 	Private AppName As String = "wetterdienst" 'plugin name (must be unique)
-	Private AppVersion As String="1.0"
+	Private AppVersion As String="1.1"
 	Private tickInterval As Int= 65 'tick rate in ms
 	Private needDownloads As Int = 1 'how many dowloadhandlers should be generated
 	Private updateInterval As Int = 0 'force update after X seconds. 0 for systeminterval
@@ -157,7 +157,7 @@ Sub evalJobResponse(nr As Int,success As Boolean,response As String,InputStream 
 					warningAvailable=True
 					Dim weather As List = warnings.Get(CellID)
 					For Each col As Map In weather
-						sb.Append(col.Get("headline")).Append(": ").Append(col.Get("description")).Append("       ")
+						sb.Append(col.Get("headline")).Append("          ")
 					Next
 					Else
 					warningAvailable=False
