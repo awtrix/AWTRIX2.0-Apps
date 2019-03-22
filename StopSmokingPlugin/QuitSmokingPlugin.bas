@@ -20,7 +20,7 @@ Sub Class_Globals
 	Dim Icon() As Int = Array As Int(0, 0, 63488, 63488, 63488, 63488, 0, 0, 0, 63488, 25388, 0, 0, 0, 63488, 0, 63488, 25388, 25388, 0, 0, 63488, 0, 63488, 63488, 25388, 0, 0, 63488, 0, 0, 63488, 63488, 65535, 65535, 63488, 65535, 64908, 64908, 63488, 63488, 0, 63488, 0, 0, 0, 0, 63488, 0, 63488, 0, 0, 0, 0, 63488, 0, 0, 0, 63488, 63488, 63488, 63488, 0, 0)
 
 	Private AppName As String = "QuitSmoking" 'plugin name (must be unique)
-	Private AppVersion As String="1.0"
+	Private AppVersion As String="1.1"
 	Private tickInterval As Int= 65 'tick rate in ms
 	Private needDownloads As Int = 0 'how many dowloadhandlers should be generated
 	Private updateInterval As Int = 0 'force update after X seconds. 0 for systeminterval (configurable)
@@ -34,7 +34,8 @@ Sub Class_Globals
 	<b>Quit Date:</b>  Format: dd.mm.yyyy.<br />
 	"$
 	
-	Private appSettings As Map = CreateMap("Quit Date":"01.01.2019") 'needed Settings for this Plugin
+	Private appSettings As Map = CreateMap("QuitDate":"01.01.2019") 'needed Settings for this Plugin
+	Dim PerDiff As Period
 End Sub
 
 #Region ignore
@@ -61,6 +62,14 @@ public Sub Run(Tag As String, Params As Map) As Object
 			If Params.ContainsKey("AppDuration") Then
 				Appduration = Params.Get("AppDuration") 						'Kann zur berechnung von Zeiten verwendet werden 'ignore
 			End If
+			DateTime.DateFormat = "dd.MM.yyyy"
+			Try
+				PerDiff= DateUtils.PeriodBetweenInDays(DateTime.Dateparse(appSettings.Get("QuitDate")),DateTime.now)
+			Catch
+				Log("Error in " &AppName)
+				Log(LastException)
+			End Try
+			 
 			scrollposition=32
 			Return MainSettings
 		Case "downloadCount"
@@ -160,8 +169,7 @@ End Sub
 
 'is called every tick, generates the commandlist (drawingroutines) and send it to awtrix
 Sub genFrame As List
-	DateTime.DateFormat = "dd.MM.yyyy"
-	Dim PerDiff As Period = DateUtils.PeriodBetweenInDays(DateTime.Dateparse(appSettings.Get("Quit Date")),DateTime.now)
+	
 	commandList.Add(genText(PerDiff.Days))
 	commandList.Add(CreateMap("type":"bmp","x":0,"y":0,"bmp":Icon,"width":8,"height":8))
 	Return commandList
