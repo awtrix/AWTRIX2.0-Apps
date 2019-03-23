@@ -16,7 +16,7 @@ Sub Class_Globals
 	Dim animCount As Int'ignore
 	Dim isAnimated As Boolean'ignore
 	Dim icon() As Int'ignore
-	Private shouldShow As Boolean'ignore
+	Dim shouldShow As Boolean = true 'ignore
 	
 	Private AppName As String = "template" 'change plugin name (must be unique)
 	Private AppVersion As String="1.0" 'version of the App
