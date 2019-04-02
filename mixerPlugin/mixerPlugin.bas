@@ -17,7 +17,7 @@ Sub Class_Globals
 	Dim isAnimated As Boolean'ignore
 	
 	Private AppName As String = "mixer" 'change plugin name (unique)
-	Private AppVersion As String="1.3"
+	Private AppVersion As String="1.0"
 	Private tickInterval As Int= 65
 	Private needDownloads As Int = 1
 	Private updateInterval As Int = 60 'force update after X seconds. 0 for systeminterval
