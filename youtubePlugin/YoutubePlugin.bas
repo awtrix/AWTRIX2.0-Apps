@@ -12,21 +12,31 @@ Sub Class_Globals
 	Dim CallerObject As Object 'ignore
 	Dim Appduration As Int 'ignore
 	
-	Private AppName As String = "youtube" 'change plugin name (unique)
-	Private AppVersion As String="1.1"
-	Private tickInterval As Int= 60
+	Private AppName As String = "Youtube" 'change plugin name (unique)
+	Private AppVersion As String="1.2"
+	Private tickInterval As Int= 65
 	Private needDownloads As Int = 1
 	Private updateInterval As Int = 0 'force update after X seconds. 0 for systeminterval
 	Private lockApp As Boolean=False
 
 
 	Private description As String= $"
-	Shows your Youtube subscriber count.<br />
+	Shows your Youtube subscriber count.<br/>
 	<small>Created by AWTRIX</small>
 	"$
 	
 	Private setupInfos As String= $"
-	<b>Profilename:</b>  As the name implies, your instagram profile name.
+	<b>APIKey:</b>
+	<ul>
+		<li>Go to https://console.developers.google.com/apis/library</li>
+		<li>Log in with your Google account.</li>
+		<li>Next to the logo click on 'Project' and 'Create project'. Name it whatever you want and click on 'Create'.<br/>
+		<li>Wait until the project is created, the page will switch to it by itself, it will take a couple of seconds up to a minute. Once it's done it will be selected next to the logo.</li>
+		<li>Once it's created and selected, click on 'Credentials' from the menu on the left.</li>
+		<li>Click on 'Create Credentials' and choose 'API Key'.</li>
+		<li>Copy your API KEY</li><br/><br/>
+	</ul>
+	<b>ChannelID:</b><br/>Login to YouYube website and select 'My channel'. You will get the ID from the page adress afer /Channel/. e.g. https://www.youtube.com/channel/UCpGLALzRO0uaasWTsm9M99w
 	"$
 	
 	Private appSettings As Map = CreateMap("APIKey":Null,"ChannelID":Null) 'needed Settings for this Plugin

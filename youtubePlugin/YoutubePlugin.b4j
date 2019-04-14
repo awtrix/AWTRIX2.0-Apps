@@ -7,7 +7,7 @@ Module1=YoutubePlugin
 NumberOfFiles=0
 NumberOfLibraries=2
 NumberOfModules=1
-Version=7
+Version=7.31
 @EndOfDesignText@
 'Non-UI application (console / server application)
 #Region Project Attributes 
