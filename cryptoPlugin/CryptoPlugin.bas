@@ -13,8 +13,8 @@ Sub Class_Globals
 	Dim Appduration As Int 'ignore
 	
 	
-	Private AppName As String = "crypto" 'plugin name (must be unique)
-	Private AppVersion As String="1.1"
+	Private AppName As String = "Crypto" 'plugin name (must be unique)
+	Private AppVersion As String="1.2"
 	Private tickInterval As Int= 65 'tick rate in ms (FPS)
 	Private needDownloads As Int = 1 'how many dowloadhandlers should be generated
 	Private updateInterval As Int = 0 'force update after X seconds. 0 for systeminterval
@@ -22,11 +22,12 @@ Sub Class_Globals
 	
 	Private description As String= $"
 	Shows prices for any cryptocurrency. Set your desired Coin and your currency<br/>
+	Powered by cryptonator.com<br/>
 	<small>Created by AWTRIX</small>
 	"$
 	
 	Private setupInfos As String= $"
-	<b>Coin:</b> Base currency code e.g. (btx, xrp ...).<br/><br/>
+	<b>Coin:</b> Base currency code e.g. (btc, xrp ...).<br/><br/>
 	<b>Currency:</b> Target currency code e.g. (eur, usd ...).
 	"$
 	Private appSettings As Map = CreateMap("Coin":Null,"Currency":Null) 'needed Settings for this Plugin
@@ -34,7 +35,7 @@ Sub Class_Globals
 
 	Private Coin As String
 	Private currency As String
-	Dim price As Double =0
+	Dim price As String ="0"
 	
 	Dim icon() As Int = Array As Int(0x0, 0xcb26, 0xe4c9, 0xee45, 0xee45, 0xee45, 0xee45, 0x0, 0xcb26, 0xe4c9, 0xee45, 0xee45, 0xe4c9, 0xcb26, 0xee45, 0xee45, 0xcb26, 0xe4c9, 0xee45, 0xe4c9, 0xe4c9, 0xcb26, 0xcb26, 0xee45, 0xcb26, 0xe4c9, 0xee45, 0xe4c9, 0xe4c9, 0xcb26, 0xcb26, 0xee45, 0xcb26, 0xe4c9, 0xee45, 0xe4c9, 0xe4c9, 0xcb26, 0xcb26, 0xee45, 0xcb26, 0xe4c9, 0xee45, 0xe4c9, 0xe4c9, 0xcb26, 0xcb26, 0xee45, 0xcb26, 0xe4c9, 0xee45, 0xee45, 0xe4c9, 0xcb26, 0xee45, 0xee45, 0x0, 0xcb26, 0xe4c9, 0xee45, 0xee45, 0xee45, 0xee45, 0x0)
 	
@@ -157,7 +158,12 @@ Sub evalJobResponse(nr As Int,success As Boolean,response As String,InputStream 
 				parser.Initialize(response)
 				Dim root As Map = parser.NextObject
 				Dim ticker As Map = root.Get("ticker")
-				price  = ticker.Get("price")
+				Dim pric As Double  = ticker.Get("price")
+				If pric < 100 Then
+					price=NumberFormat2(pric,1,2,0,False)
+				Else
+					price=NumberFormat2(pric,1,0,0,False)
+				End If
 				Return True			
 			Catch
 				Log("Error in: "& AppName & CRLF & LastException)
