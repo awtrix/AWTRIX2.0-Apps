@@ -162,33 +162,21 @@ public Sub Run(Tag As String, Params As Map) As Object
 	Return True
 End Sub
 
-'ignore
+'Get settings from the settings file
+'You only need to set your variables
 Sub setSettings As Boolean
-	Log("setSettings")
 	If File.Exists(File.Combine(File.DirApp,"plugins"),AppName&".ax") Then
 		Dim m As Map = File.ReadMap(File.Combine(File.DirApp,"plugins"),AppName&".ax")
-	
 		For Each k As String In appSettings.Keys
-			If Not(m.ContainsKey(k)) Then
-				m.Put(k,appSettings.Get(k))
-			Else
-				appSettings.Put(k,m.Get(k))
-			End If
+			If Not(m.ContainsKey(k)) Then m.Put(k,appSettings.Get(k))
 		Next
+		File.WriteMap(File.Combine(File.DirApp,"plugins"),AppName&".ax",m)
+		updateInterval=m.Get("updateInterval")
 		'You need just change the following lines to get the values into your variables
 		latitude=m.Get("Latitude")
 		longitude=m.Get("Longitude")
 		utcOffset=m.Get("UTC-Offset")
 		hrFormat=m.Get("12hrFormat")
-		For Counter = m.Size -1 To 0 Step -1
-			Dim SettingsKey As String = m.GetKeyAt(Counter)
-			Log(SettingsKey)
-			If Not(SettingsKey="updateInterval") Then
-				If Not(appSettings.ContainsKey(SettingsKey)) Then m.Remove(SettingsKey)
-			End If
-		Next
-		updateInterval=m.Get("updateInterval")
-		File.WriteMap(File.Combine(File.DirApp,"plugins"),AppName&".ax",m)
 	Else
 		Dim m As Map
 		m.Initialize
@@ -200,6 +188,7 @@ Sub setSettings As Boolean
 	End If
 	Return True
 End Sub
+
 
 'Called with every updatecall from Awtrix, here you can download your desired data
 Sub startDownload(nr As Int) As String

@@ -15,7 +15,7 @@ Sub Class_Globals
 	Dim icon() As Int = Array As Int(4, 36, 36, 4, 4, 4, 4, 4, 4624, 2413, 71, 2, 4, 4, 4, 4, 21691, 19708, 28222, 15483, 137, 4, 4, 4, 15089, 13010, 10996, 15385, 26110, 6804, 37, 37, 14957, 6538, 6539, 10799, 8817, 17497, 17562, 6, 6407, 2148, 6440, 6505, 6539, 8718, 8981, 15385, 34, 34, 34, 2181, 2214, 4392, 6540, 13142, 33, 34, 34, 2147, 67, 100, 4359, 12910)
 	Dim shouldShow As Boolean = True 'ignore
 	
-	Private AppName As String = "peopleInSpace" 'change plugin name (must be unique)
+	Private AppName As String = "PeopleInSpace" 'change plugin name (must be unique)
 	Private AppVersion As String="1.0" 'version of the App
 	Private tickInterval As Int= 65 'Tickinterval in ms (should be 65 by default)
 	Private needDownloads As Int = 1 'How many downloadhandlers should be generated
@@ -31,7 +31,7 @@ Sub Class_Globals
 	Private setupInfos As String= $"
 	"$
 	
-	Private appSettings As Map = CreateMap() 'needed Settings for this Plugin, parse Null if this setting should entered bny the user in the Apps Setup
+	Private appSettings As Map = CreateMap() 'needed Settings for this Plugin, parse Null if this setting should entered by the user in the Apps Setup
 	
 	Dim people As String = "0"
 End Sub
@@ -108,28 +108,17 @@ public Sub Run(Tag As String, Params As Map) As Object
 	Return True
 End Sub
 
-'ignore
+'Get settings from the settings file
+'You only need to set your variables
 Sub setSettings As Boolean
-	Log("setSettings")
 	If File.Exists(File.Combine(File.DirApp,"plugins"),AppName&".ax") Then
 		Dim m As Map = File.ReadMap(File.Combine(File.DirApp,"plugins"),AppName&".ax")
-	
 		For Each k As String In appSettings.Keys
-			If Not(m.ContainsKey(k)) Then
-				m.Put(k,appSettings.Get(k))
-			Else
-				appSettings.Put(k,m.Get(k))
-			End If
+			If Not(m.ContainsKey(k)) Then m.Put(k,appSettings.Get(k))
 		Next
-		For Counter = m.Size -1 To 0 Step -1
-			Dim SettingsKey As String = m.GetKeyAt(Counter)
-			Log(SettingsKey)
-			If Not(SettingsKey="updateInterval") Then
-				If Not(appSettings.ContainsKey(SettingsKey)) Then m.Remove(SettingsKey)
-			End If
-		Next
-		updateInterval=m.Get("updateInterval")
 		File.WriteMap(File.Combine(File.DirApp,"plugins"),AppName&".ax",m)
+		updateInterval=m.Get("updateInterval")
+		'You need just change the following lines to get the values into your variables
 	Else
 		Dim m As Map
 		m.Initialize
