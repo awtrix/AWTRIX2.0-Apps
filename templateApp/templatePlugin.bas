@@ -16,7 +16,7 @@ Sub Class_Globals
 	Dim animCount As Int'ignore
 	Dim isAnimated As Boolean'ignore
 	Dim icon() As Int'ignore
-	Dim shouldShow As Boolean = true 'ignore
+	Dim shouldShow As Boolean = True 'ignore
 	
 	Private AppName As String = "template" 'change plugin name (must be unique)
 	Private AppVersion As String="1.0" 'version of the App
@@ -37,6 +37,8 @@ Sub Class_Globals
 	
 	Private appSettings As Map = CreateMap("Text":Null) 'needed Settings for this Plugin, parse Null if this setting should entered bny the user in the Apps Setup
 	
+	'Define your variables here
+	Dim DemoText As String
 	
 End Sub
 
@@ -151,28 +153,22 @@ public Sub Run(Tag As String, Params As Map) As Object
 	Return True
 End Sub
 
-'ignore
+'Get settings from the settings file
+'You only need to set your variables
 Sub setSettings As Boolean
-	Log("setSettings")
 	If File.Exists(File.Combine(File.DirApp,"plugins"),AppName&".ax") Then
 		Dim m As Map = File.ReadMap(File.Combine(File.DirApp,"plugins"),AppName&".ax")
-	
 		For Each k As String In appSettings.Keys
-			If Not(m.ContainsKey(k)) Then
-				m.Put(k,appSettings.Get(k))
-			Else
-				appSettings.Put(k,m.Get(k))
-			End If
+			If Not(m.ContainsKey(k)) Then m.Put(k,appSettings.Get(k))
 		Next
-		For Counter = m.Size -1 To 0 Step -1
-			Dim SettingsKey As String = m.GetKeyAt(Counter)
-			Log(SettingsKey)
-			If Not(SettingsKey="updateInterval") Then
-				If Not(appSettings.ContainsKey(SettingsKey)) Then m.Remove(SettingsKey)
-			End If
-		Next
-		updateInterval=m.Get("updateInterval")
 		File.WriteMap(File.Combine(File.DirApp,"plugins"),AppName&".ax",m)
+		updateInterval=m.Get("updateInterval")
+		
+		
+		'You need just change the following lines to get the values into your variables
+		DemoText=m.Get("Text")
+		
+		
 	Else
 		Dim m As Map
 		m.Initialize
@@ -203,7 +199,7 @@ End Sub
 
 'Generate your Frame. This Sub is called with every Tick
 Sub genFrame As List
-	commandList.Add(genText(appSettings.Get("Text")))			'Fügt einen Befehl der Liste hinzu
+	commandList.Add(genText(DemoText))			'Fügt einen Befehl der Liste hinzu
 	commandList.Add(CreateMap("type":"bmp","x":0,"y":0,"bmp":icon,"width":8,"height":8))
 	Return commandList
 End Sub
