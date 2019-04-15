@@ -196,7 +196,6 @@ Sub startDownload(nr As Int) As String
 	Select nr
 		Case 1	
 			URL=("https://api.sunrise-sunset.org/json?lat="&latitude&"&lng="&longitude)	
-			LogError(URL)
 	End Select
 	Return URL
 End Sub
@@ -232,8 +231,7 @@ Sub evalJobResponse(nr As Int,success As Boolean,response As String,InputStream 
 				End If
 				
 				SunTime = DateTime.Time(SunriseLocal) & "/" & DateTime.Time(SunsetLocal)
-				
-				LogError(SunTime)
+
 				Return True	
 			Catch
 	
