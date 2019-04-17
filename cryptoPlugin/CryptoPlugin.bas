@@ -11,14 +11,20 @@ Sub Class_Globals
 	Dim commandList As List 'ignore
 	Dim CallerObject As Object 'ignore
 	Dim Appduration As Int 'ignore
+	Dim iconTimer As Timer'ignore
+	Dim iconList As List'ignore
+	Dim animCount As Int'ignore
+	Dim isAnimated As Boolean'ignore
 	
 	
 	Private AppName As String = "Crypto" 'plugin name (must be unique)
-	Private AppVersion As String="1.2"
+	Private AppVersion As String="1.3"
 	Private tickInterval As Int= 65 'tick rate in ms (FPS)
 	Private needDownloads As Int = 1 'how many dowloadhandlers should be generated
 	Private updateInterval As Int = 0 'force update after X seconds. 0 for systeminterval
 	Private lockApp As Boolean=False
+	Private IconID As Int = 240
+	
 	
 	Private description As String= $"
 	Shows prices for any cryptocurrency. Set your desired Coin and your currency<br/>
@@ -27,10 +33,11 @@ Sub Class_Globals
 	"$
 	
 	Private setupInfos As String= $"
-	<b>Coin:</b> Base currency code e.g. (btc, xrp ...).<br/><br/>
-	<b>Currency:</b> Target currency code e.g. (eur, usd ...).
+	<b>Coin:</b>  Base currency code e.g. (btc, xrp ...).<br/><br/>
+	<b>Currency:</b>  Target currency code e.g. (eur, usd ...).<br />
+	<b>IconID:</b>  Choose your desired IconID from AWTRIXER.<br />
 	"$
-	Private appSettings As Map = CreateMap("Coin":Null,"Currency":Null) 'needed Settings for this Plugin
+	Private appSettings As Map = CreateMap("Coin":Null,"Currency":Null,"IconID":240) 'needed Settings for this Plugin
 	
 
 	Private Coin As String
@@ -42,11 +49,31 @@ Sub Class_Globals
 End Sub
 
 ' ignore
+Sub IconTimer_Tick
+	Try
+		Dim parse As JSONParser
+		If animCount>iconList.Size-1 Then animCount=0
+		parse.Initialize(iconList.Get(animCount))
+		Dim bmproot As List = parse.NextArray
+		Dim bpm(bmproot.Size) As Int
+		For bm=0 To bmproot.Size-1
+			bpm(bm)=bmproot.Get(bm)
+		Next
+		icon=bpm
+	Catch
+		Log(LastException)
+	End Try
+	animCount=animCount+1
+End Sub
+
+' ignore
 Public Sub Initialize() As String
 	commandList.Initialize
 	MainSettings.Initialize
 	MainSettings.Put("interval",tickInterval) 										'übergibt AWTRIX die gewünschte tick-rate in ms. bei 0 wird der Tick nur einmalig aufgerufen
 	MainSettings.Put("needDownload",needDownloads)
+	iconTimer.Initialize("iconTimer",1000)
+	iconList.Initialize
 	setSettings
 	Return "MyKey"
 End Sub
@@ -64,6 +91,8 @@ public Sub Run(Tag As String, Params As Map) As Object
 				Appduration = Params.Get("AppDuration") 						'Kann zur berechnung von Zeiten verwendet werden 'ignore
 			End If
 			scrollposition=32
+			animCount=0
+			MainSettings.Put("icon",IconID)
 			Return MainSettings
 		Case "downloadCount"
 			Return needDownloads
@@ -71,6 +100,11 @@ public Sub Run(Tag As String, Params As Map) As Object
 			Return startDownload(Params.Get("jobNr"))
 		Case "httpResponse"
 			Return evalJobResponse(Params.Get("jobNr"),Params.Get("success"),Params.Get("response"),Params.Get("InputStream"))
+		Case "running"
+			If isAnimated Then
+				iconTimer.Enabled=True
+				IconTimer_Tick
+			End If
 		Case "tick"
 			commandList.Clear											'Wird in der eingestellten Tickrate aufgerufen
 			Return genFrame
@@ -86,11 +120,8 @@ public Sub Run(Tag As String, Params As Map) As Object
 				File.Copy2(in, out)
 				data = out.ToBytesArray
 				out.Close
-				infos.Put("pic",data)
-			Else
-				infos.Put("pic",data)
 			End If
-			
+			infos.Put("pic",data)
 			Dim isconfigured As Boolean=True
 			If File.Exists(File.Combine(File.DirApp,"plugins"),AppName&".ax") Then
 				Dim m As Map = File.ReadMap(File.Combine(File.DirApp,"plugins"),AppName&".ax")
@@ -109,6 +140,19 @@ public Sub Run(Tag As String, Params As Map) As Object
 			Return setSettings
 		Case "getUpdateInterval"
 			Return updateInterval
+		Case "icon"
+			If Not(Params.ContainsKey("noIcon")) Then
+				If Params.ContainsKey("tick") Then
+					iconList=Params.Get("data")
+					iconTimer.Interval=Params.Get("tick")
+					isAnimated=True
+				Else
+					icon=Params.Get("data")
+					isAnimated=False
+				End If
+			End If
+		Case "stop"
+			iconTimer.Enabled=False
 	End Select
 	Return True
 End Sub
@@ -127,6 +171,7 @@ Sub setSettings As Boolean
 		'You need just change the following lines to get the values into your variables
 		Coin=m.Get("Coin")
 		currency=m.Get("Currency")
+		IconID=m.Get("IconID")
 	Else
 		Dim m As Map
 		m.Initialize
