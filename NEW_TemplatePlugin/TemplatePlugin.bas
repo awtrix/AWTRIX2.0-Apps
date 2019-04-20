@@ -74,7 +74,7 @@ Sub startDownload(jobNr As Int) As String
 End Sub
 
 'process the response from each download handler
-'if youre working with JSONs you can use this onlione parser
+'if youre working with JSONs you can use this online parser
 'to generate the code automaticly
 'https://json.blueforcer.de/ 
 Sub evalJobResponse(Resp As JobResponse)
