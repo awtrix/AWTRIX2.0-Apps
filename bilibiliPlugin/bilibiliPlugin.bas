@@ -173,13 +173,14 @@ End Sub
 Sub genFrame As List
 	commandList.Add(genText(subs))
 	commandList.Add(CreateMap("type":"bmp","x":0,"y":0,"bmp":Icon,"width":8,"height":8))
+    commandList.add(CreateMap("type":"line","x0":9,"y0":7,"x1":29,"y1":7,"color":Array As Int(98,214,255)))
 	Return commandList
 End Sub
 
 'Helper to generate a scrolling Text
 Sub genText(s As String) As Map
 	If s.Length>5 Then
-		Dim command As Map=CreateMap("type":"text","text":s,"x":scrollposition,"y":1,"font":"auto")
+		Dim command As Map=CreateMap("type":"text","text":s,"x":scrollposition,"y":1,"font":"auto","color":Array As Int(207,78,117))
 		scrollposition=scrollposition-1
 		If scrollposition< 0-(s.Length*4)  Then
 			If lockApp Then
@@ -190,7 +191,7 @@ Sub genText(s As String) As Map
 			End If
 		End If
 	Else
-		Dim command As Map=CreateMap("type":"text","text":s,"x":9,"y":1,"font":"auto")
+		Dim command As Map=CreateMap("type":"text","text":s,"x":9,"y":1,"font":"auto","color":Array As Int(207,78,117))
 	End If
 	Return command
 End Sub
