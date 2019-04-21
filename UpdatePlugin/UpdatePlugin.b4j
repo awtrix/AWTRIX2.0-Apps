@@ -3,16 +3,14 @@ Build1=Default,b4j.example
 Group=Default Group
 Library1=jcore
 Library2=json
-Library3=jdateutils
-Module1=templatePlugin
+Module1=AWTRIX
+Module2=UpdateNotifierPlugin
 NumberOfFiles=0
-NumberOfLibraries=3
-NumberOfModules=1
+NumberOfLibraries=2
+NumberOfModules=2
 Version=7.31
 @EndOfDesignText@
-
-'ignore this Code Module!. everything is happen in the second Class
-
+'Draws a Rectangle'Non-UI application (console / server application)
 #Region Project Attributes 
 	#CommandLineArgs:
 	#MergeLibraries: True 

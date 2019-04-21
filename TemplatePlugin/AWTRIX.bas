@@ -1,10 +1,4 @@
-﻿B4J=true
-Group=Default Group
-ModulesStructureVersion=1
-Type=Class
-Version=7.31
-@EndOfDesignText@
-Sub Class_Globals
+﻿Sub Class_Globals
 	Private icoMap As Map
 	Private RenderedIcons As Map
 	Private animCounter As Map
@@ -14,6 +8,7 @@ Sub Class_Globals
 	Private Target As Object
 	Private scrollposition As Int 'ignore
 	Private commandList As List
+	Private colorCounter As Int
 	Public Appduration As Int
 	Public ShouldShow As Boolean = True
 	Public LockApp As Boolean=False
@@ -26,6 +21,8 @@ Sub Class_Globals
 	Public AppDescription As String
 	Public SetupInfos As String
 	Public appSettings As Map
+	Public ServerVersion As String
+	Public Displaytime As Int
 	Type JobResponse (jobNr As Int,Success As Boolean,ResponseString As String)
 	Dim starttime As String ="0"
 	Dim endtime As String = "0"
@@ -148,17 +145,22 @@ Sub AppControl(Tag As String, Params As Map) As Object
 		Case "start"
 			'wird bei jedem start des Plugins aufgerufen und übergibt seine Settings an Awtrix
 			If Params.ContainsKey("AppDuration") Then
-				Appduration = Params.Get("AppDuration") 						'Kann zur berechnung von Zeiten verwendet werden 'ignore
+				Appduration = Params.Get("AppDuration") 
 			End If
+			If Params.ContainsKey("ServerVersion") Then
+				ServerVersion =	 Params.Get("ServerVersion")
+			End If
+
 			scrollposition=32
 			Set.Put("interval",TickInterval) 										'übergibt AWTRIX die gewünschte tick-rate in ms. bei 0 wird der Tick nur einmalig aufgerufen
 			Set.Put("needDownload",NeedDownloads)
+			Set.Put("Displaytime", Displaytime)
+			
 			If ShouldShow Then
 				Set.Put("show",timesComparative)
 			Else
-				Set.Put("show",False)
-			End If
-		
+				Set.Put("show",ShouldShow)
+			End If		
 			Set.Put("hold",LockApp)
 			Set.Put("iconList",Icons)
 			Return Set
@@ -216,6 +218,8 @@ Sub AppControl(Tag As String, Params As Map) As Object
 			stopIconRenderer
 		Case "iconList"
 			addToIconRenderer(Params)
+		Case "externalCommand"
+			
 	End Select
 	Return True
 End Sub
@@ -224,7 +228,7 @@ End Sub
 'If the text is longer that 5 characters it will scroll the text
 'else it will center the text.
 'Call drawText to handle it manually.
-Sub genText(Text As String)
+Sub genText(Text As String)'ignore
 	If Text.Length>5 Then
 		Dim command As Map=CreateMap("type":"text","text":Text,"x":scrollposition,"y":1,"font":"auto")
 		scrollposition=scrollposition-1
@@ -255,13 +259,14 @@ Sub MakeSettings
 		Next
 		For Counter = m.Size -1 To 0 Step -1
 			Dim SettingsKey As String = m.GetKeyAt(Counter)
-			If Not(SettingsKey="updateInterval" Or SettingsKey="StartTime" Or SettingsKey="EndTime")   Then
+			If Not(SettingsKey="updateInterval" Or SettingsKey="StartTime" Or SettingsKey="EndTime" Or SettingsKey="Displaytime")   Then
 				If Not(appSettings.ContainsKey(SettingsKey)) Then m.Remove(SettingsKey)
 			End If
 		Next
 		starttime=m.Get("StartTime")
 		endtime=m.Get("EndTime")
 		UpdateInterval=m.Get("updateInterval")
+		Displaytime=m.Get("Displaytime")
 		File.WriteMap(File.Combine(File.DirApp,"plugins"),AppName&".ax",m)
 	Else
 		Dim m As Map
@@ -269,6 +274,7 @@ Sub MakeSettings
 		m.Put("updateInterval",UpdateInterval)
 		m.Put("StartTime","0")
 		m.Put("EndTime","0")
+		m.Put("Displaytime","0")
 		For Each k As String In appSettings.Keys
 			m.Put(k,appSettings.Get(k))
 		Next
@@ -293,9 +299,9 @@ End Sub
 'Draws a Text
 Sub drawText(text As String,x As Int, y As Int,Color() As Int)'ignore
 	If Color=Null Then
-		commandList.Add(CreateMap("type":"text","x":x,"y":y))
+		commandList.Add(CreateMap("type":"text","text":text,"x":x,"y":y))
 	Else
-		commandList.Add(CreateMap("type":"text","x":x,"y":y,"color":Color))
+		commandList.Add(CreateMap("type":"text","text":text,"x":x,"y":y,"color":Color))
 	End If
 End Sub
 
@@ -333,5 +339,24 @@ End Sub
 'only needed if you have set LockApp to true
 Sub finish'ignore
 	commandList.Add(CreateMap("type":"finish"))
+End Sub
+
+'Returns a rainbowcolor wich is fading each tick
+Sub Rainbow As Int()
+	colorCounter=colorCounter+1
+	If colorCounter>255 Then colorCounter=0
+	Return(wheel(colorCounter))
+End Sub
+
+Private Sub wheel(Wheelpos As Int) As Int() 'ignore
+	If(Wheelpos < 85) Then
+		Return Array As Int(Wheelpos * 3, 255 - Wheelpos * 3, 0)
+	else if(Wheelpos < 170) Then
+		Wheelpos =Wheelpos- 85
+		Return  Array As Int(255 - Wheelpos * 3, 0, Wheelpos * 3)
+	Else
+		Wheelpos =Wheelpos- 170
+		Return  Array As Int(0, Wheelpos * 3, 255 - Wheelpos * 3)
+	End If
 End Sub
 
