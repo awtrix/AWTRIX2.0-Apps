@@ -11,9 +11,11 @@ Sub Class_Globals
 	Dim commandList As List 'ignore
 	Dim CallerObject As Object 'ignore
 	Dim Appduration As Int 'ignore
+	Dim starttime , endtime As String = "0" 'ignore
+
 	
 	Private AppName As String = "LookingEyes" 'change plugin name (unique)
-	Private AppVersion As String="1.1"
+	Private AppVersion As String="1.2"
 	Private tickInterval As Int= 90
 	Private needDownloads As Int = 0
 	Private updateInterval As Int = 0 'force update after X seconds. 0 for systeminterval
@@ -25,10 +27,11 @@ Sub Class_Globals
 	"$
 	
 	Private setupInfos As String= $"
-	nothing to do
+	<b>StartTime/EndTime:</b>Period where the app is active. Parse 0 to disable. Format needs to be HH:mm<br/><br/> 
 	"$
 	
-	Private appSettings As Map = CreateMap() 'needed Settings for this Plugin
+	Private appSettings As Map = CreateMap("StartTime":"0","EndTime":"0") 'needed Settings for this Plugin, parse Null if this setting should entered bny the user in the Apps Setup
+	
 	
 	Dim blinkIndex() As Int = Array As Int( 1, 2, 3, 4, 3, 2, 1 )
 	Dim blinkCountdown As Int = 30
@@ -68,6 +71,31 @@ public Sub GetNiceName() As String
 	Return AppName
 End Sub
 
+
+Sub timesComparative  As Boolean
+	Try
+		If starttime = "0" Or endtime = "0" Then Return True
+		Dim startT() As String=Regex.Split(":",starttime)
+		Dim EndT() As String=Regex.Split(":",endtime)
+		Dim hour As Int=DateTime.GetHour(DateTime.Now)
+		Dim minute As Int=DateTime.GetMinute(DateTime.Now)
+		Dim second As Int=DateTime.GetSecond(DateTime.Now)
+		Dim now, start, stop As Int
+		now = ((hour * 3600) + (minute * 60) + second)
+		start = (startT(0) * 3600) + (startT(1) * 60)
+		stop = ( EndT(0)* 3600) + (EndT(1) * 60)
+		If (start < stop) Then
+			Return (now >= start And now <= stop )
+		Else
+			Return (now >= start Or now <= stop)
+		End If
+	Catch
+		Log(LastException)
+		Return True
+	End Try
+End Sub
+
+
 ' ignore
 public Sub Run(Tag As String, Params As Map) As Object
 	Select Case Tag
@@ -75,7 +103,7 @@ public Sub Run(Tag As String, Params As Map) As Object
 			If Params.ContainsKey("AppDuration") Then
 				Appduration = Params.Get("AppDuration") 						'Kann zur berechnung von Zeiten verwendet werden 'ignore
 			End If
-
+			MainSettings.Put("show",timesComparative)
 			Return MainSettings
 		Case "downloadCount"
 			Return needDownloads
@@ -132,6 +160,9 @@ Sub setSettings As Boolean
 		Next
 		File.WriteMap(File.Combine(File.DirApp,"plugins"),AppName&".ax",m)
 		updateInterval=m.Get("updateInterval")
+		'You need just change the following lines to get the values into your variables
+		starttime=m.Get("StartTime")
+		endtime=m.Get("EndTime")
 	Else
 		Dim m As Map
 		m.Initialize
