@@ -1,4 +1,4 @@
-﻿Sub Class_Globals
+Sub Class_Globals
 	Private icoMap As Map
 	Private RenderedIcons As Map
 	Private animCounter As Map
@@ -148,7 +148,7 @@ Sub AppControl(Tag As String, Params As Map) As Object
 				Appduration = Params.Get("AppDuration") 
 			End If
 			If Params.ContainsKey("ServerVersion") Then
-				ServerVersion =	 Params.Get("ServerVersion")
+				ServerVersion =	 Params.Get("ServerVersion")		
 			End If
 
 			scrollposition=32
@@ -259,22 +259,22 @@ Sub MakeSettings
 		Next
 		For Counter = m.Size -1 To 0 Step -1
 			Dim SettingsKey As String = m.GetKeyAt(Counter)
-			If Not(SettingsKey="updateInterval" Or SettingsKey="StartTime" Or SettingsKey="EndTime" Or SettingsKey="Displaytime")   Then
+			If Not(SettingsKey="UpdateInterval" Or SettingsKey="StartTime" Or SettingsKey="EndTime" Or SettingsKey="DisplayTime")   Then
 				If Not(appSettings.ContainsKey(SettingsKey)) Then m.Remove(SettingsKey)
 			End If
 		Next
 		starttime=m.Get("StartTime")
 		endtime=m.Get("EndTime")
-		UpdateInterval=m.Get("updateInterval")
-		Displaytime=m.Get("Displaytime")
+		UpdateInterval=m.Get("UpdateInterval")
+		Displaytime=m.Get("DisplayTime")
 		File.WriteMap(File.Combine(File.DirApp,"plugins"),AppName&".ax",m)
 	Else
 		Dim m As Map
 		m.Initialize
-		m.Put("updateInterval",UpdateInterval)
+		m.Put("UpdateInterval","0")
 		m.Put("StartTime","0")
 		m.Put("EndTime","0")
-		m.Put("Displaytime","0")
+		m.Put("DisplayTime","0")
 		For Each k As String In appSettings.Keys
 			m.Put(k,appSettings.Get(k))
 		Next
