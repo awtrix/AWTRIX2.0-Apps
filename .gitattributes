@@ -1,3 +1,3 @@
 # Auto detect text files and perform LF normalization
 * text=auto
-*.bas linguist-language=Visual Basic
+*.bas linguist-language=Java
