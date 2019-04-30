@@ -1,4 +1,20 @@
-﻿Sub Class_Globals
+﻿B4J=true
+Group=Default Group
+ModulesStructureVersion=1
+Type=Class
+Version=7.31
+@EndOfDesignText@
+'This Class takes control of the Interface to AWTRIX, the Icon Renderer
+'and some useful functions to make the development more easier.
+'Usually you dont need to modify this Class!
+
+#Event: AppStarted
+#Event: iconRequest
+#Event: startDownload(jobNr As Int) As String
+#Event: evalJobResponse(Resp As JobResponse)
+#Event: externalCommand(cmd As Map)
+
+Sub Class_Globals
 	Private icoMap As Map
 	Private RenderedIcons As Map
 	Private animCounter As Map
@@ -6,11 +22,12 @@
 	Private timermap As Map
 	Private Set As Map 'ignore
 	Private Target As Object
-	Private scrollposition As Int 'ignore
 	Private commandList As List
 	Private colorCounter As Int
 	Public Appduration As Int
+	Public scrollposition As Int
 	Public ShouldShow As Boolean = True
+	Public forceDownload As Boolean
 	Public LockApp As Boolean=False
 	Public Icons As List
 	Public AppName As String
@@ -22,15 +39,25 @@
 	Public SetupInfos As String
 	Public appSettings As Map
 	Public ServerVersion As String
-	Public Displaytime As Int
-	Type JobResponse (jobNr As Int,Success As Boolean,ResponseString As String)
-	Dim starttime As String ="0"
-	Dim endtime As String = "0"
+	Public DisplayTime As Int
+	Type JobResponse (jobNr As Int,Success As Boolean,ResponseString As String,Stream As InputStream)
+	Private starttime As String ="0"
+	Private endtime As String = "0"
+	Public MatrixWidth As Int = 32
+	Public MatrixHeight As Int = 8
+	Private CharMap As Map
+	Private TextBuffer As String
+	Private TextLength As Int
+	Private UppercaseLetters As Boolean
+	Private SystemColor() As Int
+	Private event As String
 End Sub
 
 'Initializes the Helperclass.
-Public Sub Initialize(class As Object)
+Public Sub Initialize(class As Object, Eventname As String)
+	event=Eventname
 	iconList.Initialize
+	Icons.Initialize
 	commandList.Initialize
 	RenderedIcons.Initialize
 	icoMap.Initialize
@@ -118,6 +145,7 @@ Private Sub Timer_Tick
 End Sub
 
 Private Sub addToIconRenderer(iconMap As Map)
+	If iconMap.Size=0 Then Return
 	icoMap.Clear
 	RenderedIcons.Clear
 	For Each ico As Int In iconMap.Keys
@@ -140,54 +168,70 @@ Sub getIcon(IconID As Int) As Int()
 End Sub
 #End Region
 
+'This is the interface between AWTRIX and the App
 Sub AppControl(Tag As String, Params As Map) As Object
 	Select Case Tag
 		Case "start"
-			'wird bei jedem start des Plugins aufgerufen und übergibt seine Settings an Awtrix
-			If Params.ContainsKey("AppDuration") Then
-				Appduration = Params.Get("AppDuration") 
+			If SubExists(Target,event&"_Started") Then
+				CallSub(Target,event&"_Started")'ignore
 			End If
-			If Params.ContainsKey("ServerVersion") Then
+			Try
+				Appduration = Params.Get("AppDuration")
 				ServerVersion =	 Params.Get("ServerVersion")
-			End If
-
-			scrollposition=32
-			Set.Put("interval",TickInterval) 										'übergibt AWTRIX die gewünschte tick-rate in ms. bei 0 wird der Tick nur einmalig aufgerufen
-			Set.Put("needDownload",NeedDownloads)
-			Set.Put("Displaytime", Displaytime)
+				MatrixWidth = Params.Get("MatrixWidth")
+				MatrixHeight = Params.Get("MatrixHeight")
+				UppercaseLetters = Params.Get("UppercaseLetters")
+				CharMap = Params.Get("CharMap")
+				SystemColor = Params.Get("SystemColor")
+				scrollposition=MatrixWidth
+				Set.Put("interval",TickInterval)
+				Set.Put("needDownload",NeedDownloads)
+				Set.Put("DisplayTime", DisplayTime)
+				Set.Put("forceDownload", forceDownload)
+			Catch
+				Log(LastException)
+			End Try
 			
 			If ShouldShow Then
 				Set.Put("show",timesComparative)
 			Else
 				Set.Put("show",ShouldShow)
-			End If		
+			End If
 			Set.Put("hold",LockApp)
 			Set.Put("iconList",Icons)
 			Return Set
 		Case "downloadCount"
 			Return NeedDownloads
 		Case "startDownload"
-			Return CallSub2(Target,"startDownload",Params.Get("jobNr"))
+			If SubExists(Target,event&"_startDownload") Then
+				Return CallSub2(Target,event&"_startDownload",Params.Get("jobNr"))'ignore
+			End If
 		Case "httpResponse"
 			Dim res As JobResponse
+			res.Initialize
 			res.jobNr=Params.Get("jobNr")
 			res.Success=Params.Get("success")
 			res.ResponseString=Params.Get("response")
-			CallSub2(Target,"evalJobResponse",res)
+			res.Stream=Params.Get("InputStream")
+			If SubExists(Target,event&"_evalJobResponse") Then
+				CallSub2(Target,event&"_evalJobResponse",res)'ignore
+			End If
 			Return True
 		Case "running"
 			startIconRenderer
 		Case "tick"
 			commandList.Clear
-			CallSub(Target,"genFrame")
+			If SubExists(Target,event&"_genFrame") Then
+				CallSub(Target,event&"_genFrame")'ignore
+			End If
 			Return commandList
 		Case "infos"
 			Dim infos As Map
 			infos.Initialize
 			Dim data() As Byte
-			If File.Exists(File.Combine(File.DirApp,"plugins"),AppName&".png") Then
+			If File.Exists(File.Combine(File.DirApp,"Apps"),AppName&".png") Then
 				Dim in As InputStream
-				in = File.OpenInput(File.Combine(File.DirApp,"plugins"),AppName&".png")
+				in = File.OpenInput(File.Combine(File.DirApp,"Apps"),AppName&".png")
 				Dim out As OutputStream
 				out.InitializeToBytesArray(1000)
 				File.Copy2(in, out)
@@ -196,10 +240,10 @@ Sub AppControl(Tag As String, Params As Map) As Object
 			End If
 			infos.Put("pic",data)
 			Dim isconfigured As Boolean=True
-			If File.Exists(File.Combine(File.DirApp,"plugins"),AppName&".ax") Then
-				Dim m As Map = File.ReadMap(File.Combine(File.DirApp,"plugins"),AppName&".ax")
+			If File.Exists(File.Combine(File.DirApp,"Apps"),AppName&".ax") Then
+				Dim m As Map = File.ReadMap(File.Combine(File.DirApp,"Apps"),AppName&".ax")
 				For Each v As Object In m.Values
-					If v="null" Then
+					If v="null" Or v="" Then
 						isconfigured=False
 					End If
 				Next
@@ -216,40 +260,79 @@ Sub AppControl(Tag As String, Params As Map) As Object
 			Return UpdateInterval
 		Case "stop"
 			stopIconRenderer
+		Case "getIcon"
+			If SubExists(Target,event&"_iconRequest") Then
+				CallSub(Target,event&"_iconRequest")'ignore
+			End If
+			Return CreateMap("iconList":Icons)
 		Case "iconList"
 			addToIconRenderer(Params)
 		Case "externalCommand"
-			
+			If SubExists(Target,event&"_externalCommand") Then
+				CallSub2(Target,event&"_externalCommand",res)'ignore
+			End If
 	End Select
 	Return True
 End Sub
 
+'This function calculates the ammount of pixels wich a text needs
+Sub calcTextLength(text As String) As Int'ignore
+	If UppercaseLetters Then text = text.ToUpperCase
+	If TextBuffer<>text Then
+		Dim Length As Int
+		For i=0 To text.Length-1
+			If CharMap.ContainsKey(Asc(text.CharAt(i))) Then
+				Length=Length+(CharMap.Get(Asc(text.CharAt(i))))
+			Else
+				Length=Length+4
+			End If
+		Next
+		TextBuffer=text
+		TextLength=Length
+		Return Length
+	End If
+End Sub
+
 'This Helper automaticly display a text in a default app style
-'If the text is longer that 5 characters it will scroll the text
-'else it will center the text.
-'Call drawText to handle it manually.
-Sub genText(Text As String)'ignore
-	If Text.Length>5 Then
-		Dim command As Map=CreateMap("type":"text","text":Text,"x":scrollposition,"y":1,"font":"auto")
+'If the text is longer than the Matrixwitdh it will scroll the text
+'otherwise it will center the text. Call drawText to handle it manually.
+'
+'Text - the text to be displayed
+'IconOffset - wether you need an offset if you place an icon on the left side.
+'Color - custom text color. Pass Null to use the Global textcolor (recommended).
+'
+'<code>App.genText("Hello World",True,Array as int(255,0,0))</code>
+Sub genText(Text As String,IconOffset As Boolean,Color() As Int)'ignore
+	calcTextLength(Text)
+	Dim offset As Int
+	If IconOffset Then offset = 24 Else offset = 32
+	If TextLength>offset Then
+		drawText(Text,scrollposition,1,Color)
 		scrollposition=scrollposition-1
-		If scrollposition< 0-(Text.Length*3.5)  Then
+		If scrollposition< 0-TextLength  Then
 			If LockApp Then
-				Dim command As Map=CreateMap("type":"finish")
-				commandList.Add(command)
+				finish
 				Return
 			Else
-				scrollposition=32
+				scrollposition=MatrixWidth
 			End If
 		End If
 	Else
-		Dim command As Map=CreateMap("type":"text","text":Text,"x":9,"y":1,"font":"auto")
+		Dim x As Int
+		If TextLength<offset+1 Then
+			If IconOffset Then
+				x=((MatrixWidth/2)-TextLength/2)+4
+			Else
+				x=(MatrixWidth/2)-TextLength/2
+			End If
+		End If
+		drawText(Text,x,1,Color)
 	End If
-	commandList.Add(command)
 End Sub
 
 Sub MakeSettings
-	If File.Exists(File.Combine(File.DirApp,"plugins"),AppName&".ax") Then
-		Dim m As Map = File.ReadMap(File.Combine(File.DirApp,"plugins"),AppName&".ax")
+	If File.Exists(File.Combine(File.DirApp,"Apps"),AppName&".ax") Then
+		Dim m As Map = File.ReadMap(File.Combine(File.DirApp,"Apps"),AppName&".ax")
 		For Each k As String In appSettings.Keys
 			If Not(m.ContainsKey(k)) Then
 				m.Put(k,appSettings.Get(k))
@@ -259,26 +342,30 @@ Sub MakeSettings
 		Next
 		For Counter = m.Size -1 To 0 Step -1
 			Dim SettingsKey As String = m.GetKeyAt(Counter)
-			If Not(SettingsKey="updateInterval" Or SettingsKey="StartTime" Or SettingsKey="EndTime" Or SettingsKey="Displaytime")   Then
+			If Not(SettingsKey="UpdateInterval" Or SettingsKey="StartTime" Or SettingsKey="EndTime" Or SettingsKey="DisplayTime")   Then
 				If Not(appSettings.ContainsKey(SettingsKey)) Then m.Remove(SettingsKey)
 			End If
 		Next
-		starttime=m.Get("StartTime")
-		endtime=m.Get("EndTime")
-		UpdateInterval=m.Get("updateInterval")
-		Displaytime=m.Get("Displaytime")
-		File.WriteMap(File.Combine(File.DirApp,"plugins"),AppName&".ax",m)
+		Try
+			starttime=m.Get("StartTime")
+			endtime=m.Get("EndTime")
+			UpdateInterval=m.Get("UpdateInterval")
+			DisplayTime=m.Get("DisplayTime")
+			File.WriteMap(File.Combine(File.DirApp,"Apps"),AppName&".ax",m)
+		Catch
+			Log(LastException)
+		End Try
 	Else
 		Dim m As Map
 		m.Initialize
-		m.Put("updateInterval",UpdateInterval)
+		m.Put("UpdateInterval",UpdateInterval)
 		m.Put("StartTime","0")
 		m.Put("EndTime","0")
-		m.Put("Displaytime","0")
+		m.Put("DisplayTime","0")
 		For Each k As String In appSettings.Keys
 			m.Put(k,appSettings.Get(k))
 		Next
-		File.WriteMap(File.Combine(File.DirApp,"plugins"),AppName&".ax",m)
+		File.WriteMap(File.Combine(File.DirApp,"Apps"),AppName&".ax",m)
 	End If
 End Sub
 
@@ -287,13 +374,14 @@ Sub get(SettingsKey As String) As Object 'ignore
 	If appSettings.ContainsKey(SettingsKey) Then
 		Return appSettings.Get(SettingsKey)
 	Else
+		Log(SettingsKey & " not found")
 		Return ""
 	End If
 End Sub
 
 'Draws a Bitmap
-Sub drawBMP(x As Int,y As Int,IconID As Int,width As Int, height As Int)'ignore
-	commandList.Add(CreateMap("type":"bmp","x":x,"y":y,"bmp":getIcon(IconID),"width":width,"height":height))
+Sub drawBMP(x As Int,y As Int,bmp() As Int,width As Int, height As Int)'ignore
+	commandList.Add(CreateMap("type":"bmp","x":x,"y":y,"bmp":bmp,"width":width,"height":height))
 End Sub
 
 'Draws a Text
@@ -306,33 +394,62 @@ Sub drawText(text As String,x As Int, y As Int,Color() As Int)'ignore
 End Sub
 
 'Draws a Circle
-Sub drawCircle(X As Int, Y As Int, Radius As Int, Color() As Int)'ignore	
-	commandList.Add(CreateMap("type":"circle","x":x,"y":y,"r":Radius,"color":Color))
+Sub drawCircle(X As Int, Y As Int, Radius As Int, Color() As Int)'ignore
+	If Color=Null Then
+		commandList.Add(CreateMap("type":"circle","x":x,"y":y,"r":Radius,"color":SystemColor))
+	Else
+		commandList.Add(CreateMap("type":"circle","x":x,"y":y,"r":Radius,"color":Color))
+	End If
 End Sub
 
 'Draws a filled Circle
 Sub fillCircle(X As Int, Y As Int, Radius As Int, Color() As Int)'ignore
-	commandList.Add(CreateMap("type":"fillCircle","x":x,"y":y,"r":Radius,"color":Color))
+	If Color=Null Then
+		commandList.Add(CreateMap("type":"fillCircle","x":x,"y":y,"r":Radius,"color":SystemColor))
+	Else
+		commandList.Add(CreateMap("type":"fillCircle","x":x,"y":y,"r":Radius,"color":Color))
+	End If
 End Sub
 
 'Draws a single Pixel
 Sub drawPixel(X As Int,Y As Int,Color() As Int)'ignore
-	commandList.Add(CreateMap("type":"pixel","x":x,"y":y,"color":Color))
+	If Color=Null Then
+		commandList.Add(CreateMap("type":"pixel","x":x,"y":y,"color":SystemColor))
+	Else
+		commandList.Add(CreateMap("type":"pixel","x":x,"y":y,"color":Color))
+	End If
 End Sub
 
 'Draws a Rectangle
 Sub drawRect(X As Int,Y As Int,Width  As Int,Height As Int,Color() As Int)'ignore
-	commandList.Add(CreateMap("type":"rect","x":x,"y":y,"w":Width,"h":Height,"color":Color))
+	If Color=Null Then
+		commandList.Add(CreateMap("type":"rect","x":x,"y":y,"w":Width,"h":Height,"color":SystemColor))
+	Else
+		commandList.Add(CreateMap("type":"rect","x":x,"y":y,"w":Width,"h":Height,"color":Color))
+	End If
 End Sub
 
 'Draws a Line
 Sub drawLine(X0 As Int,Y0 As Int,X1  As Int,Y1 As Int,Color() As Int)'ignore
-	commandList.Add(CreateMap("type":"line","x0":X0,"y0":Y0,"x1":X1,"y1":Y1,"color":Color))
+	If Color=Null Then
+		commandList.Add(CreateMap("type":"line","x0":X0,"y0":Y0,"x1":X1,"y1":Y1,"color":SystemColor))
+	Else
+		commandList.Add(CreateMap("type":"line","x0":X0,"y0":Y0,"x1":X1,"y1":Y1,"color":Color))
+	End If
+End Sub
+
+'Sends a custom or undocumented command
+Sub customCommand(cmd As Map)'ignore
+	commandList.Add(cmd)
 End Sub
 
 'Fills the screen with a color
 Sub fill(Color() As Int)'ignore
-	commandList.Add(CreateMap("type":"fill","color":Color))
+	If Color=Null Then
+		commandList.Add(CreateMap("type":"fill","color":SystemColor))
+	Else
+		commandList.Add(CreateMap("type":"fill","color":Color))
+	End If
 End Sub
 
 'Exits the app and force AWTRIX to switch to the next App
@@ -342,7 +459,7 @@ Sub finish'ignore
 End Sub
 
 'Returns a rainbowcolor wich is fading each tick
-Sub Rainbow As Int()
+Sub Rainbow As Int() 'ignore
 	colorCounter=colorCounter+1
 	If colorCounter>255 Then colorCounter=0
 	Return(wheel(colorCounter))
@@ -359,4 +476,3 @@ Private Sub wheel(Wheelpos As Int) As Int() 'ignore
 		Return  Array As Int(0, Wheelpos * 3, 255 - Wheelpos * 3)
 	End If
 End Sub
-

@@ -8,20 +8,31 @@ Version=4.2
 Sub Class_Globals
 	Dim App As AWTRIX
 	
-	'###### nötige Variablen deklarieren ######
-
+	'Declare your variables here
+	Dim first_name As String
+	
 End Sub
 
 ' ignore
+public Sub GetNiceName() As String
+	Return App.AppName
+End Sub
+
+' ignore
+public Sub Run(Tag As String, Params As Map) As Object
+	Return App.AppControl(Tag,Params)
+End Sub
+
+' Config your App
 Public Sub Initialize() As String
 	
-	App.Initialize(Me)
+	App.Initialize(Me,"App")
 	
-	'change plugin name (must be unique, avoid spaces)
+	'App name (must be unique, avoid spaces)
 	App.AppName="Template"
 	
 	'Version of the App
-	App.AppVersion="1.0"
+	App.AppVersion="2.0"
 	
 	'Description of the App. You can use HTML to format it
 	App.AppDescription=$"
@@ -37,10 +48,10 @@ Public Sub Initialize() As String
 	'How many downloadhandlers should be generated
 	App.NeedDownloads=1
 	
-	'IconIDs from AWTRIXER.
+	'IconIDs from AWTRIXER. You can add multiple if you want to display them at the same time
 	App.Icons=Array As Int(6)
 	
-	'Tickinterval in ms (should be 65 by default)
+	'Tickinterval in ms (should be 65 by default, for smooth scrolling))
 	App.TickInterval=65
 	
 	'If set to true AWTRIX will wait for the "finish" command before switch to the next app.
@@ -50,22 +61,17 @@ Public Sub Initialize() As String
 	App.appSettings=CreateMap("CustomText":"Hello World")
 	
 	App.MakeSettings
-	Return "MyKey"
+	Return "AWTRIX2"
 End Sub
 
-' ignore
-public Sub GetNiceName() As String
-	Return App.AppName
-End Sub
-
-' ignore
-public Sub Run(Tag As String, Params As Map) As Object
-	Return App.AppControl(Tag,Params)
+'this sub is called right before AWTRIX will display your App
+Sub App_Started
+	
 End Sub
 
 'Called with every update from Awtrix
 'return one URL for each downloadhandler
-Sub startDownload(jobNr As Int) As String
+Sub App_startDownload(jobNr As Int) As String
 	Select jobNr
 		Case 1
 			Return "https://reqres.in/api/users/2"
@@ -77,7 +83,7 @@ End Sub
 'if youre working with JSONs you can use this online parser
 'to generate the code automaticly
 'https://json.blueforcer.de/ 
-Sub evalJobResponse(Resp As JobResponse)
+Sub App_evalJobResponse(Resp As JobResponse)
 	Try
 		If Resp.success Then
 			Select Resp.jobNr
@@ -86,7 +92,7 @@ Sub evalJobResponse(Resp As JobResponse)
 					parser.Initialize(Resp.ResponseString)
 					Dim root As Map = parser.NextObject
 					Dim data As Map = root.Get("data")
-					Dim first_name As String = data.Get("first_name")
+					first_name = data.Get("first_name")
 			End Select
 		End If
 	Catch
@@ -95,7 +101,8 @@ Sub evalJobResponse(Resp As JobResponse)
 	End Try
 End Sub
 
-Sub genFrame
-	App.GenText(App.get("CustomText"))
-	App.drawBMP(0,0,6,8,8)
+'With this sub you build your frame.
+Sub App_genFrame
+	App.genText(App.get("CustomText") & " " & first_name ,True,Null)
+	App.drawBMP(0,0,App.getIcon(6),8,8)
 End Sub
