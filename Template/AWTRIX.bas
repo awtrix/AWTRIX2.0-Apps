@@ -54,10 +54,15 @@ Sub Class_Globals
 	Private event As String
 	Private Enabled As Boolean = True
 	Public StartedAt As Long
+	Dim noIcon() As Int = Array As Int(0, 0, 0, 63488, 63488, 0, 0, 0, 0, 0, 63488, 0, 0, 63488, 0, 0, 0, 0, 0, 0, 0, 63488, 0, 0, 0, 0, 0, 0, 63488, 0, 0, 0, 0, 0, 0, 63488, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 63488, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+	Dim DownloadURL As String
+	Dim DownloadHeader As Map
+	Dim isRunning As Boolean
 End Sub
 
 'Initializes the Helperclass.
 Public Sub Initialize(class As Object, Eventname As String)
+	DownloadHeader.Initialize
 	event=Eventname
 	iconList.Initialize
 	Icons.Initialize
@@ -89,6 +94,7 @@ Private Sub timesComparative  As Boolean
 			Return (now >= start Or now <= stop)
 		End If
 	Catch
+		Log("Error in TimesComparative:")
 		Log(LastException)
 		Return True
 	End Try
@@ -100,77 +106,107 @@ Private Sub startIconRenderer
 	For Each k As Timer In timermap.Keys
 		k.Enabled=True
 	Next
+	isRunning=True
 End Sub
 
 Private Sub stopIconRenderer
 	For Each k As Timer In timermap.Keys
 		k.Enabled=False
 	Next
+	isRunning=False
 End Sub
 
 Private Sub FirstTick
+	
 	For Each IconID As Int In icoMap.Keys
-		Dim ico As List=icoMap.get(IconID)
 		Try
-			Dim parse As JSONParser
-			If animCounter.Get(IconID)>ico.Size-1 Then animCounter.put(IconID,0)
-			parse.Initialize(ico.Get(animCounter.Get(IconID)))
-			Dim bmproot As List = parse.NextArray
-			Dim bmp(bmproot.Size) As Int
-			For bm=0 To bmproot.Size-1
-				bmp(bm)=bmproot.Get(bm)
-			Next
-			RenderedIcons.Put(IconID,bmp)
-			animCounter.put(IconID,animCounter.Get(IconID)+1)
+			If icoMap.ContainsKey(IconID) Then
+				Dim ico As List=icoMap.get(IconID)
+				Dim parse As JSONParser
+				If animCounter.Get(IconID)>ico.Size-1 Then animCounter.put(IconID,0)
+				parse.Initialize(ico.Get(animCounter.Get(IconID)))
+				Dim bmproot As List = parse.NextArray
+				Dim bmp(bmproot.Size) As Int
+				For bm=0 To bmproot.Size-1
+					bmp(bm)=bmproot.Get(bm)
+				Next
+				RenderedIcons.Put(IconID,bmp)
+				animCounter.put(IconID,animCounter.Get(IconID)+1)
+			End If
 		Catch
+			Log("Error in IconPreloader:")
+			Log("IconID:" & IconID)
 			Log(LastException)
 		End Try
 	Next
 End Sub
 
 Private Sub Timer_Tick
-	Dim iconid As Int=timermap.Get(Sender)
-	Dim ico As List=icoMap.get(iconid)
 	Try
-		Dim parse As JSONParser
-		If animCounter.Get(iconid)>ico.Size-1 Then animCounter.put(iconid,0)
-		parse.Initialize(ico.Get(animCounter.Get(iconid)))
-		Dim bmproot As List = parse.NextArray
-		Dim bpm(bmproot.Size) As Int
-		For bm=0 To bmproot.Size-1
-			bpm(bm)=bmproot.Get(bm)
-		Next
-		RenderedIcons.Put(iconid,bpm)
-		animCounter.put(iconid,animCounter.Get(iconid)+1)
+		Dim iconid As Int=timermap.Get(Sender)
+		If icoMap.ContainsKey(iconid) Then
+			Dim ico As List= icoMap.get(iconid)
+			Dim parse As JSONParser
+			If animCounter.Get(iconid)>ico.Size-1 Then animCounter.put(iconid,0)
+			parse.Initialize(ico.Get(animCounter.Get(iconid)))
+			Dim bmproot As List = parse.NextArray
+			Dim bpm(bmproot.Size) As Int
+			For bm=0 To bmproot.Size-1
+				bpm(bm)=bmproot.Get(bm)
+			Next
+			RenderedIcons.Put(iconid,bpm)
+			animCounter.put(iconid,animCounter.Get(iconid)+1)
+		End If
 	Catch
+		Log("Error in IconRenderer:")
 		Log(LastException)
+		stopIconRenderer
 	End Try
 End Sub
 
 Private Sub addToIconRenderer(iconMap As Map)
-	If iconMap.Size=0 Then Return
-	icoMap.Clear
-	For Each ico As Int In iconMap.Keys
-		Dim ico1 As Map = iconMap.get(ico)
-		If ico1.ContainsKey("tick") Then
-			icoMap.Put(ico,ico1.Get("data"))
-			animCounter.Put(ico,0)
-			Dim timer As Timer
-			timer.Initialize("Timer",ico1.Get("tick"))
-			Dim icoExists As Boolean=False
-			For Each timerico As Int In timermap.Values
-				If timerico=ico Then icoExists=True
-			Next
-			If Not(icoExists) Then timermap.Put(timer,ico)
+	Try
+		If iconMap.Size=0 Then Return
+		If isRunning Then
+			stopIconRenderer
+			isRunning=True
 		Else
-			RenderedIcons.Put(ico,ico1.Get("data"))
+			stopIconRenderer
 		End If
-	Next
+		timermap.Clear
+		icoMap.Clear
+		RenderedIcons.Clear
+		For Each ico As Int In iconMap.Keys
+			Dim ico1 As Map = iconMap.get(ico)
+			If ico1.ContainsKey("tick") Then
+				icoMap.Put(ico,ico1.Get("data"))
+				animCounter.Put(ico,0)
+				Dim timer As Timer
+				timer.Initialize("Timer",ico1.Get("tick"))
+				Dim icoExists As Boolean=False
+				For Each timerico As Int In timermap.Values
+					If timerico=ico Then icoExists=True
+				Next
+				If Not(icoExists) Then timermap.Put(timer,ico)
+			Else
+				RenderedIcons.Put(ico,ico1.Get("data"))
+			End If
+		Next
+		If isRunning Then startIconRenderer
+	Catch
+		Log("Error in IconAdder:")
+		Log(LastException)
+	End Try
 End Sub
 
 'returns the rendered Icon
 Public Sub getIcon(IconID As Int) As Int()
-	Return RenderedIcons.Get(IconID)
+	If RenderedIcons.ContainsKey(IconID) Then
+		Return RenderedIcons.Get(IconID)
+	Else
+		Log("Icon " & IconID & " not found")
+		Return noIcon
+	End If
 End Sub
 #End Region
 
@@ -209,9 +245,16 @@ Public Sub AppControl(Tag As String, Params As Map) As Object
 		Case "downloadCount"
 			Return NeedDownloads
 		Case "startDownload"
+			Dim downloadMap As Map
+			downloadMap.Initialize
 			If SubExists(Target,event&"_startDownload") Then
-				Return CallSub2(Target,event&"_startDownload",Params.Get("jobNr"))'ignore
+				CallSub2(Target,event&"_startDownload",Params.Get("jobNr"))
+				Dim downloadMap As Map
+				downloadMap.Initialize
+				downloadMap.Put("URL",DownloadURL)
+				downloadMap.Put("Header",DownloadHeader)
 			End If
+			Return downloadMap
 		Case "httpResponse"
 			Dim res As JobResponse
 			res.Initialize

@@ -71,12 +71,11 @@ End Sub
 
 'Called with every update from Awtrix
 'return one URL for each downloadhandler
-Sub App_startDownload(jobNr As Int) As String
+Sub App_startDownload(jobNr As Int)
 	Select jobNr
 		Case 1
-			Return "https://reqres.in/api/users/2"
+			App.DownloadURL= "https://reqres.in/api/users/2"
 	End Select
-	Return ""
 End Sub
 
 'process the response from each download handler
