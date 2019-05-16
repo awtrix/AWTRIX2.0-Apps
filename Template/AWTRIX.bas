@@ -16,15 +16,6 @@ Version=7.31
 #Event: externalCommand(cmd As Map)
 
 Sub Class_Globals
-	Private icoMap As Map
-	Private RenderedIcons As Map
-	Private animCounter As Map
-	Private iconList As List'ignore
-	Private timermap As Map
-	Private Set As Map 'ignore
-	Private Target As Object
-	Private commandList As List
-	Private colorCounter As Int
 	Public Appduration As Int
 	Public scrollposition As Int
 	Public ShouldShow As Boolean = True
@@ -41,11 +32,22 @@ Sub Class_Globals
 	Public appSettings As Map
 	Public ServerVersion As String
 	Public DisplayTime As Int
-	Type JobResponse (jobNr As Int,Success As Boolean,ResponseString As String,Stream As InputStream)
-	Private starttime As String ="0"
-	Private endtime As String = "0"
 	Public MatrixWidth As Int = 32
 	Public MatrixHeight As Int = 8
+	Public DownloadURL As String
+	Public DownloadHeader As Map
+	Public StartedAt As Long
+	Private icoMap As Map
+	Private RenderedIcons As Map
+	Private animCounter As Map
+	Private iconList As List'ignore
+	Private timermap As Map
+	Private Set As Map 'ignore
+	Private Target As Object
+	Private commandList As List
+	Private colorCounter As Int
+	Private starttime As String ="0"
+	Private endtime As String = "0"
 	Private CharMap As Map
 	Private TextBuffer As String
 	Private TextLength As Int
@@ -53,11 +55,12 @@ Sub Class_Globals
 	Private SystemColor() As Int
 	Private event As String
 	Private Enabled As Boolean = True
-	Public StartedAt As Long
-	Dim noIcon() As Int = Array As Int(0, 0, 0, 63488, 63488, 0, 0, 0, 0, 0, 63488, 0, 0, 63488, 0, 0, 0, 0, 0, 0, 0, 63488, 0, 0, 0, 0, 0, 0, 63488, 0, 0, 0, 0, 0, 0, 63488, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 63488, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
-	Dim DownloadURL As String
-	Dim DownloadHeader As Map
-	Dim isRunning As Boolean
+	Private noIcon() As Int = Array As Int(0, 0, 0, 63488, 63488, 0, 0, 0, 0, 0, 63488, 0, 0, 63488, 0, 0, 0, 0, 0, 0, 0, 63488, 0, 0, 0, 0, 0, 0, 63488, 0, 0, 0, 0, 0, 0, 63488, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 63488, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+	Private isRunning As Boolean
+	Private Menu As Map
+	Private MenuList As List
+	Private bc As B4XSerializator
+	Type JobResponse (jobNr As Int,Success As Boolean,ResponseString As String,Stream As InputStream)
 End Sub
 
 'Initializes the Helperclass.
@@ -72,13 +75,15 @@ Public Sub Initialize(class As Object, Eventname As String)
 	animCounter.Initialize
 	timermap.Initialize
 	Set.Initialize
+	Menu.Initialize
+	MenuList.Initialize
 	Target=class
 End Sub
 
 'Checks if the app should shown
 Private Sub timesComparative  As Boolean
 	Try
-		If starttime = "0" Or endtime = "0" Then Return True
+		If starttime = endtime Then Return True
 		Dim startT() As String=Regex.Split(":",starttime)
 		Dim EndT() As String=Regex.Split(":",endtime)
 		Dim hour As Int=DateTime.GetHour(DateTime.Now)
@@ -94,6 +99,7 @@ Private Sub timesComparative  As Boolean
 			Return (now >= start Or now <= stop)
 		End If
 	Catch
+		Log("Got Error from " & AppName)
 		Log("Error in TimesComparative:")
 		Log(LastException)
 		Return True
@@ -117,7 +123,6 @@ Private Sub stopIconRenderer
 End Sub
 
 Private Sub FirstTick
-	
 	For Each IconID As Int In icoMap.Keys
 		Try
 			If icoMap.ContainsKey(IconID) Then
@@ -127,13 +132,14 @@ Private Sub FirstTick
 				parse.Initialize(ico.Get(animCounter.Get(IconID)))
 				Dim bmproot As List = parse.NextArray
 				Dim bmp(bmproot.Size) As Int
-				For bm=0 To bmproot.Size-1
-					bmp(bm)=bmproot.Get(bm)
+				For i=0 To bmproot.Size-1
+					bmp(i)=bmproot.Get(i)
 				Next
 				RenderedIcons.Put(IconID,bmp)
 				animCounter.put(IconID,animCounter.Get(IconID)+1)
 			End If
 		Catch
+			Log("Got Error from " & AppName)
 			Log("Error in IconPreloader:")
 			Log("IconID:" & IconID)
 			Log(LastException)
@@ -151,13 +157,14 @@ Private Sub Timer_Tick
 			parse.Initialize(ico.Get(animCounter.Get(iconid)))
 			Dim bmproot As List = parse.NextArray
 			Dim bpm(bmproot.Size) As Int
-			For bm=0 To bmproot.Size-1
-				bpm(bm)=bmproot.Get(bm)
+			For i=0 To bmproot.Size-1
+				bpm(i)=bmproot.Get(i)
 			Next
 			RenderedIcons.Put(iconid,bpm)
 			animCounter.put(iconid,animCounter.Get(iconid)+1)
 		End If
 	Catch
+		Log("Got Error from " & AppName)
 		Log("Error in IconRenderer:")
 		Log(LastException)
 		stopIconRenderer
@@ -175,6 +182,7 @@ Private Sub addToIconRenderer(iconMap As Map)
 		End If
 		timermap.Clear
 		icoMap.Clear
+		animCounter.Clear
 		RenderedIcons.Clear
 		For Each ico As Int In iconMap.Keys
 			Dim ico1 As Map = iconMap.get(ico)
@@ -194,6 +202,7 @@ Private Sub addToIconRenderer(iconMap As Map)
 		Next
 		If isRunning Then startIconRenderer
 	Catch
+		Log("Got Error from " & AppName)
 		Log("Error in IconAdder:")
 		Log(LastException)
 	End Try
@@ -204,6 +213,7 @@ Public Sub getIcon(IconID As Int) As Int()
 	If RenderedIcons.ContainsKey(IconID) Then
 		Return RenderedIcons.Get(IconID)
 	Else
+		Log("Got Error from " & AppName)
 		Log("Icon " & IconID & " not found")
 		Return noIcon
 	End If
@@ -219,6 +229,9 @@ Public Sub AppControl(Tag As String, Params As Map) As Object
 			End If
 			Try
 				Appduration = Params.Get("AppDuration")
+				If DisplayTime>0 Then
+					Appduration=DisplayTime
+				End If
 				ServerVersion =	 Params.Get("ServerVersion")
 				MatrixWidth = Params.Get("MatrixWidth")
 				MatrixHeight = Params.Get("MatrixHeight")
@@ -231,6 +244,8 @@ Public Sub AppControl(Tag As String, Params As Map) As Object
 				Set.Put("DisplayTime", DisplayTime)
 				Set.Put("forceDownload", forceDownload)
 			Catch
+				Log("Got Error from " & AppName)
+				Log("Error in start procedure")
 				Log(LastException)
 			End Try
 			StartedAt=DateTime.now
@@ -288,9 +303,9 @@ Public Sub AppControl(Tag As String, Params As Map) As Object
 				out.Close
 			End If
 			infos.Put("pic",data)
-			Dim isconfigured As Boolean=True
+			Dim isconfigured As Boolean = True
 			If File.Exists(File.Combine(File.DirApp,"Apps"),AppName&".ax") Then
-				Dim m As Map = File.ReadMap(File.Combine(File.DirApp,"Apps"),AppName&".ax")
+				Dim m As Map = bc.ConvertBytesToObject(File.ReadBytes(File.Combine(File.DirApp,"Apps"),AppName&".ax"))
 				For Each v As Object In m.Values
 					If v="null" Or v="" Then
 						isconfigured=False
@@ -325,6 +340,12 @@ Public Sub AppControl(Tag As String, Params As Map) As Object
 			If SubExists(Target,event&"_externalCommand") Then
 				CallSub2(Target,event&"_externalCommand",res)
 			End If
+		Case "getMenu"
+			Menu.Initialize
+			Menu.Put("Version","1.6")
+			Menu.Put("Theme","Light Theme")
+			Menu.Put("Items",MenuList)
+			Return Menu
 	End Select
 	Return True
 End Sub
@@ -388,7 +409,8 @@ End Sub
 
 Public Sub MakeSettings
 	If File.Exists(File.Combine(File.DirApp,"Apps"),AppName&".ax") Then
-		Dim m As Map = File.ReadMap(File.Combine(File.DirApp,"Apps"),AppName&".ax")
+		Dim data() As Byte = File.ReadBytes(File.Combine(File.DirApp,"Apps"),AppName&".ax")
+		Dim m As Map = bc.ConvertBytesToObject(data)
 		For Each k As String In appSettings.Keys
 			If Not(m.ContainsKey(k)) Then
 				m.Put(k,appSettings.Get(k))
@@ -408,25 +430,27 @@ Public Sub MakeSettings
 			endtime=m.Get("EndTime")
 			UpdateInterval=m.Get("UpdateInterval")
 			DisplayTime=m.Get("DisplayTime")
-			File.WriteMap(File.Combine(File.DirApp,"Apps"),AppName&".ax",m)
+			File.WriteBytes(File.Combine(File.DirApp,"Apps"),AppName&".ax",bc.ConvertObjectToBytes(m))
 			If SubExists(Target,event&"_settingsChanged") Then
 				CallSub(Target,event&"_settingsChanged")'ignore
 			End If
 		Catch
+			Log("Got Error from " & AppName)
+			Log("Error while saving settings")
 			Log(LastException)
 		End Try
 	Else
 		Dim m As Map
 		m.Initialize
 		m.Put("UpdateInterval",UpdateInterval)
-		m.Put("StartTime","0")
-		m.Put("EndTime","0")
+		m.Put("StartTime","00:00")
+		m.Put("EndTime","00:00")
 		m.Put("DisplayTime","0")
 		m.Put("Enabled",True)
 		For Each k As String In appSettings.Keys
 			m.Put(k,appSettings.Get(k))
 		Next
-		File.WriteMap(File.Combine(File.DirApp,"Apps"),AppName&".ax",m)
+		File.WriteBytes(File.Combine(File.DirApp,"Apps"),AppName&".ax",bc.ConvertObjectToBytes(m))
 	End If
 End Sub
 
@@ -442,9 +466,10 @@ End Sub
 
 Private Sub saveSingleSetting(key As String, value As Object)
 	If File.Exists(File.Combine(File.DirApp,"Apps"),AppName&".ax") Then
-		Dim m As Map = File.ReadMap(File.Combine(File.DirApp,"Apps"),AppName&".ax")
+		Dim data() As Byte = File.ReadBytes(File.Combine(File.DirApp,"Apps"),AppName&".ax")
+		Dim m As Map = bc.ConvertBytesToObject(data)
 		m.Put(key,value)
-		File.WriteMap(File.Combine(File.DirApp,"Apps"),AppName&".ax",m)
+		File.WriteBytes(File.Combine(File.DirApp,"Apps"),AppName&".ax",bc.ConvertObjectToBytes(m))
 	End If
 End Sub
 
@@ -545,4 +570,17 @@ Private Sub wheel(Wheelpos As Int) As Int() 'ignore
 		Wheelpos =Wheelpos- 170
 		Return  Array As Int(0, Wheelpos * 3, 255 - Wheelpos * 3)
 	End If
+End Sub
+
+Public Sub addMenuItem(Options As List,Title As String, Typ As String,Key As String,required As Boolean)
+	Dim m As Map
+	m.Initialize
+	m.Put("title",Title)
+	m.Put("type",Typ)
+	m.Put("key",Key)
+	m.Put("required",required)
+	If Options.Size>0 Then
+		m.Put("options",Options)
+	End If
+	MenuList.Add(m)
 End Sub
