@@ -3,10 +3,11 @@ Build1=Default,b4j.example
 Group=Default Group
 Library1=jcore
 Library2=json
-Module1=AWTRIX
-Module2=Template
+Library3=jrandomaccessfile
+Module1=Template
+Module2=AWTRIX
 NumberOfFiles=0
-NumberOfLibraries=2
+NumberOfLibraries=3
 NumberOfModules=2
 Version=7.31
 @EndOfDesignText@
