@@ -3,18 +3,16 @@ Build1=Default,b4j.example
 Group=Default Group
 Library1=jcore
 Library2=json
-Library3=jdateutils
-Library4=jrandomaccessfile
+Library3=jrandomaccessfile
+Library4=jdateutils
 Module1=AWTRIX
-Module2=QuitSmoking
+Module2=RocketLaunch
 NumberOfFiles=0
 NumberOfLibraries=4
 NumberOfModules=2
 Version=7.31
 @EndOfDesignText@
-
-'ignore this Code Module!. everything is happen in the second Class
-
+'Draws a Rectangle'Non-UI application (console / server application)
 #Region Project Attributes 
 	#CommandLineArgs:
 	#MergeLibraries: True 

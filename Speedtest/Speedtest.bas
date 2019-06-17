@@ -16,7 +16,7 @@ Public Sub Initialize() As String
 	App.AppName="Speedtest"
 	
 	'Version of the App
-	App.AppVersion="2.0"
+	App.AppVersion="2.1"
 	
 	'Description of the App. You can use HTML to format it
 	App.AppDescription=$"
@@ -42,7 +42,7 @@ Public Sub Initialize() As String
 	App.appSettings=CreateMap()
 	
 	App.MakeSettings
-	Return "AWTRIX2"
+	Return "AWTRIX20"
 End Sub
 
 ' ignore

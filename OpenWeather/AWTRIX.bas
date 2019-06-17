@@ -55,11 +55,12 @@ Sub Class_Globals
 	Private SystemColor() As Int
 	Private event As String
 	Private Enabled As Boolean = True
-	Private noIcon() As Int = Array As Int(0, 0, 0, 63488, 63488, 0, 0, 0, 0, 0, 63488, 0, 0, 63488, 0, 0, 0, 0, 0, 0, 0, 63488, 0, 0, 0, 0, 0, 0, 63488, 0, 0, 0, 0, 0, 0, 63488, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 63488, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+	Private noIcon() As Short = Array As Short(0, 0, 0, 63488, 63488, 0, 0, 0, 0, 0, 63488, 0, 0, 63488, 0, 0, 0, 0, 0, 0, 0, 63488, 0, 0, 0, 0, 0, 0, 63488, 0, 0, 0, 0, 0, 0, 63488, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 63488, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
 	Private isRunning As Boolean
 	Private Menu As Map
 	Private MenuList As List
 	Private bc As B4XSerializator
+	Private noIconMessage As Boolean
 	
 	Type JobResponse (jobNr As Int,Success As Boolean,ResponseString As String,Stream As InputStream)
 End Sub
@@ -132,7 +133,7 @@ Private Sub FirstTick
 				If animCounter.Get(IconID)>ico.Size-1 Then animCounter.put(IconID,0)
 				parse.Initialize(ico.Get(animCounter.Get(IconID)))
 				Dim bmproot As List = parse.NextArray
-				Dim bmp(bmproot.Size) As Int
+				Dim bmp(bmproot.Size) As Short
 				For i=0 To bmproot.Size-1
 					bmp(i)=bmproot.Get(i)
 				Next
@@ -140,6 +141,7 @@ Private Sub FirstTick
 				animCounter.put(IconID,animCounter.Get(IconID)+1)
 			End If
 		Catch
+	
 			Log("Got Error from " & AppName)
 			Log("Error in IconPreloader:")
 			Log("IconID:" & IconID)
@@ -157,7 +159,7 @@ Private Sub Timer_Tick
 			If animCounter.Get(iconid)>ico.Size-1 Then animCounter.put(iconid,0)
 			parse.Initialize(ico.Get(animCounter.Get(iconid)))
 			Dim bmproot As List = parse.NextArray
-			Dim bpm(bmproot.Size) As Int
+			Dim bpm(bmproot.Size) As Short
 			For i=0 To bmproot.Size-1
 				bpm(i)=bmproot.Get(i)
 			Next
@@ -175,8 +177,10 @@ End Sub
 Private Sub addToIconRenderer(iconMap As Map)
 	Try
 		If iconMap.Size=0 Then Return
+		Dim runMarker As Boolean
 		If isRunning Then
 			stopIconRenderer
+			runMarker=True
 		End If
 		timermap.Clear
 		icoMap.Clear
@@ -198,7 +202,9 @@ Private Sub addToIconRenderer(iconMap As Map)
 				RenderedIcons.Put(ico,ico1.Get("data"))
 			End If
 		Next
-		If isRunning Then startIconRenderer
+		If runMarker Then
+			 startIconRenderer
+		End If
 	Catch
 		Log("Got Error from " & AppName)
 		Log("Error in IconAdder:")
@@ -207,12 +213,16 @@ Private Sub addToIconRenderer(iconMap As Map)
 End Sub
 
 'returns the rendered Icon
-Public Sub getIcon(IconID As Int) As Int()
-	If RenderedIcons.ContainsKey(IconID) Then
-		Return RenderedIcons.Get(IconID)
+Public Sub getIcon(ID As Int) As Short()
+	If RenderedIcons.ContainsKey(ID) Then
+		Return RenderedIcons.Get(ID)
 	Else
-		Log("Got Error from " & AppName)
-		Log("Icon " & IconID & " not found")
+		If noIconMessage = False Then
+			Log("Got Error from " & AppName)
+			Log("Icon " & ID & " not found")
+			noIconMessage=True
+		End If
+	
 		Return noIcon
 	End If
 End Sub
@@ -247,6 +257,7 @@ Public Sub AppControl(Tag As String, Params As Map) As Object
 				Log(LastException)
 			End Try
 			StartedAt=DateTime.now
+			noIconMessage=False
 			If ShouldShow Then
 				Set.Put("show",timesComparative)
 			Else
@@ -473,7 +484,7 @@ End Sub
 
 
 'Draws a Bitmap
-Public Sub drawBMP(x As Int,y As Int,bmp() As Int,width As Int, height As Int)
+Public Sub drawBMP(x As Int,y As Int,bmp() As Short,width As Int, height As Int)
 	commandList.Add(CreateMap("type":"bmp","x":x,"y":y,"bmp":bmp,"width":width,"height":height))
 End Sub
 

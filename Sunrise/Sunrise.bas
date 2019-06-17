@@ -19,7 +19,7 @@ Public Sub Initialize() As String
 	App.AppName="Sunrise"
 	
 	'Version of the App
-	App.AppVersion="2.0"
+	App.AppVersion="2.1"
 	
 	'Description of the App. You can use HTML to format it
 	App.AppDescription=$"
@@ -52,7 +52,7 @@ Public Sub Initialize() As String
 	App.appSettings=CreateMap("Latitude":"50.1343", "Longitude":"8.8398", "UTC-Offset":"2", "12hrFormat":False)
 	
 	App.MakeSettings
-	Return "AWTRIX2"
+	Return "AWTRIX20"
 End Sub
 
 ' ignore
@@ -84,6 +84,7 @@ Sub App_evalJobResponse(Resp As JobResponse)
 		If Resp.success Then
 			Select Resp.jobNr
 				Case 1
+					Dim savedTime As String= DateTime.TimeFormat
 					DateTime.TimeFormat = "KK:mm:ss a"
 					Dim parser As JSONParser
 					parser.Initialize(Resp.ResponseString)
@@ -107,11 +108,13 @@ Sub App_evalJobResponse(Resp As JobResponse)
 					End If
 				
 					SunTime = DateTime.Time(SunriseLocal) & "/" & DateTime.Time(SunsetLocal)
+					DateTime.TimeFormat=savedTime
 			End Select
 		End If
 	Catch
 		Log("Error in: "& App.AppName & CRLF & LastException)
 		Log("API response: " & CRLF & Resp.ResponseString)
+		DateTime.TimeFormat=savedTime
 	End Try
 End Sub
 

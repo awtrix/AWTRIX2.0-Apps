@@ -9,7 +9,6 @@ Sub Class_Globals
 	Dim App As AWTRIX
 	
 	'Declare your variables here
-	Dim first_name As String
 	Dim hr, mn, sc As Int
 	Dim sc0, sc1 As Int
 	Dim mn0, mn1 As Int
@@ -35,7 +34,7 @@ Public Sub Initialize() As String
 	App.AppName="BinaryClock"
 	
 	'Version of the App
-	App.AppVersion="2.0"
+	App.AppVersion="2.1"
 	
 	'Description of the App. You can use HTML to format it
 	App.AppDescription=$"
@@ -64,7 +63,7 @@ Public Sub Initialize() As String
 	App.appSettings=CreateMap()
 	
 	App.MakeSettings
-	Return "AWTRIX2"
+	Return "AWTRIX20"
 End Sub
 
 'this sub is called right before AWTRIX will display your App

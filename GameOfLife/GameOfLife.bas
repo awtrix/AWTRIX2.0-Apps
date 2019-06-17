@@ -26,7 +26,7 @@ Public Sub Initialize() As String
 	App.AppName="GameOfLife"
 	
 	'Version of the App
-	App.AppVersion="2.0"
+	App.AppVersion="2.1"
 	
 	'Description of the App. You can use HTML to format it
 	App.AppDescription=$"
@@ -58,7 +58,7 @@ Public Sub Initialize() As String
 	App.appSettings=CreateMap("AutoReset":10,"Speed":500,"Seeds":65,"ColorOld":"50,50,50","ColorNew":"0,255,0")
 	
 	App.MakeSettings
-	Return "AWTRIX2"
+	Return "AWTRIX20"
 End Sub
 
 ' ignore

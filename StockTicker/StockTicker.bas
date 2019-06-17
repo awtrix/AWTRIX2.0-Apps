@@ -34,7 +34,7 @@ Public Sub Initialize() As String
 	App.AppName="StockTicker"
 	
 	'Version of the App
-	App.AppVersion="2.0"
+	App.AppVersion="2.1"
 	
 	'Description of the App. You can use HTML to format it
 	App.AppDescription=$"
@@ -66,7 +66,7 @@ Public Sub Initialize() As String
 	App.appSettings=CreateMap("ScrollTime":3,"APIKey":"","Symbols":"MSFT,APC,GOOGL")
 	
 	App.MakeSettings
-	Return "AWTRIX2"
+	Return "AWTRIX20"
 End Sub
 
 ' ignore

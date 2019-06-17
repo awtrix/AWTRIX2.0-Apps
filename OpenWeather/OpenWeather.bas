@@ -22,7 +22,7 @@ Public Sub Initialize() As String
 	App.AppName="OpenWeather"
 	
 	'Version of the App
-	App.AppVersion="2.0"
+	App.AppVersion="2.1"
 	
 	'Description of the App. You can use HTML to format it
 	App.AppDescription=$"
@@ -53,8 +53,12 @@ Public Sub Initialize() As String
 	'needed Settings for this App (Wich can be configurate from user via webinterface)
 	App.appSettings=CreateMap("APIKey":"","Unit":"metric","LocationID":"2874230")
 	
+	App.addMenuItem(Array As String("metric","imperial"),"Unit","Short Options","Unit",True)
+	App.addMenuItem(Array As String(),"APIKey","Text","APIKey",True)
+	App.addMenuItem(Array As String(),"Location ID","Number","LocationID",True)
+	
 	App.MakeSettings
-	Return "AWTRIX2"
+	Return "AWTRIX20"
 End Sub
 
 ' ignore
