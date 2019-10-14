@@ -10,12 +10,11 @@ Module2=DayOfTheWeek
 NumberOfFiles=0
 NumberOfLibraries=4
 NumberOfModules=2
-Version=7.31
+Version=7.51
 @EndOfDesignText@
 'Draws a Rectangle'Non-UI application (console / server application)
 #Region Project Attributes 
-	#CommandLineArgs:
-	#MergeLibraries: True 
+#LibraryName:DayOfTheWeek
 #End Region
 
 Sub Process_Globals

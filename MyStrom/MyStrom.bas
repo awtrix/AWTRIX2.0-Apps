@@ -18,36 +18,34 @@ Public Sub Initialize() As String
 	App.Initialize(Me,"App")
 	
 	'change plugin name (must be unique, avoid spaces)
-	App.AppName="MyStrom"
+	App.Name="MyStrom"
 	
 	'Version of the App
-	App.AppVersion="2.1"
+	App.Version="1.0"
 	
 	'Description of the App. You can use HTML to format it
-	App.AppDescription=$"
-	Shows the state and power consumption of your MyStrom SmartPlug<br/>
-	<small>Created by AWTRIX</small> 
-	"$
+	App.Description=$"Shows the state and power consumption of your MyStrom SmartPlug"$
 		
 	'SetupInstructions. You can use HTML to format it
-	App.SetupInfos= $"
+	App.setupDescription= $"
 	<b>IP:</b>  The IP Adress of your MyStrom SmartPlug<br />
 	"$
 	
+	App.Author="Blueforcer"
+	
+	App.CoverIcon=398
+	
 	'How many downloadhandlers should be generated
-	App.NeedDownloads=1
+	App.Downloads=1
 	
 	'IconIDs from AWTRIXER.
 	App.Icons=Array As Int(397,398)
 	
 	'Tickinterval in ms (should be 65 by default)
-	App.TickInterval=65
-	
-	'If set to true AWTRIX will wait for the "finish" command before switch to the next app.
-	App.LockApp=False
+	App.Tick=65
 	
 	'needed Settings for this App (Wich can be configurate from user via webinterface)
-	App.appSettings= CreateMap("IP":"")
+	App.Settings= CreateMap("IP":"")
 	
 	App.MakeSettings
 	Return "AWTRIX20"
@@ -55,12 +53,12 @@ End Sub
 
 ' ignore
 public Sub GetNiceName() As String
-	Return App.AppName
+	Return App.Name
 End Sub
 
 ' ignore
 public Sub Run(Tag As String, Params As Map) As Object
-	Return App.AppControl(Tag,Params)
+	Return App.interface(Tag,Params)
 End Sub
 
 
@@ -69,7 +67,7 @@ End Sub
 Sub App_startDownload(jobNr As Int)
 	Select jobNr
 		Case 1
-			App.DownloadURL= "http://"&App.Get("IP")&"/report"
+			App.Download("http://"&App.Get("IP")&"/report")
 	End Select
 
 End Sub
@@ -100,12 +98,12 @@ Sub App_evalJobResponse(Resp As JobResponse)
 			End Select
 		End If
 	Catch
-		Log("Error in: "& App.AppName & CRLF & LastException)
+		Log("Error in: "& App.Name & CRLF & LastException)
 		Log("API response: " & CRLF & Resp.ResponseString)
 	End Try
 End Sub
 
 Sub App_genFrame
-	App.genText(watt& "W",True,1,Null)
+	App.genText(watt& "W",True,1,Null,True)
 	App.drawBMP(0,0,App.getIcon(IconID),8,8)
 End Sub

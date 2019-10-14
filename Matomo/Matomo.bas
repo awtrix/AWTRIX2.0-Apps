@@ -16,36 +16,31 @@ Public Sub Initialize() As String
 	App.Initialize(Me,"App")
 	
 	'change plugin name (must be unique, avoid spaces)
-	App.AppName="Matomo"
+	App.Name="Matomo"
 	
 	'Version of the App
-	App.AppVersion="2.1"
+	App.Version="1.0"
 	
 	'Description of the App. You can use HTML to format it
-	App.AppDescription=$"
-	Shows you the visitors of the transferred Matomo instance who were online during the given time period.<br />
-	<small>Created by Dennis Hinzpeter</small>"$
+	App.Description=$"
+	Shows you the visitors of the transferred Matomo instance who were online during the given time period.<br />"$
 
-		
-	'SetupInstructions. You can use HTML to format it
-	App.SetupInfos= $"
-
-	"$
+	App.Author="Dennis Hinzpeter"
+	
+	App.CoverIcon=68
+	
 	
 	'How many downloadhandlers should be generated
-	App.NeedDownloads=1
+	App.Downloads=1
 	
 	'IconIDs from AWTRIXER.
 	App.Icons=Array As Int(68)
 	
 	'Tickinterval in ms (should be 65 by default)
-	App.TickInterval=65
-	
-	'If set to true AWTRIX will wait for the "finish" command before switch to the next app.
-	App.LockApp=False
+	App.Tick=65
 	
 	'needed Settings for this App (Wich can be configurate from user via webinterface)
-	App.appSettings=CreateMap("apiKey":"","siteID":"","baseURL":"","timeSpan":"")
+	App.Settings=CreateMap("apiKey":"","siteID":"","baseURL":"","timeSpan":"")
 	
 	App.MakeSettings
 	Return "AWTRIX20"
@@ -53,12 +48,12 @@ End Sub
 
 ' ignore
 public Sub GetNiceName() As String
-	Return App.AppName
+	Return App.Name
 End Sub
 
 ' ignore
 public Sub Run(Tag As String, Params As Map) As Object
-	Return App.AppControl(Tag,Params)
+	Return App.interface(Tag,Params)
 End Sub
 
 Public Sub AppStarted
@@ -70,7 +65,7 @@ End Sub
 Sub App_startDownload(jobNr As Int)
 	Select jobNr
 		Case 1
-			App.DownloadURL=App.get("baseURL")&"/index.php?module=API&method=Live.getCounters&idSite="&App.get("siteID")&"&lastMinutes="&App.get("timeSpan")&"&format=JSON&token_auth="&App.get("apiKey")
+			App.Download(App.get("baseURL")&"/index.php?module=API&method=Live.getCounters&idSite="&App.get("siteID")&"&lastMinutes="&App.get("timeSpan")&"&format=JSON&token_auth="&App.get("apiKey"))
 	End Select
 End Sub
 
@@ -90,12 +85,12 @@ Sub App_evalJobResponse(Resp As JobResponse)
 			End Select
 		End If
 	Catch
-		Log("Error in: "& App.AppName & CRLF & LastException)
+		Log("Error in: "& App.Name & CRLF & LastException)
 		Log("API response: " & CRLF & Resp.ResponseString)
 	End Try
 End Sub
 
 Sub App_genFrame
-	App.genText(result,True,1,Null)
+	App.genText(result,True,1,Null,True)
 	App.drawBMP(0,0,App.geticon(68),8,8)
 End Sub

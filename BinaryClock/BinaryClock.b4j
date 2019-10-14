@@ -4,17 +4,16 @@ Group=Default Group
 Library1=jcore
 Library2=json
 Library3=jrandomaccessfile
-Module1=AWTRIX
-Module2=BinaryClock
+Module1=BinaryClock
+Module2=AWTRIX
 NumberOfFiles=0
 NumberOfLibraries=3
 NumberOfModules=2
-Version=7.31
+Version=7.51
 @EndOfDesignText@
 'Draws a Rectangle'Non-UI application (console / server application)
 #Region Project Attributes 
-	#CommandLineArgs:
-	#MergeLibraries: True 
+#LibraryName:BinaryClock
 #End Region
 
 Sub Process_Globals

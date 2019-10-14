@@ -9,13 +9,12 @@ Module2=AWTRIX
 NumberOfFiles=0
 NumberOfLibraries=3
 NumberOfModules=2
-Version=7.31
+Version=7.51
 @EndOfDesignText@
 'Ignore this module
 
 #Region Project Attributes 
-	#CommandLineArgs:
-	#MergeLibraries: True 
+#LibraryName:Fortnite
 #End Region
 
 Sub Process_Globals

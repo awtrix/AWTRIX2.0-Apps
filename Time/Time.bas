@@ -6,9 +6,7 @@ Version=4.2
 @EndOfDesignText@
 Sub Class_Globals
 	Dim App As AWTRIX
-
 	Dim weekday As Int
-	Dim startat As Long
 	Dim scroll As Int
 End Sub
 
@@ -18,19 +16,20 @@ Public Sub Initialize() As String
 	App.Initialize(Me,"App")
 	
 	'change plugin name (must be unique, avoid spaces)
-	App.AppName="Time"
+	App.Name="Time"
 	
 	'Version of the App
-	App.AppVersion="2.1"
+	App.Version="1.0"
 	
 	'Description of the App. You can use HTML to format it
-	App.AppDescription=$"
-	Shows Time, Date and the day of the week.<br />
-	<small>Created by AWTRIX</small>
-	"$
+	App.Description="Shows Time, Date and the day of the week."
+	
+	App.Author = "Blueforcer"
+	
+	App.CoverIcon = 13
 		
 	'SetupInstructions. You can use HTML to format it
-	App.SetupInfos= $"
+	App.setupDescription= $"
 	<b>ShowWeekday:</b>  Whether the weekday should be displayed or not (true/false).<br />
 	<b>ShowSeconds:</b>  Whether the seconds should be displayed or not (true/false).<br />
 	<b>ShowDate:</b>  Whether the date should be displayed or not (true/false).<br />
@@ -38,17 +37,11 @@ Public Sub Initialize() As String
 	<b>DateFormat:</b>  Set date format (DD/MM or MM/DD) .<br />
 	"$
 	
-	'How many downloadhandlers should be generated
-	App.NeedDownloads=0
-		
 	'Tickinterval in ms (should be 65 by default)
-	App.TickInterval=65
-	
-	'If set to true AWTRIX will wait for the "finish" command before switch to the next app.
-	App.LockApp=False
+	App.Tick=65
 	
 	'needed Settings for this App (Wich can be configurate from user via webinterface)
-	App.appSettings= CreateMap("ShowSeconds":False,"ShowWeekday":True,"ShowDate":True,"12hrFormat":False,"DateFormat":"DD/MM") 'needed Settings for this Plugin
+	App.Settings= CreateMap("ShowSeconds":False,"ShowWeekday":True,"ShowDate":True,"12hrFormat":False,"DateFormat":"DD/MM") 'needed Settings for this Plugin
 	
 	App.MakeSettings
 	Return "AWTRIX20"
@@ -57,17 +50,16 @@ End Sub
 
 ' must be available
 public Sub GetNiceName() As String
-	Return App.AppName
+	Return App.Name
 End Sub
 
 
 ' ignore
 public Sub Run(Tag As String, Params As Map) As Object
-	Return App.AppControl(Tag,Params)
+	Return App.interface(Tag,Params)
 End Sub
 
 Sub App_Started
-	startat=DateTime.Now
 	scroll=1
 	weekday=GetWeekNumber(DateTime.Now)
 End Sub
@@ -92,7 +84,7 @@ Sub App_genFrame
 	Dim timeString As String= DateTime.Time(DateTime.Now)
 	
 	If  App.get("ShowDate") Then
-		If startat<DateTime.Now-App.Appduration*1000/2 Then
+		If App.startedAt<DateTime.Now-App.duration*1000/2 Then
 			Dim day As String=NumberFormat( DateTime.GetDayOfMonth(DateTime.Now),2,0)
 			Dim month As String=NumberFormat(DateTime.GetMonth(DateTime.Now),2,0)
 			'Sets the Date Format
@@ -142,9 +134,9 @@ Sub App_genFrame
 		App.drawLine(0,7,31,7,Array As Int(0,0,0))
 		For i=0 To 6
 			If i=weekday-1  Then
-				App.drawLine(2+i*4,7,i*4+4,7,Array As Int(200,200,200))
+				App.drawLine(3+i*4,7,i*4+5,7,Array As Int(200,200,200))
 			Else
-				App.drawLine(2+i*4,7,i*4+4,7,Array As Int(80,80,80))
+				App.drawLine(3+i*4,7,i*4+5,7,Array As Int(80,80,80))
 			End If
 		Next
 	End If

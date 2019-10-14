@@ -5,19 +5,18 @@ Library1=jcore
 Library2=json
 Library3=jdateutils
 Library4=jrandomaccessfile
-Module1=AWTRIX
-Module2=QuitSmoking
+Module1=QuitSmoking
+Module2=AWTRIX
 NumberOfFiles=0
 NumberOfLibraries=4
 NumberOfModules=2
-Version=7.31
+Version=7.51
 @EndOfDesignText@
 
 'ignore this Code Module!. everything is happen in the second Class
 
 #Region Project Attributes 
-	#CommandLineArgs:
-	#MergeLibraries: True 
+#LibraryName:QuitSmoking
 #End Region
 
 Sub Process_Globals

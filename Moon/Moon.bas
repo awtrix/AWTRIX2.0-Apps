@@ -23,34 +23,20 @@ Public Sub Initialize() As String
 	App.Initialize(Me,"App")
 	
 	'change plugin name (must be unique, avoid spaces)
-	App.AppName="Moon"
+	App.Name="Moon"
 	
 	'Version of the App
-	App.AppVersion="2.1"
+	App.Version="1.0"
 	
 	'Description of the App. You can use HTML to format it
-	App.AppDescription=$"
-	Shows Today's Moon Phase with current viewing information<br />
-	<small>Created by AWTRIX</small>
-	"$
+	App.Description=$"Shows Today's Moon Phase with current viewing information"$
 		
-	'SetupInstructions. You can use HTML to format it
-	App.SetupInfos= $"
-	<b>Nothing to do<br/>
-	"$
+	App.Author="BLueforcer"
 	
-	'How many downloadhandlers should be generated
-	App.NeedDownloads=0
-	
+	App.CoverIcon=348	
 	
 	'Tickinterval in ms (should be 65 by default)
-	App.TickInterval=1500
-	
-	'If set to true AWTRIX will wait for the "finish" command before switch to the next app.
-	App.LockApp=False
-	
-	'needed Settings for this App (Wich can be configurate from user via webinterface)
-	App.appSettings=CreateMap()
+	App.Tick=1500
 	
 	App.MakeSettings
 	Return "AWTRIX20"
@@ -59,12 +45,12 @@ End Sub
 
 ' ignore
 public Sub GetNiceName() As String
-	Return App.AppName
+	Return App.Name
 End Sub
 
 ' ignore
 public Sub Run(Tag As String, Params As Map) As Object
-	Return App.AppControl(Tag,Params)
+	Return App.interface(Tag,Params)
 End Sub
 
 Sub App_genFrame
@@ -94,7 +80,7 @@ End Sub
 Sub gensky 
 	
 	For i=0 To 7
-		App.drawPixel(Rnd(0,31),Rnd(0,7),Array as Int(51,93,159))
+		App.drawPixel(Rnd(0,31),Rnd(0,7),Array As Int(51,93,159))
 	Next
 
 End Sub

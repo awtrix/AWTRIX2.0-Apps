@@ -4,19 +4,17 @@ Group=Default Group
 Library1=jcore
 Library2=json
 Library3=jrandomaccessfile
-Module1=Instagram
-Module2=AWTRIX
+Module1=AWTRIX
+Module2=Instagram2
 NumberOfFiles=0
 NumberOfLibraries=3
 NumberOfModules=2
-Version=7.31
+Version=7.51
 @EndOfDesignText@
-
 'ignore this Code Module!. everything is happen in the second Class (InstagramPlugin)
 
 #Region Project Attributes 
-	#CommandLineArgs:
-	#MergeLibraries: True 
+#LibraryName:Instagram2
 #End Region
 
 Sub Process_Globals

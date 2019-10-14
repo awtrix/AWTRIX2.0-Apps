@@ -16,36 +16,35 @@ Public Sub Initialize() As String
 	App.Initialize(Me,"App")
 	
 	'change plugin name (must be unique, avoid spaces)
-	App.AppName="pr0gramm"
+	App.Name="pr0gramm"
 	
 	'Version of the App
-	App.AppVersion="2.1"
+	App.Version="1.0"
 	
 	'Description of the App. You can use HTML to format it
-	App.AppDescription=$"
-	Show the lenght of your Benis<br />
-	<small>Created by Kevin</small>
-	"$
+	App.Description=$"Show the lenght of your Benis"$
+	
+	App.Author="Kevin"
+	
+	App.CoverIcon=399
 		
 	'SetupInstructions. You can use HTML to format it
-	App.SetupInfos= $"
+	App.setupDescription= $"
 	<b>Name:</b>  Enter your name from pr0gramm.
 	"$
 	
 	'How many downloadhandlers should be generated
-	App.NeedDownloads=1
+	App.Downloads=1
 	
 	'IconIDs from AWTRIXER.
 	App.Icons=Array As Int(399)
 	
 	'Tickinterval in ms (should be 65 by default)
-	App.TickInterval=65
+	App.Tick=65
 	
-	'If set to true AWTRIX will wait for the "finish" command before switch to the next app.
-	App.LockApp=False
 	
 	'needed Settings for this App (Wich can be configurate from user via webinterface)
-	App.appSettings=CreateMap("Name":"")
+	App.Settings=CreateMap("Name":"")
 	
 	App.MakeSettings
 	Return "AWTRIX20"
@@ -53,12 +52,12 @@ End Sub
 
 ' ignore
 public Sub GetNiceName() As String
-	Return App.AppName
+	Return App.Name
 End Sub
 
 ' ignore
 public Sub Run(Tag As String, Params As Map) As Object
-	Return App.AppControl(Tag,Params)
+	Return App.interface(Tag,Params)
 End Sub
 
 
@@ -67,7 +66,7 @@ End Sub
 Sub App_startDownload(jobNr As Int)
 	Select jobNr
 		Case 1
-			App.DownloadURL= "https://pr0gramm.com/api/profile/info?name="&App.get("Name")&"&flags=1&self=false"
+			App.Download("https://pr0gramm.com/api/profile/info?name="&App.get("Name")&"&flags=1&self=false")
 	End Select
 End Sub
 
@@ -88,13 +87,13 @@ Sub App_evalJobResponse(Resp As JobResponse)
 			End Select
 		End If
 	Catch
-		Log("Error in: "& App.AppName & CRLF & LastException)
+		Log("Error in: "& App.Name & CRLF & LastException)
 		Log("API response: " & CRLF & Resp.ResponseString)
 	End Try
 End Sub
 
 'Generate your Frame. This Sub is called with every Tick
 Sub App_genFrame
-	App.genText(benis,True,1,Null)
+	App.genText(benis,True,1,Null,True)
 	App.drawBMP(0,0,App.getIcon(399),8,8)
 End Sub

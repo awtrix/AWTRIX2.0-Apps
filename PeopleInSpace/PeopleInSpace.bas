@@ -6,7 +6,6 @@ Version=7.31
 @EndOfDesignText@
 Sub Class_Globals
 	Dim App As AWTRIX
-
 	Dim people As String = "0"
 End Sub
 
@@ -16,36 +15,26 @@ Public Sub Initialize() As String
 	App.Initialize(Me,"App")
 	
 	'change plugin name (must be unique, avoid spaces)
-	App.AppName="PeopleInSpace"
+	App.Name="PeopleInSpace"
 	
 	'Version of the App
-	App.AppVersion="2.1"
+	App.Version="1.0"
 	
 	'Description of the App. You can use HTML to format it
-	App.AppDescription=$"
-	Shows how many people are in space right now.<br />
-	<small>Created by huseyint</small>
-	"$
-		
-	'SetupInstructions. You can use HTML to format it
-	App.SetupInfos= $"
-	<b>Nothing to do<br/>
-	"$
+	App.Description="Shows how many people are in space right now."
+			
+	App.Author="huseyint"
 	
+	App.CoverIcon=587
+		
 	'How many downloadhandlers should be generated
-	App.NeedDownloads=1
+	App.Downloads=1
 	
 	'IconIDs from AWTRIXER.
 	App.Icons=Array As Int(587)
 	
 	'Tickinterval in ms (should be 65 by default)
-	App.TickInterval=65
-	
-	'If set to true AWTRIX will wait for the "finish" command before switch to the next app.
-	App.LockApp=False
-	
-	'needed Settings for this App (Wich can be configurate from user via webinterface)
-	App.appSettings=CreateMap()
+	App.Tick=65
 	
 	App.MakeSettings
 	Return "AWTRIX20"
@@ -53,12 +42,12 @@ End Sub
 
 ' ignore
 public Sub GetNiceName() As String
-	Return App.AppName
+	Return App.Name
 End Sub
 
 ' ignore
 public Sub Run(Tag As String, Params As Map) As Object
-	Return App.AppControl(Tag,Params)
+	Return App.interface(Tag,Params)
 End Sub
 
 'Called with every update from Awtrix
@@ -66,7 +55,7 @@ End Sub
 Sub App_startDownload(jobNr As Int)
 	Select jobNr
 		Case 1
-			App.DownloadURL= "http://www.howmanypeopleareinspacerightnow.com/space.json"
+			App.Download("http://www.howmanypeopleareinspacerightnow.com/peopleinspace.json")
 	End Select
 End Sub
 
@@ -86,13 +75,13 @@ Sub App_evalJobResponse(Resp As JobResponse)
 			End Select
 		End If
 	Catch
-		Log("Error in: "& App.AppName & CRLF & LastException)
+		Log("Error in: "& App.Name & CRLF & LastException)
 		Log("API response: " & CRLF & Resp.ResponseString)
 	End Try
 End Sub
 
 
 Sub App_genFrame
-	App.genText(people,True,1,Null)
+	App.genText(people,True,1,Null,True)
 	App.drawBMP(0,0,App.getIcon(587),8,8)
 End Sub

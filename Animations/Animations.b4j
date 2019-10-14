@@ -1,5 +1,5 @@
 ﻿AppType=StandardJava
-Build1=Default,b4j.example
+Build1=Default,de.blueforcer
 Group=Default Group
 Library1=jcore
 Library2=json
@@ -9,12 +9,11 @@ Module2=AWTRIX
 NumberOfFiles=0
 NumberOfLibraries=3
 NumberOfModules=2
-Version=7.31
+Version=7.51
 @EndOfDesignText@
-'Draws a Rectangle'Non-UI application (console / server application)
+
 #Region Project Attributes 
-	#CommandLineArgs:
-	#MergeLibraries: True 
+	#LibraryName: Animations
 #End Region
 
 Sub Process_Globals

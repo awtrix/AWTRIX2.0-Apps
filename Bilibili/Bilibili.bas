@@ -17,19 +17,20 @@ Public Sub Initialize() As String
 	App.Initialize(Me,"App")
 	
 	'change plugin name (must be unique, avoid spaces)
-	App.AppName="Bilibili"
+	App.Name="Bilibili"
 	
 	'Version of the App
-	App.AppVersion="2.1"
+	App.Version="1.0"
 	
 	'Description of the App. You can use HTML to format it
-	App.AppDescription=$"
-	This is a app for a Bilibili Upper to show fans count.<br />
-	<small>Created by Albert</small>
-	"$
+	App.Description="This Is a App For a Bilibili Upper To show fans count."
+	
+	App.Author="Albert"
+	
+	App.CoverIcon = 9
 		
 	'SetupInstructions. You can use HTML to format it
-	App.SetupInfos= $"
+	App.setupDescription= $"
 		<b>MID:</b>
     <ul>
 		<li>Go to https://space.bilibili.com/</li>
@@ -39,31 +40,29 @@ Public Sub Initialize() As String
 	"$
 	
 	'How many downloadhandlers should be generated
-	App.NeedDownloads=1
+	App.Downloads=1
 	
 	'IconIDs from AWTRIXER.
 	App.Icons=Array As Int(9)
 	
 	'Tickinterval in ms (should be 65 by default)
-	App.TickInterval=65
+	App.Tick=65
 	
-	'If set to true AWTRIX will wait for the "finish" command before switch to the next app.
-	App.LockApp=False
-	
+
 	'needed Settings for this App (Wich can be configurate from user via webinterface)
-	App.appSettings=CreateMap("MID":"")
+	App.Settings=CreateMap("MID":"")
 	
 	App.MakeSettings
 	Return "AWTRIX20"
 End Sub
 ' ignore
 public Sub GetNiceName() As String
-	Return App.AppName
+	Return App.Name
 End Sub
 
 ' ignore
 public Sub Run(Tag As String, Params As Map) As Object
-	Return App.AppControl(Tag,Params)
+	Return App.interface(Tag,Params)
 End Sub
 
 'Called with every update from Awtrix
@@ -71,7 +70,7 @@ End Sub
 Sub App_startDownload(jobNr As Int)
 	Select jobNr
 		Case 1
-			app.DownloadURL="https://api.bilibili.com/x/relation/stat?vmid="&App.Get("MID")&"&jsonp=jsonp"
+			App.Download("https://api.bilibili.com/x/relation/stat?vmid="&App.Get("MID")&"&jsonp=jsonp")
 	End Select
 
 End Sub
@@ -89,14 +88,14 @@ Sub App_evalJobResponse(Resp As JobResponse)
 			End Select
 		End If
 	Catch
-		Log("Error in: "& App.AppName & CRLF & LastException)
+		Log("Error in: "& App.Name & CRLF & LastException)
 		Log("API response: " & CRLF & Resp.ResponseString)
 	End Try
 End Sub
 
 'Generate your Frame. This Sub is called with every Tick
 Sub App_genFrame
-	App.genText(subs,True,1,Array As Int(98,214,255))
+	App.genText(subs,True,1,Array As Int(98,214,255),True)
 	App.drawBMP(0,0,App.getIcon(9),8,8)
     App.drawLine(9,7,29,7,Array As Int(98,214,255))
 End Sub

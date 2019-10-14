@@ -16,39 +16,34 @@ Public Sub Initialize() As String
 	App.Initialize(Me,"App")
 	
 	'App name (must be unique, avoid spaces)
-	App.AppName="TronaldDump"
+	App.Name="TronaldDump"
 	
 	'Version of the App
-	App.AppVersion="2.1"
+	App.Version="1.0"
 	
 	'Description of the App. You can use HTML to format it
-	App.AppDescription=$"
+	App.Description=$"
 	Shows the dumbest things Donald Trump has ever said <br/> 
-	Powered by tronalddump.io<br />
-	<small>Created by AWTRIX</small>
+	Powered by tronalddump.io
 	"$
 		
-	'SetupInstructions. You can use HTML to format it
-	App.SetupInfos= $"
-	<b>Nothing to do<br/>
-	"$
+	App.Author="Blueforcer"
+	
+	App.CoverIcon=516
 	
 	'How many downloadhandlers should be generated
-	App.NeedDownloads=1
+	App.Downloads=1
 	
 	'IconIDs from AWTRIXER. You can add multiple if you want to display them at the same time
 	App.Icons=Array As Int(516)
 	
 	'Tickinterval in ms (should be 65 by default, for smooth scrolling))
-	App.TickInterval=65
+	App.Tick=65
 	
 	'If set to true AWTRIX will wait for the "finish" command before switch to the next app.
-	App.LockApp=True
+	App.Lock=True
 	
 	App.forceDownload=True
-	
-	'needed Settings for this App (Wich can be configurate from user via webinterface)
-	App.appSettings=CreateMap()
 	
 	App.MakeSettings
 	Return "AWTRIX20"
@@ -56,12 +51,12 @@ End Sub
 
 ' ignore
 public Sub GetNiceName() As String
-	Return App.AppName
+	Return App.Name
 End Sub
 
 ' ignore
 public Sub Run(Tag As String, Params As Map) As Object
-	Return App.AppControl(Tag,Params)
+	Return App.interface(Tag,Params)
 End Sub
 
 'Called with every update from Awtrix
@@ -69,7 +64,7 @@ End Sub
 Sub App_startDownload(jobNr As Int)
 	Select jobNr
 		Case 1
-			App.DownloadURL= "https://api.tronalddump.io/random/quote"
+			App.Download("https://api.tronalddump.io/random/quote")
 	End Select
 End Sub
 
@@ -89,13 +84,13 @@ Sub App_evalJobResponse(Resp As JobResponse)
 			End Select
 		End If
 	Catch
-		Log("Error in: "& App.AppName & CRLF & LastException)
+		Log("Error in: "& App.Name & CRLF & LastException)
 		Log("API response: " & CRLF & Resp.ResponseString)
 	End Try
 End Sub
 
 Sub App_genFrame
-	App.genText(QUOT,True,1,Null)
+	App.genText(QUOT,True,1,Null,True)
 	
 	If App.scrollposition>9 Then
 		App.drawBMP(0,0,App.getIcon(516),8,8)

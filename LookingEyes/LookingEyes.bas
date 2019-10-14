@@ -33,53 +33,39 @@ End Sub
 Public Sub Initialize() As String
 	
 	eye.Initialize
+	
 	eye.AddAll(Array(n0,n1,n2,n3,n4))
 	
 	App.Initialize(Me,"App")
 	
 	'change plugin name (must be unique, avoid spaces)
-	App.AppName="LookingEyes"
+	App.Name="LookingEyes"
 	
 	'Version of the App
-	App.AppVersion="2.1"
+	App.Version="1.0"
 	
 	'Description of the App. You can use HTML to format it
-	App.AppDescription=$"
-	Just some looking eyes:)<br/>
-	<small>Created by AWTRIX</small>
-	"$
+	App.Description=$"Just some looking eyes:)"$
+	
+	App.Author="Blueforcer"
+	
+	App.CoverIcon=709
 		
-	'SetupInstructions. You can use HTML to format it
-	App.SetupInfos= $"
-	<b>nothing to do<br/>
-	"$
-	
-	'How many downloadhandlers should be generated
-	App.NeedDownloads=0
-	
-	
 	'Tickinterval in ms (should be 65 by default)
-	App.TickInterval=90
-	
-	'If set to true AWTRIX will wait for the "finish" command before switch to the next app.
-	App.LockApp=False
-	
-	'needed Settings for this App (Wich can be configurate from user via webinterface)
-	App.appSettings=CreateMap()
+	App.Tick=90
 	
 	App.MakeSettings
 	Return "AWTRIX20"
 	
 End Sub
-
 	
 ' ignore
 public Sub GetNiceName() As String
-	Return App.AppName
+	Return App.Name
 End Sub
 
 public Sub Run(Tag As String, Params As Map) As Object
-	Return App.AppControl(Tag,Params)
+	Return App.interface(Tag,Params)
 End Sub
 
 Sub App_genFrame

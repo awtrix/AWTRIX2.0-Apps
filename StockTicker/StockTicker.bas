@@ -31,39 +31,42 @@ Public Sub Initialize() As String
 	App.Initialize(Me,"App")
 	
 	'App name (must be unique, avoid spaces)
-	App.AppName="StockTicker"
+	App.Name="StockTicker"
 	
 	'Version of the App
-	App.AppVersion="2.1"
+	App.Version="1.1"
 	
 	'Description of the App. You can use HTML to format it
-	App.AppDescription=$"
+	App.Description=$"
 	Shows the Current stock price for up to 5 companies<br/> 
-	Powered by alphavantage.co<br />
-	<small>Created by AWTRIX</small>
+	Powered by alphavantage.co
 	"$
+	
+	App.Author="Blueforcer"
+	
+	App.CoverIcon=442
 		
 	'SetupInstructions. You can use HTML to format it
-	App.SetupInfos= $"
+	App.setupDescription= $"
 	<b>APIKey: get your key at https://www.alphavantage.co/<br/>
 	<b>Symbols: stock symbols, you can use up to 5 stocks (with free API key). Just seperate them with ","<br/>
 	<b>ScrollTime: How long each Item schould be shown in seconds","<br/>
 	"$
 	
 	'How many downloadhandlers should be generated
-	App.NeedDownloads=1
+	App.Downloads=1
 	
 	'IconIDs from AWTRIXER. You can add multiple if you want to display them at the same time
 	App.Icons=Array As Int(442)
 	
 	'Tickinterval in ms (should be 65 by default, for smooth scrolling))
-	App.TickInterval=65
+	App.Tick=65
 	
 	'If set to true AWTRIX will wait for the "finish" command before switch to the next app.
-	App.LockApp=True
+	App.Lock=True
 		
 	'needed Settings for this App (Wich can be configurate from user via webinterface)
-	App.appSettings=CreateMap("ScrollTime":3,"APIKey":"","Symbols":"MSFT,APC,GOOGL")
+	App.Settings=CreateMap("ScrollTime":3,"APIKey":"","Symbols":"MSFT,APC,GOOGL")
 	
 	App.MakeSettings
 	Return "AWTRIX20"
@@ -71,25 +74,25 @@ End Sub
 
 ' ignore
 public Sub GetNiceName() As String
-	Return App.AppName
+	Return App.Name
 End Sub
 
 ' ignore
 public Sub Run(Tag As String, Params As Map) As Object
-	Return App.AppControl(Tag,Params)
+	Return App.interface(Tag,Params)
 End Sub
 
 'Called with every update from Awtrix
 'return one URL for each downloadhandler
 Sub App_startDownload(jobNr As Int)
 	Dim Symbol As String = StockList.Get(jobNr-1)
-	App.DownloadURL= "https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol="&Symbol&"&apikey=" & App.get("APIKey")
+	App.Download("https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol="&Symbol&"&apikey=" & App.get("APIKey"))
 End Sub
 
 Sub App_settingsChanged
 	StockList.Clear
+	StockMap.Clear
 	Dim SymbolsString As String = App.get("Symbols")
-	Log(SymbolsString)
 	If SymbolsString.Contains(",") Then
 		Dim l() As String = Regex.Split(",",SymbolsString)
 		For i=0 To l.Length-1
@@ -98,7 +101,7 @@ Sub App_settingsChanged
 	Else
 		StockList.Add(SymbolsString)
 	End If
-	App.NeedDownloads=StockList.Size
+	App.Downloads=StockList.Size
 End Sub
 
 'process the response from each download handler
@@ -107,17 +110,26 @@ End Sub
 'https://json.blueforcer.de/ 
 Sub App_evalJobResponse(Resp As JobResponse)
 	Try
+		If Resp.Success Then
+			
+	
 		Dim parser As JSONParser
 		parser.Initialize(Resp.ResponseString)
 		Dim root As Map = parser.NextObject
-		If root.ContainsKey("Note") Then Return
+		If root.ContainsKey("Note") Then
+			StockMap.Put(Resp.jobNr,CreateMap("Symbol":"---","Change":"-","Price":"0000"))
+			 Return
+			 End If
 		Dim GlobalQUOTE As Map = root.Get("Global Quote")
 		Dim Symbol As String = GlobalQUOTE.Get("01. symbol")
 		Dim change As String = GlobalQUOTE.Get("10. change percent")
 		Dim Price As String = GlobalQUOTE.Get("05. price")
 		StockMap.Put(Resp.jobNr,CreateMap("Symbol":Symbol,"Change":change,"Price":Price))
+		Else
+			StockMap.Put(Resp.jobNr,CreateMap("Symbol":"---","Change":"-","Price":"0000"))
+		End If
 	Catch
-		Log("Error in " & App.AppName)
+		Log("Error in " & App.Name)
 		Log(LastException)
 	End Try
 	
@@ -129,12 +141,19 @@ Sub App_Started
 	stocksfinish=False
 	scrollsdone=1
 	scroll=1
-	scope1 = StockMap.Get(scrollsdone)
-	Symbol=scope1.Get("Symbol")
-	Price=scope1.Get("Price")
-	Price=NumberFormat2(Price,2,2,0,False)
-	Dim change As String= scope1.Get("Change")
-	If change.Contains("-") Then col=Array As Int (255,0,0) Else col=Array As Int (0,255,0)
+	If StockMap.Size=0 Then
+		App.shouldShow=False
+		Log("no stock")
+	Else
+		App.shouldShow=True
+		scope1 = StockMap.Get(scrollsdone)
+		Symbol=scope1.Get("Symbol")
+		Price=scope1.Get("Price")
+		Price=NumberFormat2(Price,2,2,0,False)
+		Dim change As String= scope1.Get("Change")
+		If change.Contains("-") Then col=Array As Int (255,0,0) Else col=Array As Int (0,255,0)
+	End If
+
 End Sub
 
 Sub scrolling
@@ -173,9 +192,9 @@ End Sub
 
 
 Sub App_genFrame
-	App.genText(Symbol,True,scroll,Null)
+	App.genText(Symbol,True,scroll,Null,True)
 	App.drawBMP(0,scroll-2,App.getIcon(442),8,8)
-	App.genText(Price,False,scroll+8,col)
+	App.genText(Price,False,scroll+8,col,True)
 	
 	If Waithelper2 And stocksfinish Then
 		Log("finish")

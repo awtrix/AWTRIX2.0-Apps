@@ -14,20 +14,23 @@ Public Sub Initialize() As String
 	App.Initialize(Me,"App")
 	
 	'change plugin name (must be unique, avoid spaces)
-	App.AppName="Tankerkoenig"
+	App.Name="Tankerkoenig"
 	
 	'Version of the App
-	App.AppVersion="2.1"
+	App.Version="1.0"
 	
 	'Description of the App. You can use HTML to format it
-	App.AppDescription=$"
+	App.Description=$"
 	Zeigt dir die die Spritpreise in Deiner Nähe an.<br/>
-	Powered by Tankerkoenig.<br />
-	<small>Created by AWTRIX</small>
+	Powered by Tankerkoenig.
 	"$
+	
+	App.Author="Blueforcer"
+	
+	App.CoverIcon=128
 		
 	'SetupInstructions. You can use HTML to format it
-	App.SetupInfos= $"
+	App.setupDescription= $"
 	<b>APIkey:</b> https://creativecommons.tankerkoenig.de/.<br/><br/>
 	<b>Latitude & Longitude:</b> Koordinaten kann man hier bekommen https://www.latlong.net/.<br/><br/>
 	<b>Radius:</b> Suchradius in km.<br/><br/>
@@ -35,19 +38,19 @@ Public Sub Initialize() As String
 	"$
 	
 	'How many downloadhandlers should be generated
-	App.NeedDownloads=1
+	App.Downloads=1
 	
 	'IconIDs from AWTRIXER.
 	App.Icons=Array As Int(128)
 	
 	'Tickinterval in ms (should be 65 by default)
-	App.TickInterval=65
+	App.Tick=65
 	
 	'If set to true AWTRIX will wait for the "finish" command before switch to the next app.
-	App.LockApp=True
+	App.Lock=True
 	
 	'needed Settings for this App (Wich can be configurate from user via webinterface)
-	App.appSettings= CreateMap("Latitude":"","Longitude":"","APIKey":"","Radius":3,"Type":"diesel")
+	App.Settings= CreateMap("Latitude":"","Longitude":"","APIKey":"","Radius":3,"Type":"diesel")
 	
 	App.MakeSettings
 	Return "AWTRIX20"
@@ -55,12 +58,12 @@ End Sub
 
 ' ignore
 public Sub GetNiceName() As String
-	Return App.AppName
+	Return App.Name
 End Sub
 
 ' ignore
 public Sub Run(Tag As String, Params As Map) As Object
-	Return App.AppControl(Tag,Params)
+	Return App.interface(Tag,Params)
 End Sub
 
 'Called with every update from Awtrix
@@ -68,7 +71,7 @@ End Sub
 Sub App_startDownload(jobNr As Int)
 	Select jobNr
 		Case 1
-			App.DownloadURL= "https://creativecommons.tankerkoenig.de/json/list.php?lat="&App.get("Latitude")&"&lng="&App.get("Longitude")&"&rad="&App.get("Radius")&"&sort=dist&Type="&App.get("Type")&"&apikey="&App.get("APIKey")
+			App.Download("https://creativecommons.tankerkoenig.de/json/list.php?lat="&App.get("Latitude")&"&lng="&App.get("Longitude")&"&rad="&App.get("Radius")&"&sort=dist&type="&App.get("Type")&"&apikey="&App.get("APIKey"))
 	End Select
 End Sub
 
@@ -87,18 +90,18 @@ Sub App_evalJobResponse(Resp As JobResponse)
 					Dim root As Map = parser.NextObject
 					Dim stations As List = root.Get("stations")
 					For Each colstations As Map In stations
-						sb.Append(colstations.Get("brand")).Append(": ").Append(colstations.Get(App.get("Type"))).Append("€").Append("          ")
+						sb.Append(colstations.Get("brand")).Append(": ").Append(colstations.Get("price")).Append("€").Append("          ")
 					Next
 			End Select
 		End If
 	Catch
-		Log("Error in: "& App.AppName & CRLF & LastException)
+		Log("Error in: "& App.Name & CRLF & LastException)
 		Log("API response: " & CRLF & Resp.ResponseString)
 	End Try
 End Sub
 
 Sub App_genFrame
-	App.genText(sb.ToString,True,1,Null)
+	App.genText(sb.ToString,True,1,Null,True)
 
 	
 	If App.scrollposition>9 Then

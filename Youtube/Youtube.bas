@@ -15,19 +15,16 @@ Public Sub Initialize() As String
 	App.Initialize(Me,"App")
 	
 	'App name (must be unique, avoid spaces)
-	App.AppName="Youtube"
+	App.Name="Youtube"
 	
 	'Version of the App
-	App.AppVersion="2.1"
+	App.Version="1.0"
 	
 	'Description of the App. You can use HTML to format it
-	App.AppDescription=$"
-	Shows your Youtube subscriber count.<br/>
-	<small>Created by AWTRIX</small>
-	"$
+	App.Description="Shows your Youtube subscriber count."
 		
 	'SetupInstructions. You can use HTML to format it
-	App.SetupInfos= $"
+	App.setupDescription= $"
 	<b>APIKey:</b>
 	<ul>
 		<li>Go to https://console.developers.google.com/apis/library</li>
@@ -41,20 +38,21 @@ Public Sub Initialize() As String
 	<b>ChannelID:</b><br/>Login to YouYube website and select 'My channel'. You will get the ID from the page adress afer /Channel/. e.g. https://www.youtube.com/channel/UCpGLALzRO0uaasWTsm9M99w
 	"$
 	
+	App.Author="Blueforcer"
+	
+	App.CoverIcon=155
+	
 	'How many downloadhandlers should be generated
-	App.NeedDownloads=1
+	App.Downloads=1
 	
 	'IconIDs from AWTRIXER. You can add multiple if you want to display them at the same time
 	App.Icons=Array As Int(155)
 	
 	'Tickinterval in ms (should be 65 by default, for smooth scrolling))
-	App.TickInterval=65
-	
-	'If set to true AWTRIX will wait for the "finish" command before switch to the next app.
-	App.LockApp=False
+	App.Tick=65
 	
 	'needed Settings for this App (Wich can be configurate from user via webinterface)
-	App.appSettings=CreateMap("APIKey":"","ChannelID":"")
+	App.Settings=CreateMap("APIKey":"","ChannelID":"")
 	
 	App.MakeSettings
 	Return "AWTRIX20"
@@ -62,12 +60,12 @@ End Sub
 
 ' ignore
 public Sub GetNiceName() As String
-	Return App.AppName
+	Return App.Name
 End Sub
 
 ' ignore
 public Sub Run(Tag As String, Params As Map) As Object
-	Return App.AppControl(Tag,Params)
+	Return App.interface(Tag,Params)
 End Sub
 
 
@@ -76,7 +74,7 @@ End Sub
 Sub App_startDownload(jobNr As Int)
 	Select jobNr
 		Case 1
-			App.DownloadURL= "https://www.googleapis.com/youtube/v3/channels?part=statistics&id="&App.get("ChannelID")&"&key="&App.get("APIKey")
+			App.Download("https://www.googleapis.com/youtube/v3/channels?part=statistics&id="&App.get("ChannelID")&"&key="&App.get("APIKey"))
 	End Select
 End Sub
 
@@ -100,12 +98,12 @@ Sub App_evalJobResponse(Resp As JobResponse)
 			End Select
 		End If
 	Catch
-		Log("Error in: "& App.AppName & CRLF & LastException)
+		Log("Error in: "& App.Name & CRLF & LastException)
 		Log("API response: " & CRLF & Resp.ResponseString)
 	End Try
 End Sub
 
 Sub App_genFrame
-	App.genText(subs,True,1,Null)
+	App.genText(subs.Replace(",",""),True,1,Null,True)
 	App.drawBMP(0,0,App.getIcon(155),8,8)
 End Sub

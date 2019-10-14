@@ -16,20 +16,23 @@ Public Sub Initialize() As String
 	App.Initialize(Me,"App")
 	
 	'App name (must be unique, avoid spaces)
-	App.AppName="Sunrise"
+	App.Name="Sunrise"
 	
 	'Version of the App
-	App.AppVersion="2.1"
+	App.Version="1.0"
 	
 	'Description of the App. You can use HTML to format it
-	App.AppDescription=$"
+	App.Description=$"
 	Shows sunset and sunrise times for a given location.<br />
-	Powered by sunrise-sunset.org <br />
-	<small>Created by 0o.y.o0</small>
+	Powered by sunrise-sunset.org
 	"$
+	
+	App.Author="0o.y.o0"
+	
+	App.CoverIcon=493
 		
 	'SetupInstructions. You can use HTML to format it
-	App.SetupInfos= $"
+	App.setupDescription= $"
 	<b>Latitude:</b>  Enter the latitude for your location in degree (e.g.  50.1343).<br />
 	<b>Longitude:</b>  Enter the longitude for your location in degree (e.g. 8.8398).<br />
 	<b>UTC-Offset:</b>  Enter the UTC offset for your location (e.g. 1 or -1).<br />
@@ -37,19 +40,16 @@ Public Sub Initialize() As String
 	"$
 	
 	'How many downloadhandlers should be generated
-	App.NeedDownloads=1
+	App.Downloads=1
 	
 	'IconIDs from AWTRIXER. You can add multiple if you want to display them at the same time
 	App.Icons=Array As Int(493)
 	
 	'Tickinterval in ms (should be 65 by default, for smooth scrolling))
-	App.TickInterval=65
-	
-	'If set to true AWTRIX will wait for the "finish" command before switch to the next app.
-	App.LockApp=False
+	App.Tick=65
 	
 	'needed Settings for this App (Wich can be configurate from user via webinterface)
-	App.appSettings=CreateMap("Latitude":"50.1343", "Longitude":"8.8398", "UTC-Offset":"2", "12hrFormat":False)
+	App.Settings=CreateMap("Latitude":"50.1343", "Longitude":"8.8398", "UTC-Offset":"2", "12hrFormat":False)
 	
 	App.MakeSettings
 	Return "AWTRIX20"
@@ -57,12 +57,12 @@ End Sub
 
 ' ignore
 public Sub GetNiceName() As String
-	Return App.AppName
+	Return App.Name
 End Sub
 
 ' ignore
 public Sub Run(Tag As String, Params As Map) As Object
-	Return App.AppControl(Tag,Params)
+	Return App.interface(Tag,Params)
 End Sub
 
 
@@ -71,7 +71,7 @@ End Sub
 Sub App_startDownload(jobNr As Int)
 	Select jobNr
 		Case 1
-			App.DownloadURL= "https://api.sunrise-sunset.org/json?lat="&App.get("Latitude")&"&lng="&App.get("Longitude")
+			App.Download("https://api.sunrise-sunset.org/json?lat="&App.get("Latitude")&"&lng="&App.get("Longitude"))
 	End Select
 End Sub
 
@@ -112,7 +112,7 @@ Sub App_evalJobResponse(Resp As JobResponse)
 			End Select
 		End If
 	Catch
-		Log("Error in: "& App.AppName & CRLF & LastException)
+		Log("Error in: "& App.Name & CRLF & LastException)
 		Log("API response: " & CRLF & Resp.ResponseString)
 		DateTime.TimeFormat=savedTime
 	End Try
@@ -121,6 +121,6 @@ End Sub
 
 'Generate your Frame. This Sub is called with every Tick
 Sub App_genFrame
-	App.genText(SunTime,True,1,Null)
+	App.genText(SunTime,True,1,Null,True)
 	App.drawBMP(0,0,App.getIcon(493),8,8)
 End Sub

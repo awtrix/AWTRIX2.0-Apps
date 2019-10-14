@@ -23,19 +23,20 @@ Public Sub Initialize() As String
 	App.Initialize(Me,"App")
 	
 	'change plugin name (must be unique, avoid spaces)
-	App.AppName="GameOfLife"
+	App.Name="GameOfLife"
 	
 	'Version of the App
-	App.AppVersion="2.1"
+	App.Version="1.0"
 	
 	'Description of the App. You can use HTML to format it
-	App.AppDescription=$"
-	Conway's Game of Life<br/>
-	<small>Created by AWTRIX</small>
-	"$
+	App.Description=$"Conway's Game of Life"$
+	
+	App.Author="Blueforcer"
+	
+	App.CoverIcon=712
 		
 	'SetupInstructions. You can use HTML to format it
-	App.SetupInfos= $"
+	App.setupDescription= $"
 	<b>Speed:</b> Ticks in ms. The bigger the slower<br/>
 	<b>Seeds:</b> Value used to initialize the random number generator for the first cells.<br/>
 	<b>ColorOld:</b> Color for old cells (r,g,b)<br/>
@@ -44,18 +45,15 @@ Public Sub Initialize() As String
 	"$
 	
 	'How many downloadhandlers should be generated
-	App.NeedDownloads=0
+	App.Downloads=0
 	
 	'IconIDs from AWTRIXER.
 	
 	'Tickinterval in ms (should be 65 by default)
-	App.TickInterval=65
-	
-	'If set to true AWTRIX will wait for the "finish" command before switch to the next app.
-	App.LockApp=False
-	
+	App.Tick=65
+		
 	'needed Settings for this App (Wich can be configurate from user via webinterface)
-	App.appSettings=CreateMap("AutoReset":10,"Speed":500,"Seeds":65,"ColorOld":"50,50,50","ColorNew":"0,255,0")
+	App.Settings=CreateMap("AutoReset":10,"Speed":500,"Seeds":65,"ColorOld":"50,50,50","ColorNew":"0,255,0")
 	
 	App.MakeSettings
 	Return "AWTRIX20"
@@ -63,12 +61,12 @@ End Sub
 
 ' ignore
 public Sub GetNiceName() As String
-	Return App.AppName
+	Return App.Name
 End Sub
 
 ' ignore
 public Sub Run(Tag As String, Params As Map) As Object
-	Return App.AppControl(Tag,Params)
+	Return App.interface(Tag,Params)
 End Sub
 
 Sub App_Started
@@ -81,7 +79,7 @@ Sub App_Started
 	ColorNew(0)=new(0)
 	ColorNew(1)=new(1)
 	ColorNew(2)=new(2)
-	App.TickInterval=App.get("Speed")
+	App.Tick=App.get("Speed")
 End Sub
 
 Sub App_genFrame

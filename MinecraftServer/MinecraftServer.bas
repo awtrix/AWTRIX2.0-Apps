@@ -15,49 +15,49 @@ Public Sub Initialize() As String
 	App.Initialize(Me,"App")
 	
 	'change plugin name (must be unique, avoid spaces)
-	App.AppName="MinecraftServer"
+	App.Name="MinecraftServer"
 	
 	'Version of the App
-	App.AppVersion="2.1"
+	App.Version="1.0"
 	
 	'Description of the App. You can use HTML to format it
-	App.AppDescription=$"
+	App.Description=$"
 	Shows the player count of a Minecraft Server<br/> 
-	Only appears if the server is online<br/>
-	<small>Created by AWTRIX</small>
+	Only appears if the server is online
 	"$
 		
+	App.Author="Blueforcer"
+	
+	App.CoverIcon=172
+	
 	'SetupInstructions. You can use HTML to format it
-	App.SetupInfos= $"
+	App.setupDescription= $"
 	<b>Host:</b> The Hostname or IP-Adress of the Minecraft server. <br/>
 	"$
 	
 	'How many downloadhandlers should be generated
-	App.NeedDownloads=1
+	App.Downloads=1
 	
 	'IconIDs from AWTRIXER.
 	App.Icons=Array As Int(172)
 	
 	'Tickinterval in ms (should be 65 by default)
-	App.TickInterval=65
-	
-	'If set to true AWTRIX will wait for the "finish" command before switch to the next app.
-	App.LockApp=False
+	App.Tick=65
 	
 	'needed Settings for this App (Wich can be configurate from user via webinterface)
-	App.appSettings=CreateMap("Host":"hub.mcs.gg")
+	App.Settings=CreateMap("Host":"hub.mcs.gg")
 	
 	App.MakeSettings
 	Return "AWTRIX20"
 End Sub
 ' ignore
 public Sub GetNiceName() As String
-	Return App.AppName
+	Return App.Name
 End Sub
 
 ' ignore
 public Sub Run(Tag As String, Params As Map) As Object
-	Return App.AppControl(Tag,Params)
+	Return App.interface(Tag,Params)
 End Sub
 
 'Called with every update from Awtrix
@@ -65,7 +65,7 @@ End Sub
 Sub App_startDownload(jobNr As Int)
 	Select jobNr
 		Case 1
-			App.DownloadURL= "https://mcapi.us/server/status?ip="&App.get("Host")
+			App.Download("https://mcapi.us/server/status?ip="&App.get("Host"))
 	End Select
 End Sub
 
@@ -95,12 +95,12 @@ Sub App_evalJobResponse(Resp As JobResponse)
 			End Select
 		End If
 	Catch
-		Log("Error in: "& App.AppName & CRLF & LastException)
+		Log("Error in: "& App.Name & CRLF & LastException)
 		Log("API response: " & CRLF & Resp.ResponseString)
 	End Try
 End Sub
 
 Sub App_genFrame
-	App.genText(playersNow,True,1,Null)
+	App.genText(playersNow,True,1,Null,False)
 	App.drawBMP(0,0,App.getIcon(172),8,8)
 End Sub

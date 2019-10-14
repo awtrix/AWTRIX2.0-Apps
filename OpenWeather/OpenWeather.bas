@@ -4,7 +4,6 @@ ModulesStructureVersion=1
 Type=Class
 Version=4.2
 @EndOfDesignText@
-
 Sub Class_Globals
 	Dim App As AWTRIX
 	
@@ -19,43 +18,43 @@ Public Sub Initialize() As String
 	App.Initialize(Me,"App")
 	
 	'change plugin name (must be unique, avoid spaces)
-	App.AppName="OpenWeather"
+	App.Name="OpenWeather"
 	
 	'Version of the App
-	App.AppVersion="2.1"
+	App.Version="1.0"
 	
 	'Description of the App. You can use HTML to format it
-	App.AppDescription=$"
+	App.Description=$"
 	Shows the current temperature of your location.<br/>
-	powered by OpenWeatherMap.org<br/>
-	<small>Created by AWTRIX</small>
+	powered by OpenWeatherMap.org<
 	"$
+	
+	App.CoverIcon=349
+	
+	App.Author="Blueforcer"
 		
 	'SetupInstructions. You can use HTML to format it
-	App.SetupInfos= $"
+	App.setupDescription= $"
 	<b>Unit:</b> enter your unit (metric or imperial)<br/>
 	<b>LocationID:</b> search for the weather at your location and get the ID from the adressbar (e.g https://openweathermap.org/city/2874230)<br/>
 	<b>APIKey:</b> get yours at https://home.openweathermap.org/api_keys<br/><br/>
 	"$
 	
 	'How many downloadhandlers should be generated
-	App.NeedDownloads=1
+	App.Downloads=1
 	
 	'IconIDs from AWTRIXER.
 	App.Icons=Array(399)
 	
 	'Tickinterval in ms (should be 65 by default)
-	App.TickInterval=65
+	App.Tick=65
 	
 	'If set to true AWTRIX will wait for the "finish" command before switch to the next app.
-	App.LockApp=False
+	App.Lock=False
 	
 	'needed Settings for this App (Wich can be configurate from user via webinterface)
-	App.appSettings=CreateMap("APIKey":"","Unit":"metric","LocationID":"2874230")
+	App.Settings=CreateMap("APIKey":"","Unit":"metric","LocationID":"2874230")
 	
-	App.addMenuItem(Array As String("metric","imperial"),"Unit","Short Options","Unit",True)
-	App.addMenuItem(Array As String(),"APIKey","Text","APIKey",True)
-	App.addMenuItem(Array As String(),"Location ID","Number","LocationID",True)
 	
 	App.MakeSettings
 	Return "AWTRIX20"
@@ -63,12 +62,12 @@ End Sub
 
 ' ignore
 public Sub GetNiceName() As String
-	Return App.AppName
+	Return App.Name
 End Sub
 
 ' ignore
 public Sub Run(Tag As String, Params As Map) As Object
-	Return App.AppControl(Tag,Params)
+	Return App.interface(Tag,Params)
 End Sub
 
 Sub App_iconRequest
@@ -80,7 +79,7 @@ End Sub
 Sub App_startDownload(jobNr As Int)
 	Select jobNr
 		Case 1
-			App.DownloadURL= "http://api.openweathermap.org/data/2.5/weather?id="&App.get("LocationID")&"&appid="&App.get("APIKey")&"&units="&App.get("Unit")
+			App.Download("http://api.openweathermap.org/data/2.5/weather?id="&App.get("LocationID")&"&appid="&App.get("APIKey")&"&units="&App.get("Unit"))
 	End Select
 End Sub
 
@@ -106,14 +105,14 @@ Sub App_evalJobResponse(Resp As JobResponse)
 			End Select
 		End If
 	Catch
-		Log("Error in: "& App.AppName & CRLF & LastException)
+		Log("Error in: "& App.Name & CRLF & LastException)
 		Log("API response: " & CRLF & Resp.ResponseString)
 	End Try
 End Sub
 
 
 Sub App_genFrame
-	App.genText(temp,True,1,Null)
+	App.genText(temp,True,1,Null,True)
 	App.drawBMP(0,0,App.getIcon(iconID),8,8)
 End Sub
 

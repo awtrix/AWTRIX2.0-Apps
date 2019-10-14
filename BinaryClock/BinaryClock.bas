@@ -17,12 +17,12 @@ End Sub
 
 ' ignore
 public Sub GetNiceName() As String
-	Return App.AppName
+	Return App.Name
 End Sub
 
 ' ignore
 public Sub Run(Tag As String, Params As Map) As Object
-	Return App.AppControl(Tag,Params)
+	Return App.interface(Tag,Params)
 End Sub
 
 ' Config your App
@@ -31,37 +31,21 @@ Public Sub Initialize() As String
 	App.Initialize(Me,"App")
 	
 	'App name (must be unique, avoid spaces)
-	App.AppName="BinaryClock"
+	App.Name="BinaryClock"
 	
 	'Version of the App
-	App.AppVersion="2.1"
+	App.Version="1.0"
 	
 	'Description of the App. You can use HTML to format it
-	App.AppDescription=$"
-	Shows the time in binary format<br/>
-	<small>Created by AWTRIX</small>
-	"$
-		
-	'SetupInstructions. You can use HTML to format it
-	App.SetupInfos= $"
-	<b>Nothing to do!<br/>
-	"$
+	App.Description="Shows the time in binary format."
 	
-	'How many downloadhandlers should be generated
-	App.NeedDownloads=0
+	App.Author="Blueforcer"
 	
-	'IconIDs from AWTRIXER. You can add multiple if you want to display them at the same time
-	App.Icons=Array As Int()
+	App.CoverIcon = 708
 	
 	'Tickinterval in ms (should be 65 by default, for smooth scrolling))
-	App.TickInterval=1000
-	
-	'If set to true AWTRIX will wait for the "finish" command before switch to the next app.
-	App.LockApp=False
-	
-	'needed Settings for this App (Wich can be configurate from user via webinterface)
-	App.appSettings=CreateMap()
-	
+	App.Tick=1000
+		
 	App.MakeSettings
 	Return "AWTRIX20"
 End Sub
@@ -70,7 +54,6 @@ End Sub
 Sub App_Started
 	
 End Sub
-
 
 'With this sub you build your frame.
 Sub App_genFrame
