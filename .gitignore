@@ -3,6 +3,8 @@
 *.class
 *.java
 *.class
+*.png
+*.jpg
 *.meta
 *.zip
 *.xml
