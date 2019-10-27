@@ -19,7 +19,7 @@ Public Sub Initialize() As String
 	App.Name="Time"
 	
 	'Version of the App
-	App.Version="1.0"
+	App.Version="1.1"
 	
 	'Description of the App. You can use HTML to format it
 	App.Description="Shows Time, Date and the day of the week."
@@ -34,6 +34,7 @@ Public Sub Initialize() As String
 	<b>ShowSeconds:</b>  Whether the seconds should be displayed or not (true/false).<br />
 	<b>ShowDate:</b>  Whether the date should be displayed or not (true/false).<br />
 	<b>12hrFormat:</b>  Switch from 24hr to 24h timeformat (true/false).<br />
+	<b>disableBlinking:</b>  Disable the colon blinking (true/false).<br />
 	<b>DateFormat:</b>  Set date format (DD/MM or MM/DD) .<br />
 	"$
 	
@@ -41,7 +42,7 @@ Public Sub Initialize() As String
 	App.Tick=65
 	
 	'needed Settings for this App (Wich can be configurate from user via webinterface)
-	App.Settings= CreateMap("ShowSeconds":False,"ShowWeekday":True,"ShowDate":True,"12hrFormat":False,"DateFormat":"DD/MM") 'needed Settings for this Plugin
+	App.Settings= CreateMap("ShowSeconds":False,"ShowWeekday":True,"ShowDate":True,"12hrFormat":False,"disableBlinking":False,"DateFormat":"DD/MM") 'needed Settings for this Plugin
 	
 	App.MakeSettings
 	Return "AWTRIX20"
@@ -96,7 +97,7 @@ Sub App_genFrame
 			If  App.get("ShowSeconds") Then
 				App.drawText(timeString,xpos,scroll,Null)
 			Else
-				If second Mod 2 >0 Then
+				If second Mod 2 >0 Or App.get("disableBlinking") Then
 					App.drawText(timeString,xpos,scroll,Null)
 				Else
 					App.drawText(timeString.Replace(":"," "),xpos,scroll,Null)
@@ -110,7 +111,7 @@ Sub App_genFrame
 			If App.get("ShowSeconds") Then
 				App.drawText(timeString,xpos,1,Null)
 			Else
-				If second Mod 2 >0 Then
+				If second Mod 2 >0 Or App.get("disableBlinking") Then
 					App.drawText(timeString,xpos,1,Null)
 				Else
 					App.drawText(timeString.Replace(":"," "),xpos,1,Null)
@@ -122,7 +123,7 @@ Sub App_genFrame
 		If App.get("ShowSeconds") Then
 			App.drawText(timeString,xpos,1,Null)
 		Else
-			If second Mod 2 >0 Then
+			If second Mod 2 >0 Or App.get("disableBlinking") Then
 				App.drawText(timeString,xpos,1,Null)
 			Else
 				App.drawText(timeString.Replace(":"," "),xpos,1,Null)
