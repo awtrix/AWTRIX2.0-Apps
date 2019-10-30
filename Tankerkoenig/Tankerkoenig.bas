@@ -17,7 +17,7 @@ Public Sub Initialize() As String
 	App.Name="Tankerkoenig"
 	
 	'Version of the App
-	App.Version="1.0"
+	App.Version="1.1"
 	
 	'Description of the App. You can use HTML to format it
 	App.Description=$"
@@ -90,7 +90,34 @@ Sub App_evalJobResponse(Resp As JobResponse)
 					Dim root As Map = parser.NextObject
 					Dim stations As List = root.Get("stations")
 					For Each colstations As Map In stations
-						sb.Append(colstations.Get("brand")).Append(": ").Append(colstations.Get("price")).Append("€").Append("          ")
+						
+						sb.Initialize
+						Dim parser As JSONParser
+						parser.Initialize(Resp.ResponseString)
+						Dim root As Map = parser.NextObject
+						Dim stations As List = root.Get("stations")
+						For Each colstations As Map In stations
+							If Not(colstations.ContainsKey("price")) Then
+								sb.Append(colstations.Get("brand")).Append(": ")
+							End If
+							If colstations.ContainsKey("e10") Then
+								sb.Append($"e10:${colstations.Get("e10")}€ / "$)
+							End If
+					
+							If colstations.ContainsKey("e5") Then
+								sb.Append($"e5:${colstations.Get("e5")}€ / "$)
+							End If
+						
+							If colstations.ContainsKey("diesel") Then
+								sb.Append($"diesel:${colstations.Get("diesel")}€ "$)
+							End If
+						
+							If colstations.ContainsKey("price") Then
+								sb.Append(colstations.Get("brand")).Append(": ").Append(colstations.Get("price")).Append("€").Append("          ")
+							Else
+								sb.Append("          ")
+							End If
+						Next
 					Next
 			End Select
 		End If
