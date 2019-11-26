@@ -33,7 +33,7 @@ Public Sub Initialize() As String
 	App.name = "Netatmo"
 	
 	'Version of the App
-	App.version = "1.0"
+	App.version = "1.1"
 	
 	'Description of the App. You can use HTML to format it
 	App.description = $"
@@ -187,6 +187,11 @@ Sub App_evalJobResponse(Resp As JobResponse)
 '							Next
 '							Dim id As String = colmodules.Get("_id")
 							Dim module_name As String = colmodules.Get("module_name")
+							
+							module_name=module_name.Replace("\u00c4","Ä").Replace("\u00e4","ä")
+							module_name=module_name.Replace("\u00d6","Ö").Replace("\u00f6","ö")
+							module_name=module_name.Replace("\u00dc","Ü").Replace("\u00fc","ü")
+							module_name=module_name.Replace("\u00df","ß")
 							Dim dashboard_data As Map = colmodules.Get("dashboard_data")
 '							Dim date_min_temp As Int = dashboard_data.Get("date_min_temp")
 '							Dim time_utc As Int = dashboard_data.Get("time_utc")
