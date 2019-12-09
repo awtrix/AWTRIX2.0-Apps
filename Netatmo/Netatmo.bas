@@ -11,6 +11,9 @@ Sub Class_Globals
 	'Declare your variables here
 	Dim OutsideTemp As Double = 0
 	Dim access_token As String
+	Dim CO2Value As Int = 0 
+	Dim ModuleType As String =""
+	Dim DisplayText As String 
 End Sub
 
 ' ignore
@@ -33,7 +36,7 @@ Public Sub Initialize() As String
 	App.name = "Netatmo"
 	
 	'Version of the App
-	App.version = "1.1"
+	App.version = "1.3"
 	
 	'Description of the App. You can use HTML to format it
 	App.description = $"
@@ -128,7 +131,7 @@ Sub App_startDownload(jobNr As Int)
 			Log("Starting get Outside Temp")
 			Dim payload As String
 			payload = "access_token="&access_token&"&device_id="&App.get("DeviceID")
-			Log("Case 2: "&payload)
+'			Log("Case 2: "&payload)
 			App.PostString("https://api.netatmo.com/api/getstationsdata", payload)
 			
 	End Select
@@ -170,20 +173,28 @@ Sub App_evalJobResponse(Resp As JobResponse)
 					Dim devices As List = body.Get("devices")
 					For Each coldevices As Map In devices
 '						Dim station_name As String = coldevices.Get("station_name")
+						Dim module_name As String = coldevices.Get("module_name")
 '						Dim Type As String = coldevices.Get("type")
 '						Dim reachable As String = coldevices.Get("reachable")
 						Dim modules As List = coldevices.Get("modules")
+						Dim dashboard_data As Map = coldevices.Get("dashboard_data")
+						If module_name = App.get("Modulename") Then
+							Dim Temperature As Double = dashboard_data.Get("Temperature")
+							OutsideTemp = Temperature
+							DisplayText = OutsideTemp & "°"
+						End If
 						For Each colmodules As Map In modules
 '							Dim last_seen As Int = colmodules.Get("last_seen")
 '							Dim last_message As Int = colmodules.Get("last_message")
-'							Dim Type As String = colmodules.Get("type")
+							Dim Type_ As String = colmodules.Get("type")
+							ModuleType = Type_
 '							Dim reachable As String = colmodules.Get("reachable")
 '							Dim last_setup As Int = colmodules.Get("last_setup")
 '							Dim rf_status As Int = colmodules.Get("rf_status")
 '							Dim battery_vp As Int = colmodules.Get("battery_vp")
 '							Dim battery_percent As Int = colmodules.Get("battery_percent")
 '							Dim data_type As List = colmodules.Get("data_type")
-'							For Each coldata_type As String In data_type
+'							For Each coldata_type As String In data_type			
 '							Next
 '							Dim id As String = colmodules.Get("_id")
 							Dim module_name As String = colmodules.Get("module_name")
@@ -196,7 +207,7 @@ Sub App_evalJobResponse(Resp As JobResponse)
 '							Dim date_min_temp As Int = dashboard_data.Get("date_min_temp")
 '							Dim time_utc As Int = dashboard_data.Get("time_utc")
 '							Dim date_max_temp As Int = dashboard_data.Get("date_max_temp")
-							Dim Temperature As Double = dashboard_data.Get("Temperature")
+							
 '							Dim min_temp As Double = dashboard_data.Get("min_temp")
 '							Dim Humidity As Int = dashboard_data.Get("Humidity")
 '							Dim temp_trend As String = dashboard_data.Get("temp_trend")
@@ -204,7 +215,16 @@ Sub App_evalJobResponse(Resp As JobResponse)
 '							Dim firmware As Int = colmodules.Get("firmware")
 				
 							If module_name = App.get("Modulename") Then
+								Dim Temperature As Double = dashboard_data.Get("Temperature")
 								OutsideTemp = Temperature
+								DisplayText = OutsideTemp & "°"
+							End If
+							
+							If ModuleType = "NAModule4" And module_name = App.get("Modulename") Then								
+								Dim CO2 As Int = dashboard_data.Get("CO2")
+								CO2Value = CO2
+								Dim ToString1 As String = Temperature
+								DisplayText = ToString1 & "° CO2: " & CO2Value
 							End If
 						Next
 '						Dim date_setup As Int = coldevices.Get("date_setup")
@@ -217,6 +237,7 @@ Sub App_evalJobResponse(Resp As JobResponse)
 '						Next
 '						Dim id As String = coldevices.Get("_id")
 '						Dim module_name As String = coldevices.Get("module_name")
+'						Log(module_name)
 '						Dim place As Map = coldevices.Get("place")
 '						Dim altitude As Int = place.Get("altitude")
 '						Dim country As String = place.Get("country")
@@ -230,8 +251,7 @@ Sub App_evalJobResponse(Resp As JobResponse)
 '						Dim time_utc As Int = dashboard_data.Get("time_utc")
 '						Dim Temperature As Double = dashboard_data.Get("Temperature")
 '						Dim pressure_trend As String = dashboard_data.Get("pressure_trend")
-'						Dim Noise As Int = dashboard_data.Get("Noise")
-'						Dim CO2 As Int = dashboard_data.Get("CO2")
+'						Dim Noise As Int = dashboard_data.Get("Noise")																			
 '						Dim temp_trend As String = dashboard_data.Get("temp_trend")
 '						Dim Pressure As Double = dashboard_data.Get("Pressure")
 '						Dim date_max_temp As Int = dashboard_data.Get("date_max_temp")
@@ -266,6 +286,7 @@ End Sub
 
 'With this sub you build your frame wtih eveery Tick.
 Sub App_genFrame
-	App.genText(OutsideTemp,True,1,Null,False)
+'	Log("Displaying: " & DisplayText)
+	App.genText(DisplayText,True,1,Null,False)
 	App.drawBMP(0,0,App.getIcon(874),8,8)
 End Sub

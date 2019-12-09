@@ -6,12 +6,12 @@ Library2=json
 Library3=jrandomaccessfile
 Library4=jokhttputils2
 Library5=okhttp
-Module1=Netatmo
-Module2=AWTRIX
+Module1=AWTRIX
+Module2=Netatmo
 NumberOfFiles=0
 NumberOfLibraries=5
 NumberOfModules=2
-Version=7.51
+Version=8
 @EndOfDesignText@
 
 #Region Project Attributes 
