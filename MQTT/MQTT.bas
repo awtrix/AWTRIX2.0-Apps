@@ -83,6 +83,5 @@ End Sub
 'With this sub you build your frame wtih eveery Tick.
 Sub App_genFrame
 	
-	App.genText("need Server update!",True,1,Array As Int(255,0,0),False)
-	App.drawBMP(0,0,App.getIcon(921),8,8)
+
 End Sub
