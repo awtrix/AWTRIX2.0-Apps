@@ -46,7 +46,7 @@ Public Sub Initialize() As String
 	App.name="FlappyAwtrix"
 	
 	'Version of the App
-	App.version="1.0"
+	App.version="1.1"
 	
 	'Description of the App. You can use HTML to format it
 	App.description=$"
@@ -55,7 +55,7 @@ Public Sub Initialize() As String
 	
 	App.author = "Blueforcer"
 	
-	App.howToPLay=$"Press A to start the Game.
+	App.howToPlay=$"Press A to start the Game.
 	The longer you hold Button A, the higher you go. Once you stop, you drop towards the ground.
 	Stay in the middle of screen until the first set of pipes appears. Measure your tap heights to go between the two pipes."$
 	
@@ -103,6 +103,7 @@ Sub App_Started
 	gap1Y = Rnd(0, 3)
 	gap2Y = Rnd(0, 3)
 	gap3Y = Rnd(0, 3)
+	restartGame
 End Sub
 
 'With this sub you build your frame.

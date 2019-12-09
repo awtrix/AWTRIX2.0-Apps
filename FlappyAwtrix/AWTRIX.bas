@@ -17,7 +17,6 @@ Version=7.31
 #Event: startDownload(jobNr As Int) As String
 #Event: evalJobResponse(Resp As JobResponse)
 
-
 private Sub Class_Globals
 	Private Appduration As Int
 	Private mscrollposition As Int
@@ -40,7 +39,7 @@ private Sub Class_Globals
 	Private MatrixWidth As Int = 32
 	Private MatrixHeight As Int = 8
 	Private DownloadHeader As Map
-	Private pluginversion as int = 1
+	Private pluginversion As Int = 1
 	Private Tag As List = Array As String()
 	Private playdescription As String
 	Private Cover As Int
@@ -78,14 +77,12 @@ private Sub Class_Globals
 	Private OAuth As Boolean
 	Private oauthmap As Map
 	Private mContentType As String
-
 	Private poll As Map = CreateMap("enable":False,"sub":"")
 	Private mHidden As Boolean
 End Sub
 
 'Initializes the Helperclass.
 Public Sub Initialize(class As Object, Eventname As String)
-
 	oauthmap.Initialize
 	Tag.Initialize
 	httpMap.Initialize
@@ -336,7 +333,6 @@ Public Sub interface(function As String, Params As Map) As Object
 					CallSub(Target,event&"_genFrame")'ignore
 				End If
 			End If
-		
 			Return commandList
 		Case "infos"
 			Dim infos As Map
@@ -410,7 +406,6 @@ Public Sub interface(function As String, Params As Map) As Object
 			Else
 				Return True
 			End If
-			
 		Case "shouldShow"
 			Return show
 		Case "poll"
@@ -551,7 +546,6 @@ Public Sub  saveSingleSetting(key As String, value As Object)
 	End If
 End Sub
 
-
 'Draws a Bitmap
 Public Sub drawBMP(x As Int,y As Int,bmp() As Short,width As Int, height As Int)
 	commandList.Add(CreateMap("type":"bmp","x":x,"y":y,"bmp":bmp,"width":width,"height":height))
@@ -661,6 +655,7 @@ Private Sub Control(controller As Map)
 	If controller.ContainsKey("GameStart") And Game Then
 		Dim state As Boolean = controller.Get("GameStart")
 		If state Then
+			finishApp=False
 			show=True
 		Else
 			finishApp=True
@@ -926,7 +921,6 @@ End Sub
 Public Sub polling(enable As Boolean,subname As String)
 	poll=CreateMap("enable":enable,"sub":subname)
 End Sub
-
 
 'hide this app from apploop
 Sub setHidden(hide As Boolean)
