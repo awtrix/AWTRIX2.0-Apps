@@ -81,6 +81,13 @@ private Sub Class_Globals
 
 	Private poll As Map = CreateMap("enable":False,"sub":"")
 	Private mHidden As Boolean
+	
+	Type FrameObject(text As String,TextLength As Int, Icon As Int)
+	Private nextString As Boolean = False
+	Private waitAfterFallingDown As Boolean = False
+	Private numberOfString As Int = 0
+	Private timeGenText2 As Long
+	
 End Sub
 
 'Initializes the Helperclass.
@@ -314,7 +321,6 @@ Public Sub interface(function As String, Params As Map) As Object
 			End If
 			Return httpMap
 		Case "httpResponse"
-			
 			Dim res As JobResponse
 			res.Initialize
 			res.jobNr=Params.Get("jobNr")
@@ -484,6 +490,120 @@ Public Sub genText(Text As String,IconOffset As Boolean,yPostition As Int,Color(
 	End If
 End Sub
 
+Public Sub genText2(list As List,Color() As Int,callFinish As Boolean, delayBetweenStrings As Int, delayAfterFallingDown As Int)
+    Log("Begining of genText2 and numberOfString is: " & numberOfString & " Nextstring is: " & nextString)
+	For Each item In list
+	 Log("List Content: " & item)
+	Next
+	If nextString Then
+		If DateTime.now - timeGenText2 > delayBetweenStrings Then
+			nextString = False
+		End If
+	Else If waitAfterFallingDown Then
+		If DateTime.now - timeGenText2 > delayAfterFallingDown Then
+			waitAfterFallingDown = False
+		End If
+	Else
+		Dim frame As FrameObject
+		frame = list.Get(numberOfString)
+		Log("The Frame is: " & frame)
+		If  Not (frame.Icon > -1) Then
+			frame.Icon = 0
+		End If
+		
+		If frame.text.Length=0 Then
+			numberOfString = numberOfString + 1
+			Log("Number Of String is: " & numberOfString)
+			If numberOfString > list.Size - 1 Then
+				numberOfString = 0
+			End If
+			Return
+		End If
+			'Text in Pixel
+		Dim x As Int
+		Dim offset As Int
+		If frame.Icon>0 Then offset = 8 Else offset = 0
+	
+		If frame.TextLength+offset<=MatrixWidth Then
+			If frame.Icon>0 Then
+				x=((MatrixWidth/2)-frame.TextLength/2)+4
+				drawBMP(0,0,getIcon(frame.Icon),8,8)
+			Else
+				x=(MatrixWidth/2)-frame.TextLength/2
+			End If
+			Log("Frame text is: " & frame.text)
+			drawText(frame.text,x,mscrollposition-38,Color)
+			mscrollposition=mscrollposition+1
+		End If
+	
+		If frame.TextLength+offset>MatrixWidth Then
+			If frame.Icon>0 Then
+				x = 9
+			Else
+				x = 1
+			End If
+			If mscrollposition-38 > 1 Then
+				If (8-(mscrollposition-38)+1)>=0 Then
+					If frame.Icon>0 Then
+						drawBMP(0-(mscrollposition-38)+1,0,getIcon(frame.Icon),8,8)
+					End If
+				End If
+				drawText(frame.text,x-(mscrollposition-39),1,Color)
+			Else
+				If frame.Icon>0 Then
+					drawBMP(0,0,getIcon(frame.Icon),8,8)
+				End If
+				drawText(frame.text,x,mscrollposition-38,Color)
+			End If
+			
+			mscrollposition=mscrollposition+1
+			If mscrollposition = 40 Then
+				waitAfterFallingDown = True
+				timeGenText2 = DateTime.now
+				Return
+			End If
+		End If
+		
+		'finishing?
+		If frame.TextLength+offset<=MatrixWidth Then
+			If mscrollposition - 38 > 1  Then
+			
+					mscrollposition=MatrixWidth
+				numberOfString = numberOfString + 1
+					timeGenText2 = DateTime.now
+					nextString = True
+				If numberOfString > list.Size - 1 Then
+					numberOfString = 0
+						finish
+					End If
+				
+			End If
+		End If
+	
+		If frame.TextLength+offset+1>MatrixWidth Then
+			Dim stop As Int
+			If frame.Icon>0 Then
+				stop = frame.TextLength + 9 + 5
+			Else
+				stop = frame.TextLength + 5
+			End If
+		
+			If mscrollposition - 34 > stop  Then
+					mscrollposition=MatrixWidth
+				numberOfString = numberOfString + 1
+					timeGenText2 = DateTime.now
+					'hier nicht warten?!
+					   nextString = True
+					If numberOfString > list.Size - 1 Then
+						numberOfString = 0
+						finish
+					End If
+				
+			End If
+		End If
+	End If
+End Sub
+
 'This functions build and savee the settings. You dont need to call this manually
 Public Sub makeSettings
 	If Game Then show=False
@@ -535,13 +655,14 @@ End Sub
 
 'Returns the value of a Settingskey
 public Sub get(SettingsKey As String) As Object
-	If appSettings.ContainsKey(SettingsKey) Then
+	If appSettings.ContainsKey(SettingsKey) Then		
 		Return appSettings.Get(SettingsKey)
 	Else
 		Log(SettingsKey & " not found")
 		Return ""
 	End If
 End Sub
+
 
 Public Sub  saveSingleSetting(key As String, value As Object)
 	If File.Exists(File.Combine(File.DirApp,"Apps"),appName&".ax") Then
