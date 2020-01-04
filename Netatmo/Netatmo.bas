@@ -14,6 +14,10 @@ Sub Class_Globals
 	Dim CO2Value As Int = 0 
 	Dim ModuleType As String =""
 	Dim DisplayText As String 
+	
+	Dim displaylist As List
+	Dim ModuleUpdate As Boolean = False
+	Dim SettingsMap As Map
 End Sub
 
 ' ignore
@@ -31,12 +35,13 @@ Public Sub Initialize() As String
 	
 	'initialize the AWTRIX class and parse the instance; dont touch this
 	App.Initialize(Me,"App")
-	
+	displaylist.Initialize
+	SettingsMap.Initialize
 	'App name (must be unique, no spaces)
 	App.name = "Netatmo"
 	
 	'Version of the App
-	App.version = "1.3"
+	App.version = "1.4"
 	
 	'Description of the App. You can use HTML to format it
 	App.description = $"
@@ -49,8 +54,18 @@ Public Sub Initialize() As String
 	'Icon (ID) to be displayed in the Appstore and MyApps
 	App.coverIcon = 874
 	
+	
+	SettingsMap.Put("ClientID","")
+	SettingsMap.Put("ClientSecret","")
+	SettingsMap.Put("DeviceID","")
+	SettingsMap.Put("E-Mail","")
+	SettingsMap.Put("Password","")
+	SettingsMap.Put("Modulename","")
+	SettingsMap.Put("AutoGetModules",False)
+	App.settings = SettingsMap
+	
 	'needed Settings for this App (Wich can be configurate from user via webinterface)
-	App.settings = CreateMap("ClientID":"","ClientSecret":"","DeviceID":"","E-Mail":"","Password":"","Modulename":"")
+	'App.settings = CreateMap("ClientID":"","ClientSecret":"","DeviceID":"","E-Mail":"","Password":"","Modulename":"","ModuleCount":"","AutoGetModules":False)
 		
 	'Setup Instructions. You can use HTML to format it
 	App.setupDescription = $"
@@ -58,7 +73,11 @@ Public Sub Initialize() As String
 	<b>ClientID:</b>Create an app at https://dev.netatmo.com/myaccount</br></br>
 	<b>ClientSecret:</b>Create an app at https://dev.netatmo.com/myaccount</br></br>
 	<b>Modulename:</b>Name of the Module from wich you want to show the Temp</br></br>
+	<b>Init the App with AutoGenMoudles. Enable and Save. Leave the Config for Netatmo and comeback. Then you can select all your desired values. After you Save the values will be displayed wenn the next update cycle is past.</br>
 	"$
+	
+	
+	
 	
 	'define some tags to simplify the search in the Appstore
 	App.tags = Array As String("Netatmo", "Awesome")
@@ -73,14 +92,14 @@ Public Sub Initialize() As String
 	App.tick = 65
 	
 	'If set to true AWTRIX will wait for the "finish" command before switch to the next app.
-	App.lock = False
+	App.lock = True
 	
 	'This tolds AWTRIX that this App is an Game.
 	App.isGame = False
 	
 	'If set to true, AWTRIX will download new data before each start.
 	App.forceDownload = False
-
+      
 	'ignore
 	App.makeSettings
 	Return "AWTRIX20"
@@ -104,9 +123,39 @@ End Sub
 
 'If the user change any Settings in the webinterface, this sub will be called
 Sub App_settingsChanged
-	
+	Log(App.get("AutoGetModules"))
+	Dim AutoUpdateEnabled As String = App.get("AutoGetModules")
+If(AutoUpdateEnabled == "true") Then
+	 Log("Autoupdate True ... Disabling and Starting..")
+	 App.saveSingleSetting("AutoGetModules", False)
+	 ModuleUpdate = True 
+'	    Get_Modules
+'	If(App.get("ModuleCount") == "1") Then
+		
+'		App.settings = CreateMap("ClientID":"","ClientSecret":"","DeviceID":"","E-Mail":"","Password":"","Modulename":"","ModuleCount":"")
+'		App.makeSettings
+'	End If
+'	If(App.get("ModuleCount") == "2") Then
+		
+'		App.settings = CreateMap("ClientID":"","ClientSecret":"","DeviceID":"","E-Mail":"","Password":"","Modulename":"","ModuleCount":"", "Modulename2":"")
+'		App.makeSettings
+'	End If
+'	If(App.get("ModuleCount") == "3") Then
+		
+'		App.settings = CreateMap("ClientID":"","ClientSecret":"","DeviceID":"","E-Mail":"","Password":"","Modulename":"","ModuleCount":"", "Modulename2":"", "Modulename3":"")
+'		App.makeSettings
+'	End If
+End If
 End Sub
 
+
+'Sub Get_Modules
+'	Dim payload As String
+'	payload = "grant_type=password&client_id="&App.get("ClientID")&"&client_secret="&App.get("ClientSecret")&"&username="&App.get("E-Mail")&"&password="&App.get("Password")
+'	Log("Get_Modules_Started")
+''	App.PostString("https://api.netatmo.com/oauth2/token", payload)
+	
+'End Sub
 'if you create an Game, use this sub to get the button presses from the Weeebinterface or Controller
 'button defines the buttonID of thee controller, dir is true if it is pressed
 Sub App_controllerButton(button As Int,dir As Boolean)
@@ -146,10 +195,11 @@ Sub App_evalJobResponse(Resp As JobResponse)
 	Try
 		If Resp.success Then
 			Log(Resp.ResponseString)
+			Log("-------------------" & Resp.jobNr)
 			Select Resp.jobNr
 				Case 1
 					
-'					Log("JobName = " & Resp.jobNr & ", Success = " & Resp.Success)
+					Log("JobName = " & Resp.jobNr & ", Success = " & Resp.Success)
 					If Resp.Success = True Then
 						Dim parser As JSONParser
 						parser.Initialize(Resp.ResponseString)
@@ -164,25 +214,56 @@ Sub App_evalJobResponse(Resp As JobResponse)
 					End If
 				Case 2
 '					Log("JobName = " & Resp.jobNr & ", Success = " & Resp.Success)
+    				displaylist.Clear
+					
 					Dim parser As JSONParser
 					parser.Initialize(Resp.ResponseString)
 					Dim root As Map = parser.NextObject
 '					Dim time_server As Int = root.Get("time_server")
 '					Dim time_exec As Double = root.Get("time_exec")
+					
 					Dim body As Map = root.Get("body")
 					Dim devices As List = body.Get("devices")
 					For Each coldevices As Map In devices
 '						Dim station_name As String = coldevices.Get("station_name")
 						Dim module_name As String = coldevices.Get("module_name")
-'						Dim Type As String = coldevices.Get("type")
+						Dim Type2 As String = coldevices.Get("type")
+                        If ModuleUpdate = True Then 
+							SettingsMap.Put(module_name, False)
+							If Type2 = "NAMain" Then
+								SettingsMap.Put(module_name & "_Temp", False)
+								SettingsMap.Put(module_name & "_CO2", False)
+							 End If
+							If Type2 = "NAModule4" Then
+								SettingsMap.Put(module_name & "_Temp", False)
+								SettingsMap.Put(module_name & "_CO2", False)
+							End If
+							If Type2 = "NAModule1" Then
+								SettingsMap.Put(module_name & "_Temp", False)							
+							End If
+                        End If
+						
+
 '						Dim reachable As String = coldevices.Get("reachable")
 						Dim modules As List = coldevices.Get("modules")
 						Dim dashboard_data As Map = coldevices.Get("dashboard_data")
-						If module_name = App.get("Modulename") Then
+						Try
+						If  App.get(module_name & "_Temp")Then
 							Dim Temperature As Double = dashboard_data.Get("Temperature")
+								Dim frame0 As FrameObject
 							OutsideTemp = Temperature
 							DisplayText = OutsideTemp & "°"
+							frame0.Initialize
+							frame0.text = DisplayText
+							frame0.TextLength = App.calcTextLength(frame0.text)
+							frame0.Icon = 874
+							Log("I am here " & frame0)
+							displaylist.Add(frame0)
+
 						End If
+						Catch
+							Log("not found") 
+							End Try
 						For Each colmodules As Map In modules
 '							Dim last_seen As Int = colmodules.Get("last_seen")
 '							Dim last_message As Int = colmodules.Get("last_message")
@@ -199,10 +280,34 @@ Sub App_evalJobResponse(Resp As JobResponse)
 '							Dim id As String = colmodules.Get("_id")
 							Dim module_name As String = colmodules.Get("module_name")
 							
+							If ModuleUpdate = True Then
+								SettingsMap.Put(module_name, False)
+								If Type_ = "NAMain" Then
+									SettingsMap.Put(module_name & "_Temp", False)
+									SettingsMap.Put(module_name & "_CO2", False)
+								End If
+								If Type_ = "NAModule4" Then
+									SettingsMap.Put(module_name & "_Temp", False)
+									SettingsMap.Put(module_name & "_CO2", False)
+								End If
+								If Type_ = "NAModule1" Then
+									SettingsMap.Put(module_name & "_Temp", False)
+								End If
+							End If
+							
+							
+							
 							module_name=module_name.Replace("\u00c4","Ä").Replace("\u00e4","ä")
 							module_name=module_name.Replace("\u00d6","Ö").Replace("\u00f6","ö")
 							module_name=module_name.Replace("\u00dc","Ü").Replace("\u00fc","ü")
 							module_name=module_name.Replace("\u00df","ß")
+							
+							
+							
+							
+							
+							
+							
 							Dim dashboard_data As Map = colmodules.Get("dashboard_data")
 '							Dim date_min_temp As Int = dashboard_data.Get("date_min_temp")
 '							Dim time_utc As Int = dashboard_data.Get("time_utc")
@@ -213,19 +318,38 @@ Sub App_evalJobResponse(Resp As JobResponse)
 '							Dim temp_trend As String = dashboard_data.Get("temp_trend")
 '							Dim max_temp As Double = dashboard_data.Get("max_temp")
 '							Dim firmware As Int = colmodules.Get("firmware")
-				
-							If module_name = App.get("Modulename") Then
+				Try
+							If  App.get(module_name & "_Temp") Then
 								Dim Temperature As Double = dashboard_data.Get("Temperature")
+							    Dim frame1 As FrameObject
 								OutsideTemp = Temperature
 								DisplayText = OutsideTemp & "°"
+								frame1.Initialize
+								frame1.text = DisplayText
+								frame1.TextLength = App.calcTextLength(frame1.text)
+								frame1.Icon = 874
+								displaylist.Add(frame1)
+								Log("I am here " & frame1)
 							End If
-							
-							If ModuleType = "NAModule4" And module_name = App.get("Modulename") Then								
+			Catch
+			Log("not found")
+		End Try
+		Try
+							If ModuleType = "NAModule4" And App.get(module_name & "_CO2") Then
 								Dim CO2 As Int = dashboard_data.Get("CO2")
 								CO2Value = CO2
-								Dim ToString1 As String = Temperature
-								DisplayText = ToString1 & "° CO2: " & CO2Value
+								DisplayText =  CO2Value								
+								Dim frame2 As FrameObject
+								frame2.Initialize
+								frame2.text = DisplayText
+								frame2.TextLength = App.calcTextLength(frame2.text)
+								frame2.Icon = 874
+								displaylist.Add(frame2)
+								Log("I am here:  " & frame2)
 							End If
+							Catch
+							Log("not found") 
+							End Try
 						Next
 '						Dim date_setup As Int = coldevices.Get("date_setup")
 '						Dim last_setup As Int = coldevices.Get("last_setup")
@@ -272,8 +396,28 @@ Sub App_evalJobResponse(Resp As JobResponse)
 '					Dim lang As String = administrative.Get("lang")
 '					Dim pressureunit As Int = administrative.Get("pressureunit")
 '					Dim status As String = root.Get("status")
-		
+					If ModuleUpdate = True Then
+					App.settings = SettingsMap
+					App.makeSettings
+					ModuleUpdate = False
+					End If
+					Dim frame3 As FrameObject
+					frame3.Initialize
+					frame3.text = " "
+					frame3.TextLength = App.calcTextLength(frame2.text)
+					frame3.Icon = 874
+					displaylist.Add(frame3)
+					
 			End Select
+			Log("Show List: " & displaylist.Size)
+			For Each item In displaylist
+				Log("In Netatmo display list: " & item )
+			Next
+			If( displaylist.Size == 0 ) Then
+				App.shouldShow=False
+			Else
+				App.shouldShow=True
+			End If
 		Else
 			
 '		Log("NO SUCSESS: "&Resp.ResponseString)
@@ -286,7 +430,8 @@ End Sub
 
 'With this sub you build your frame wtih eveery Tick.
 Sub App_genFrame
-'	Log("Displaying: " & DisplayText)
-	App.genText(DisplayText,True,1,Null,False)
-	App.drawBMP(0,0,App.getIcon(874),8,8)
+    
+	App.genText2(displaylist,Null,True,10000,50000)
+	'App.drawBMP(0,0,App.getIcon(874),8,8)
+
 End Sub

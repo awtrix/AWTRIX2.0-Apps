@@ -24,7 +24,7 @@ Sub Process_Globals
 End Sub
 
 Sub AppStart (Args() As String)
-	
+
 End Sub
 
 'Return true to allow the default exceptions handler to handle the uncaught exception.
