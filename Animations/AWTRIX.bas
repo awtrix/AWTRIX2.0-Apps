@@ -40,7 +40,7 @@ private Sub Class_Globals
 	Private MatrixWidth As Int = 32
 	Private MatrixHeight As Int = 8
 	Private DownloadHeader As Map
-	Private pluginversion as int = 1
+	Private pluginversion As Int = 1
 	Private Tag As List = Array As String()
 	Private playdescription As String
 	Private Cover As Int
