@@ -5,16 +5,16 @@ Library1=jcore
 Library2=json
 Library3=jrandomaccessfile
 Module1=AWTRIX
-Module2=Instagram2
+Module2=Instagram
 NumberOfFiles=0
 NumberOfLibraries=3
 NumberOfModules=2
-Version=7.51
+Version=8
 @EndOfDesignText@
 'ignore this Code Module!. everything is happen in the second Class (InstagramPlugin)
 
 #Region Project Attributes 
-#LibraryName:Instagram2
+#LibraryName:Instagram
 #End Region
 
 Sub Process_Globals

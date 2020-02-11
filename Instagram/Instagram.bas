@@ -17,10 +17,10 @@ Public Sub Initialize() As String
 	App.Initialize(Me,"App")
 	
 	'change plugin name (must be unique, avoid spaces)
-	App.Name="Instagram2"
+	App.Name="Instagram"
 	
 	'Version of the App
-	App.Version="1.0"
+	App.Version="1.1"
 	
 	'Description of the App. You can use HTML to format it
 	App.Description=$"Shows your Instagram followers"$
@@ -85,8 +85,8 @@ Sub App_evalJobResponse(Resp As JobResponse)
 					Dim line As String
 					line = Reader.ReadLine
 					Do While line <> Null
-						If line.Contains("Followers") Then
-							Followers=line.SubString2(line.IndexOf("""")+1,line.IndexOf("Followers")-1)
+						If line.Contains("userInteractionCount") Then
+							Followers=line.SubString2(line.IndexOf($""userInteractionCount":""$)+24,line.IndexOf($""}},"image""$))
 							Followers=Followers.Replace(",","")
 							Exit
 						End If
