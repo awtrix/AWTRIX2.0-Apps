@@ -6,11 +6,13 @@ Version=4.2
 @EndOfDesignText@
 Sub Class_Globals
 	Dim App As AWTRIX
-		
+	Dim hour As String
 	Private completion As String
 	Private printTimeLeft As String ="0"
-	
+	Dim scroll As Int
 	Dim isOnline As Boolean
+	Dim minute As String
+	Dim day As String
 End Sub
 
 ' ignore
@@ -22,15 +24,14 @@ Public Sub Initialize() As String
 	App.Name="Octoprint"
 	
 	'Version of the App
-	App.Version="1.0"
+	App.Version="1.1"
 	
 	'Description of the App. You can use HTML to format it
 	App.Description=$"
-	Shows the percentage of progress and remaining time of OctoPrint printing.<br />
-	<small>Created by Dennis Hinzpeter</small>
+	Shows the percentage of progress and remaining time of OctoPrint printing.
 	"$
 		
-	App.Author="Dennis Hinzpeter"
+	App.Author="Blueforcer"
 	
 	App.CoverIcon=74
 		
@@ -44,12 +45,12 @@ Public Sub Initialize() As String
 	App.Downloads=1
 	
 	'IconIDs from AWTRIXER.
-	App.Icons=Array As Int(74)
+	App.Icons=Array As Int(1014)
 	
 	'Tickinterval in ms (should be 65 by default)
 	App.Tick=65
 	
-	
+	App.forceDownload=True
 	'needed Settings for this App (Wich can be configurate from user via webinterface)
 	App.Settings=CreateMap("IP":"","apiKey":"")
 	
@@ -68,6 +69,7 @@ public Sub Run(Tag As String, Params As Map) As Object
 End Sub
 
 Sub App_Started
+	scroll=1
 	App.ShouldShow=isOnline
 End Sub
 
@@ -100,6 +102,10 @@ Sub App_evalJobResponse(Resp As JobResponse)
 					Dim ticker As Map = root.Get("progress")
 					completion  = ticker.Get("completion")
 					printTimeLeft  = ticker.Get("printTimeLeft")
+					Dim seconds As Long = printTimeLeft * DateTime.TicksPerSecond 'convert seconds to ticks!
+					hour=NumberFormat( Floor(seconds/DateTime.TicksPerHour Mod 24),2,0)
+					minute=NumberFormat( Floor(seconds/DateTime.TicksPerMinute Mod 60),2,0)
+					day=NumberFormat( Floor(seconds/DateTime.TicksPerDay),2,0)
 			End Select
 		End If
 	Catch
@@ -116,26 +122,25 @@ Sub App_genFrame
 		If printTimeLeft == "null" Then
 			App.genText("wait..",True,1,Null,True)
 		Else
-			Dim seconds As Int = printTimeLeft * DateTime.TicksPerSecond 'convert seconds to ticks!
-			Dim hour As String=NumberFormat( Floor(seconds/DateTime.TicksPerHour Mod 24),2,0)
-			Dim minute As String=NumberFormat( Floor(seconds/DateTime.TicksPerMinute Mod 60),2,0)
-			Dim day As String=NumberFormat( Floor(seconds/DateTime.TicksPerDay),2,0)
+			
 	
-			If App.startedAt < DateTime.Now - App.duration / 2 Then
-				App.genText(Round2(completion,0)&"%",True,1,Null,True)
-			Else
+			If App.startedAt<DateTime.Now-App.duration*1000/2 Then
 				If day > 0 Then
-					App.genText(day&":"&hour,True,1,Null,True)
-					App.drawLine(10,7,14,7,Array As Int(124,252,000))
+					App.genText(day&":"&hour,True,scroll-8,Null,True)
 					
 				Else
-					App.genText(hour&":"&minute,True,1,Null,True)
-					App.drawLine(10,7,14,7,Array As Int(124,252,000))
+					App.genText(hour&":"&minute,True,scroll-8,Null,True)
+					
 				End If
+				If scroll<9 Then
+					scroll=scroll+1
+				End If
+			Else
+				App.genText(Round2(completion,0)&"%",True,scroll,Null,True)
 			End If
 		End If
 	Else
 		App.genText("zZz",True,1,Null,True)
 	End If
-	App.drawBMP(0,0,App.getIcon(74),8,8)
+	App.drawBMP(0,0,App.getIcon(1014),8,8)
 End Sub
