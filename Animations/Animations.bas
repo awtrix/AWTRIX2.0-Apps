@@ -32,7 +32,7 @@ Public Sub Initialize() As String
 	App.Name ="Animations"
 	
 	'Version of the App
-	App.Version ="1.3"
+	App.Version ="1.4"
 	
 	'Description of the App. You can use HTML to format it
 	App.Description = "Shows a Animations from the AWTRIX Cloud."
@@ -83,7 +83,7 @@ End Sub
 Sub App_startDownload(jobNr As Int)
 	Select jobNr
 		Case 1
-			App.PostString("https://awtrix.blueforcer.de/animation", $"{"reqType":"aniList","filter":""}"$)
+			App.PostString("https://awtrix.blueforcer.de/animation", $"{"reqType":"getAnimationList","filter":""}"$)
 			App.SetContentType("application/json")
 	End Select
 End Sub

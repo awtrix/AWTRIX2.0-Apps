@@ -40,7 +40,7 @@ private Sub Class_Globals
 	Private MatrixWidth As Int = 32
 	Private MatrixHeight As Int = 8
 	Private DownloadHeader As Map
-	Private pluginversion as int = 1
+	Private pluginversion As Int = 1
 	Private Tag As List = Array As String()
 	Private playdescription As String
 	Private Cover As Int
@@ -287,12 +287,8 @@ Public Sub interface(function As String, Params As Map) As Object
 			End Try
 			startTimestamp=DateTime.now
 			noIconMessage=False
-			If show Then
-				set.Put("show",timesComparative)
-			Else
-				set.Put("show",show)
-			End If
-			
+			CallSub(Target,event&"_checkVersion")
+			set.Put("show",show)
 			set.Put("isGame",Game)
 			set.Put("hold",LockApp)
 			set.Put("iconList",Icon)
