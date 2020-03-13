@@ -626,7 +626,7 @@ Public Sub customCommand(cmd As Map)
 	commandList.Add(cmd)
 End Sub
 
-'Fills the screen with a color
+'Plays a soundfile via DFplayer
 Public Sub fill(Color() As Int)
 	If Color=Null Then
 		commandList.Add(CreateMap("type":"fill","color":SystemColor))
