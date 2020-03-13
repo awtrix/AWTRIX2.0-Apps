@@ -635,6 +635,11 @@ Public Sub fill(Color() As Int)
 	End If
 End Sub
 
+'Fills the screen with a color
+Public Sub playSound(soundfile As Int)
+	commandList.Add(CreateMap("type":"sound","file":soundfile))
+End Sub
+
 'Exits the app and force AWTRIX to switch to the next App
 'only needed if you have set LockApp to true
 Public Sub finish
