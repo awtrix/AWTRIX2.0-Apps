@@ -483,6 +483,16 @@ Public Sub genText(Text As String,IconOffset As Boolean,yPostition As Int,Color(
 	End If
 End Sub
 
+Sub progressBar(percent As Int, x As Int, y As Int,maxLength As Int, barColor()As Int,backColor()As Int)
+	Dim progress As Int = Min(percent,100)/(100/Min(maxLength,32))
+	If Not(backColor = Null) Then
+		drawLine(x,y,maxLength,y,backColor)
+	End If
+	If progress>0 Then
+		drawLine(x,y,progress,y,barColor)
+	End If
+End Sub
+
 'This functions build and savee the settings. You dont need to call this manually
 Public Sub makeSettings
 	If Game Then show=False
@@ -623,6 +633,11 @@ Public Sub fill(Color() As Int)
 	Else
 		commandList.Add(CreateMap("type":"fill","color":Color))
 	End If
+End Sub
+
+'Fills the screen with a color
+Public Sub playSound(soundfile As Int)
+	commandList.Add(CreateMap("type":"sound","file":soundfile))
 End Sub
 
 'Exits the app and force AWTRIX to switch to the next App
@@ -932,6 +947,10 @@ End Sub
 Sub setHidden(hide As Boolean)
 	mHidden=hide
 End Sub
+
+#Region Colors
+
+#End Region
 
 
 
