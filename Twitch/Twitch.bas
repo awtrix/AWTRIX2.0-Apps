@@ -11,6 +11,7 @@ Sub Class_Globals
 	Dim viewers As String = "0"
 	Dim isStreaming As Boolean
 	Dim iconID As Int=141
+	Dim userID As String
 End Sub
 ' Config your App
 Public Sub Initialize() As String
@@ -21,7 +22,7 @@ Public Sub Initialize() As String
 	App.Name="Twitch"
 	
 	'Version of the App
-	App.Version="1.0"
+	App.Version="1.1"
 	
 	'Description of the App. You can use HTML to format it
 	App.Description="Shows your Twitch subscriber count or your live viewers while youre streaming"
@@ -37,7 +38,7 @@ Public Sub Initialize() As String
 	App.Author="Blueforcer"
 	
 	'How many downloadhandlers should be generated
-	App.Downloads=2
+	App.Downloads=3
 	
 	'IconIDs from AWTRIXER. You can add multiple if you want to display them at the same time
 	App.Icons=Array As Int(141)
@@ -73,9 +74,14 @@ End Sub
 Sub App_startDownload(jobNr As Int)
 	Select jobNr
 		Case 1
-			App.Download("https://api.twitch.tv/kraken/streams/"&App.get("Profile")&"?client_id="&App.get("ClientID"))
+			App.Download("https://api.twitch.tv/helix/users?login="&App.get("Profile"))
+			App.Header=CreateMap("Client-ID":App.get("ClientID"))
 		Case 2
-			App.Download("https://api.twitch.tv/kraken/channels/"&App.get("Profile")&"?client_id="&App.get("ClientID")&"&callback=null")
+			App.Download("https://api.twitch.tv/helix/streams?user_id="&userID)
+			App.Header=CreateMap("Client-ID":App.get("ClientID"))
+		Case 3
+			App.Download("https://api.twitch.tv/helix/users/follows?to_id="&userID)
+			App.Header=CreateMap("Client-ID":App.get("ClientID"))
 	End Select
 End Sub
 
@@ -89,26 +95,32 @@ Sub App_evalJobResponse(Resp As JobResponse)
 			Select Resp.jobNr
 				Case 1
 					isStreaming=False
-						Dim parser As JSONParser
-						Dim res As String = Resp.ResponseString
-						Dim s As String=res.SubString(res.IndexOf("(")+1).Replace(")","")
-						parser.Initialize(s)
-						Dim root As Map = parser.NextObject
-						If root.Get("stream") Is Map Then
-							isStreaming=True
-							iconID=339
-							Dim stream As Map = root.Get("stream")
-							viewers = stream.Get("viewers")
-						Else
-							iconID=141
-						End If
-				Case 2	
-						Dim parser As JSONParser
-						Dim res As String = Resp.ResponseString
-						Dim s As String=res.SubString(res.IndexOf("(")+1).Replace(")","")
-						parser.Initialize(s)
-						Dim root As Map = parser.NextObject
-						followers= root.Get("followers")	
+					Dim parser As JSONParser
+					parser.Initialize(Resp.ResponseString)
+					Dim root As Map = parser.NextObject
+					Dim data As List = root.Get("data")
+					Dim coldata As Map = data.Get(0)
+					userID = coldata.Get("id")
+				Case 2
+					Dim parser As JSONParser
+					parser.Initialize(Resp.ResponseString)
+					Dim root As Map = parser.NextObject
+					Dim data As List = root.Get("data")
+					Dim coldata As Map = data.Get(0)
+					
+					If coldata.Get("type") = "live" Then
+						isStreaming=True
+						viewers = coldata.Get("viewer_count")
+						iconID=339
+					Else
+						isStreaming=False
+						iconID=141
+					End If
+				Case 3
+					Dim parser As JSONParser
+					parser.Initialize(Resp.ResponseString)
+					Dim root As Map = parser.NextObject
+					followers = root.Get("total")
 			End Select
 		End If
 	Catch
@@ -122,7 +134,7 @@ Sub App_genFrame
 		App.genText(viewers,True,1,Null,True)
 		App.drawBMP(0,0,App.getIcon(iconID),8,8)
 	Else
-		App.genText(followers,True,1,Null,True)	
+		App.genText(followers,True,1,Null,True)
 		App.drawBMP(0,0,App.getIcon(iconID),8,8)
 	End If
 End Sub
