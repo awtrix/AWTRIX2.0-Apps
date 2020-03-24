@@ -8,7 +8,8 @@ Version=4.2
 Sub Class_Globals
 	Dim App As AWTRIX
 	
-	Dim total As Int = 0
+	Dim confirmed As Int = 0
+	Dim active As Int = 0
 	Dim recovered As Int = 0
 	Dim deaths As Int = 0
 	Dim mortality As Double = 0
@@ -34,11 +35,11 @@ Public Sub Initialize() As String
 	App.name = "COVID19"
 	
 	'Version of the App
-	App.version = "1.1"
+	App.version = "1.2"
 	
 	'Description of the App. You can use HTML to format it
 	App.description = $"
-	Displays Corona virus global cases<br/>
+	Displays Corona virus cases for your Country<br/>
 	Data from the <i>Center for Systems Science and Engineering (CSSE)</i> at Johns Hopkins University in Baltimore, Maryland, USA<br/>
 	<a href="https://systems.jhu.edu/research/public-health/ncov/">Coronavirus Dashboard</a>
 	"$
@@ -50,20 +51,24 @@ Public Sub Initialize() As String
 	App.coverIcon = 1040
 	
 	'needed Settings for this App (Wich can be configurate from user via webinterface)
-	App.settings = CreateMap("Totals":True, "Recovered":True, "Deaths":True, "Mortality":True,"UpdateInterval":3600)
+	App.settings = CreateMap("Country":"Germany", "Confirmed":True, "Recovered":True, "Active":True, "Deaths":True, "Mortality":True)
 		
 	'Setup Instructions. You can use HTML to format it
 	App.setupDescription = $"
-	<b>Select values to be displayed.</b><br/>
-	Mortality is calculated by: <pre><i>Deaths</i> * 100 / <i>Infections</i></pre>
-	<i>Read <a href="https://systems.jhu.edu/research/public-health/ncov/">this blog article</a> for more background information.</i><br/>
+	<b>Select country and values to be displayed.</b><br/>
+	Find supported countries <a href="https://www.arcgis.com/apps/opsdashboard/index.html#/bda7594740fd40299423467b48e9ecf6" target="_blank">here</a> 
+	(enter the name exactly as in the left sided list).<br/>
+	Mortality is calculated by: <pre><i>Deaths</i> * 100 / <i>Confirmed</i></pre>
+	Read <a href="https://heise.de/-4679338">this article</a> (german) for a deeper look into different methods of 
+	calculation of mortality rates. At this early stage of the desease, it´s extremely hard to find reasonable values!<br/>
+	<i>Read <a href="https://systems.jhu.edu/research/public-health/ncov/">this blog article</a> for more background information about the source of the values.</i><br/>
 	"$
 	
 	'define some tags to simplify the search in the Appstore
 	App.tags = Array As String("Corona", "Virus", "Health")
 	
 	'How many downloadhandlers should be generated
-	App.downloads = 3
+	App.downloads = 1
 	
 	'IconIDs from AWTRIXER. You can add multiple if you need more
 	App.icons = Array As Int(1040)
@@ -120,19 +125,9 @@ End Sub
 'Called with every update from Awtrix
 'return one URL for each downloadhandler
 Sub App_startDownload(jobNr As Int)
-	Dim parameter As String = ""
-	Select jobNr
-		Case 1
-			' Confirmed
-			parameter = "Confirmed"
-		Case 2
-			' Recovered
-			parameter = "Recovered"
-		Case 3
-			' Deaths
-			parameter = "Deaths"
-	End Select
-	Dim url As String = "https://services1.arcgis.com/0MSEUqKaxRlEPj5g/arcgis/rest/services/ncov_cases/FeatureServer/1/query?f=json&where=Confirmed%20%3E%200&returnGeometry=false&spatialRel=esriSpatialRelIntersects&outFields=*&outStatistics=%5B%7B%22statisticType%22%3A%22sum%22%2C%22onStatisticField%22%3A%22" & parameter & "%22%2C%22outStatisticFieldName%22%3A%22value%22%7D%5D&cacheHint=true"
+	Dim url As String= ""
+	' url = "https://services9.arcgis.com/N9p5hsImWXAccRNI/arcgis/rest/services/Z7biAeD8PAkqgmWhxG2A/FeatureServer/2/query?f=json&where=Confirmed%20%3E%200&returnGeometry=false&spatialRel=esriSpatialRelIntersects&outFields=*&orderByFields=Confirmed%20desc&outSR=102100&resultOffset=0&resultRecordCount=200&cacheHint=true"
+	url = "https://services1.arcgis.com/0MSEUqKaxRlEPj5g/arcgis/rest/services/ncov_cases/FeatureServer/2/query?f=json&where=Confirmed%20%3E%200&returnGeometry=false&spatialRel=esriSpatialRelIntersects&outFields=*&orderByFields=Confirmed%20desc&resultOffset=0&resultRecordCount=100&cacheHint=true"
 	App.Download(url)
 End Sub
 
@@ -149,22 +144,19 @@ Sub App_evalJobResponse(Resp As JobResponse)
 			Dim features As List = root.Get("features")
 			For Each colfeatures As Map In features
 				Dim attributes As Map = colfeatures.Get("attributes")
-				Dim value As Int = attributes.Get("value")
-			Next
-			Select Resp.jobNr
-				Case 1
-					total = value
-					Log("COVID19-Total: " & total)
-				Case 2
-					recovered = value
-					Log("COVID19-Recovered: " & recovered)
-				Case 3
-					deaths = value
-					Log("COVID19-Deaths: " & deaths)
-					If total > 0 Then
-						mortality = Round2(deaths * 100 / total, 2)
+				Dim Country_Region As String = attributes.Get("Country_Region")
+				Log("Country: " & Country_Region)
+				If Country_Region = App.get("Country") Then
+					recovered = attributes.Get("Recovered")
+					active = attributes.Get("Active")
+					deaths = attributes.Get("Deaths")
+					confirmed = attributes.Get("Confirmed")
+					If confirmed > 0 Then
+						mortality = Round2(deaths * 100 / confirmed, 2)
 					End If
-			End Select
+					Exit
+				End If
+			Next
 		End If
 	Catch
 		App.throwError(LastException)
@@ -174,11 +166,14 @@ End Sub
 'With this sub you build your frame wtih eveery Tick.
 Sub App_genFrame
 	Dim text As String = "Covid-19 rates: "
-	If App.get("Totals") = True Then
-		text = text & "Infections: " & total & " "
+	If App.get("Confirmed") = True Then
+		text = text & "Infections: " & confirmed & " "
 	End If
 	If App.get("Recovered") = True Then
 		text = text & "Recovered: " & recovered & " "
+	End If
+	If App.get("Active") = True Then
+		text = text & "Active: " & active & " "
 	End If
 	If App.get("Deaths") = True Then
 		text = text & "Deaths: " & deaths  & " "
