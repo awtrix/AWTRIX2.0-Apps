@@ -78,7 +78,7 @@ private Sub Class_Globals
 	Private OAuth As Boolean
 	Private oauthmap As Map
 	Private mContentType As String
-
+	Private customcolor As String 
 	Private poll As Map = CreateMap("enable":False,"sub":"")
 	Private mHidden As Boolean
 End Sub
@@ -274,7 +274,6 @@ Public Sub interface(function As String, Params As Map) As Object
 				MatrixHeight = Params.Get("MatrixHeight")
 				UppercaseLetters = Params.Get("UppercaseLetters")
 				CharMap = Params.Get("CharMap")
-				SystemColor = Params.Get("SystemColor")
 				MatrixInfo=Params.Get("MatrixInfo")
 				set.Put("interval",TickInterval)
 				set.Put("needDownload",NeedDownloads)
@@ -292,7 +291,11 @@ Public Sub interface(function As String, Params As Map) As Object
 			Else
 				set.Put("show",show)
 			End If
-			
+			If Regex.IsMatch("^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})",customcolor) Then
+					SystemColor=getRGB(customcolor)
+				Else
+					SystemColor = Params.Get("SystemColor")
+				End If
 			set.Put("isGame",Game)
 			set.Put("hold",LockApp)
 			set.Put("iconList",Icon)
@@ -417,9 +420,17 @@ Public Sub interface(function As String, Params As Map) As Object
 			Dim s As String=Params.Get("sub")
 			If SubExists(Target,event & "_" & s) Then
 				CallSub(Target,event & "_" & s)
-			End If			
+			End If
 	End Select
 	Return True
+End Sub
+
+Private Sub getRGB(Color As String) As Int()
+	Dim res(3) As Int
+	res(0) = Bit.ParseInt(Color.SubString2(1,3), 16)
+	res(1) = Bit.ParseInt(Color.SubString2(3,5), 16)
+	res(2) = Bit.ParseInt(Color.SubString2(5,7), 16)
+	Return res
 End Sub
 
 'This function calculates the ammount of pixels wich a text needs
@@ -483,6 +494,16 @@ Public Sub genText(Text As String,IconOffset As Boolean,yPostition As Int,Color(
 	End If
 End Sub
 
+Public Sub progressBar(percent As Int, x As Int, y As Int,maxLength As Int, barColor()As Int,backColor()As Int)
+	Dim progress As Int = Min(percent,100)/(100/Min(maxLength,32))
+	If Not(backColor = Null) Then
+		drawLine(x,y,maxLength,y,backColor)
+	End If
+	If progress>0 Then
+		drawLine(x,y,progress,y,barColor)
+	End If
+End Sub
+
 'This functions build and savee the settings. You dont need to call this manually
 Public Sub makeSettings
 	If Game Then show=False
@@ -498,11 +519,16 @@ Public Sub makeSettings
 		Next
 		For Counter = m.Size -1 To 0 Step -1
 			Dim SettingsKey As String = m.GetKeyAt(Counter)
-			If Not(SettingsKey="UpdateInterval" Or SettingsKey="StartTime" Or SettingsKey="EndTime" Or SettingsKey="DisplayTime" Or SettingsKey="Enabled")   Then
+			If Not(SettingsKey="UpdateInterval" Or SettingsKey="StartTime" Or SettingsKey="EndTime" Or SettingsKey="DisplayTime" Or SettingsKey="Enabled" Or SettingsKey="CustomColor")   Then
 				If Not(appSettings.ContainsKey(SettingsKey)) Then m.Remove(SettingsKey)
 			End If
 		Next
 		Try
+			
+		If Not(m.ContainsKey("CustomColor")) Then
+			m.Put("CustomColor","0")
+		End If
+			customcolor=m.Get("CustomColor")
 			Enabled=m.Get("Enabled")
 			startTime=m.Get("StartTime")
 			endtime=m.Get("EndTime")
@@ -520,6 +546,7 @@ Public Sub makeSettings
 	Else
 		Dim m As Map
 		m.Initialize
+		m.Put("CustomColor","0")
 		m.Put("UpdateInterval",UpdateInterval)
 		m.Put("StartTime","00:00")
 		m.Put("EndTime","00:00")
@@ -560,7 +587,7 @@ End Sub
 'Draws a Text
 Public Sub drawText(text As String,x As Int, y As Int,Color() As Int)
 	If Color=Null Then
-		commandList.Add(CreateMap("type":"text","text":text,"x":x,"y":y))
+		commandList.Add(CreateMap("type":"text","text":text,"x":x,"y":y,"color":SystemColor))
 	Else
 		commandList.Add(CreateMap("type":"text","text":text,"x":x,"y":y,"color":Color))
 	End If
@@ -623,6 +650,11 @@ Public Sub fill(Color() As Int)
 	Else
 		commandList.Add(CreateMap("type":"fill","color":Color))
 	End If
+End Sub
+
+'Plays a soundfile via DFplayer
+Public Sub playSound(soundfile As Int)
+	commandList.Add(CreateMap("type":"sound","file":soundfile))
 End Sub
 
 'Exits the app and force AWTRIX to switch to the next App
@@ -882,7 +914,7 @@ End Sub
 'Sends a multipart POST request.
 'NameValues - A map with the keys and values. Pass Null if not needed.
 'Files - List of MultipartFileData items. Pass Null if not needed.
-Public Sub PostMultipart(Link As String, NameValues As Map, Files As List)
+Public Sub PostMultipart(Link As String, NameValues As Map, Files As Object)
 	httpMap=CreateMap("type":"PostMultipart","Link":Link,"NameValues":NameValues,"Files":Files)
 End Sub
 
@@ -932,6 +964,10 @@ End Sub
 Sub setHidden(hide As Boolean)
 	mHidden=hide
 End Sub
+
+#Region Colors
+
+#End Region
 
 
 

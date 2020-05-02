@@ -21,7 +21,7 @@ Public Sub Initialize() As String
 	App.Name="OpenWeather"
 	
 	'Version of the App
-	App.Version="1.0"
+	App.Version="1.2"
 	
 	'Description of the App. You can use HTML to format it
 	App.Description=$"

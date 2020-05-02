@@ -4,12 +4,12 @@ Group=Default Group
 Library1=jcore
 Library2=json
 Library3=jrandomaccessfile
-Module1=Tankerkoenig
-Module2=AWTRIX
+Module1=AWTRIX
+Module2=Tankerkoenig
 NumberOfFiles=0
 NumberOfLibraries=3
 NumberOfModules=2
-Version=7.51
+Version=8.1
 @EndOfDesignText@
 'Non-UI application (console / server application)
 #Region Project Attributes 

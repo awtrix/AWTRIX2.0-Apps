@@ -17,7 +17,7 @@ Public Sub Initialize() As String
 	App.Name="Tankerkoenig"
 	
 	'Version of the App
-	App.Version="1.1"
+	App.Version="1.2"
 	
 	'Description of the App. You can use HTML to format it
 	App.Description=$"
