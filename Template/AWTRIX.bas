@@ -367,11 +367,11 @@ Public Sub interface(function As String, Params As Map) As Object
 			End If
 			infos.Put("isconfigured",isconfigured)
 			
-			If isconfigured Then
+			
 				If SubExists(Target,event&"_CustomSetupScreen") Then
 					infos.Put("CustomSetup",CallSub(Target,event&"_CustomSetupScreen"))
 				End If
-			End If
+			
 			infos.Put("AppVersion",AppVersion)
 			infos.Put("tags",Tag)
 			infos.Put("poll",poll)
