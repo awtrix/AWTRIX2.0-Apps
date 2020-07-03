@@ -1,19 +1,22 @@
 ﻿AppType=StandardJava
-Build1=Default,de.blueforcer
+Build1=Default,b4j.example
 Group=Default Group
 Library1=jcore
 Library2=json
 Library3=jrandomaccessfile
-Module1=Animations
-Module2=AWTRIX
+Library4=jdateutils
+Library5=jstringutils
+Library6=byteconverter
+Module1=AWTRIX
+Module2=Toggl
 NumberOfFiles=0
-NumberOfLibraries=3
+NumberOfLibraries=6
 NumberOfModules=2
 Version=8.31
 @EndOfDesignText@
 
 #Region Project Attributes 
-	#LibraryName: Animations
+	#LibraryName:Toggl
 #End Region
 
 Sub Process_Globals

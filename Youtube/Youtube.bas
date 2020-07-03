@@ -18,7 +18,7 @@ Public Sub Initialize() As String
 	App.Name="Youtube"
 	
 	'Version of the App
-	App.Version="1.0"
+	App.Version="1.1"
 	
 	'Description of the App. You can use HTML to format it
 	App.Description="Shows your Youtube subscriber count."
@@ -74,7 +74,7 @@ End Sub
 Sub App_startDownload(jobNr As Int)
 	Select jobNr
 		Case 1
-			App.Download("https://www.googleapis.com/youtube/v3/channels?part=statistics&id="&App.get("ChannelID")&"&key="&App.get("APIKey"))
+			App.Download("https://content.googleapis.com/youtube/v3/channels?part=statistics&id="&App.get("ChannelID")&"&key="&App.get("APIKey"))
 	End Select
 End Sub
 

@@ -9,8 +9,6 @@ Sub Class_Globals
 	Dim App As AWTRIX
 	Dim animationlist As List
 	Dim nextAnimation As String
-	Dim availableAnimations As StringBuilder
-	Dim aniCount As Int
 End Sub
 
 ' ignore
@@ -25,25 +23,23 @@ End Sub
 
 ' Config your App
 Public Sub Initialize() As String
-	
+	animationlist.Initialize
 	App.Initialize(Me,"App")
 	
 	'App name (must be unique, avoid spaces)
 	App.Name ="Animations"
 	
 	'Version of the App
-	App.Version ="1.4"
+	App.Version ="1.6"
 	
 	'Description of the App. You can use HTML to format it
 	App.Description = "Shows a Animations from the AWTRIX Cloud."
 	
-	App.setupDescription =$"<b>Favorites: </b> choose your favorite animations. You can get the <b>name</b> from each available animation below.<br> You can choose more than one by seperate each name wich a comma.<br>  Enter "random" for random animations"$
 	
 	App.CoverIcon = 620
 	
 	App.downloads=1
-	
-	App.settings= CreateMap("Favorites":"random","Mix":True )
+
 		
 	App.Author = "Blueforcer"
 	
@@ -52,30 +48,53 @@ Public Sub Initialize() As String
 End Sub
 
 Sub App_Started
-	animationlist.Initialize
-	Dim favString As String = App.get("Favorites")
-	If favString.Contains(",") Then
-		Dim reg() As String = Regex.Split(",",favString)
-		For i=0 To reg.Length-1
-			animationlist.Add(reg(i))
-		Next
-		If App.get("Mix") Then
-			Dim randomAnimation As Int = Rnd(0,animationlist.Size)
-			nextAnimation=animationlist.Get(randomAnimation)
-		Else
-			If animationlist.Size>0 Then
-				aniCount=aniCount+1
-				If aniCount>animationlist.Size-1 Then aniCount=0
-				nextAnimation=animationlist.Get(aniCount)
+	Try
+		App.shouldShow=True
+		If animationlist.Size>0 Then
+		
+			Dim oneActive As Boolean
+			For Each AppName As String In animationlist
+				If App.settings.Get(AppName) Then
+					oneActive=True
+				End If
+			Next
+		
+			If oneActive = True Then
+				Dim isEnable As Boolean =False
+				nextAnimation="random"
+				Do Until isEnable
+					Dim nextApp As String = animationlist.Get(Rnd(0,animationlist.Size))
+					If isactive(nextApp) Then
+						isEnable = True
+						nextAnimation=nextApp
+					End If
+				Loop
 			Else
 				nextAnimation="random"
 			End If
-			
+		Else
+			nextAnimation="random"
 		End If
+	Catch
+		nextAnimation="random"
+	End Try
+	
+End Sub
+
+
+Sub isactive(name As String)As Boolean
+	
+	If App.Settings.ContainsKey(name) Then
+		If App.settings.Get(name) = True Then
 		
+			Return True
+		Else
+			Return False
+		End If
 	Else
-		nextAnimation=App.get("Favorites")
+		Return False
 	End If
+	
 End Sub
 
 'Called with every update from Awtrix
@@ -98,26 +117,28 @@ Sub App_evalJobResponse(Resp As JobResponse)
 		If Resp.success Then
 			Select Resp.jobNr
 				Case 1
-					availableAnimations.Initialize
-					availableAnimations.Append($"<b>Favorites: </b><br> Choose your favorite animations. 
-					You can get the <b>name</b> from each available animation below. (This list updates itself) <br> 
-					You can choose more than one by seperate each name wich a comma.<br> 
-					Enter "random" for shwoing all available animations randomly<br><br> 
-					<b>Mix:</b><br> If activated, all specified animations are displayed randomly with each appstart. If deactivated it will be displayed in the given order<br><br>
-					<i><b>Pro-Tip:</b><br> deactivate it, and copy the app to different places inside the loop, so you can determine exactly when which animation is displayed.<br>
-					<b>You can also create new animations with the icon creator! Just resize the sprite to 32x8 and keep going!</b></i>
-					<br><br>
-					Available animations:<br>
-					"$)
-					availableAnimations.Append("<ul>")
+					animationlist.Clear
 					Dim parser As JSONParser
 					parser.Initialize(Resp.ResponseString)
 					Dim root As Map = parser.NextObject
 					For Each name As String In root.Values
-						availableAnimations.Append($"<li>${name}</li>"$)
+						If Not(App.settings.ContainsKey(name)) Then
+							App.settings.Put(name,True)
+						End If
+						animationlist.Add(name)
 					Next
-					availableAnimations.Append("</ul>")
-					App.setupDescription=availableAnimations.ToString
+					
+					For Counter = App.settings.Size-1 To 0 Step -1
+						Dim SettingsKey As String =App.settings.GetKeyAt(Counter)
+						If Not(SettingsKey="UpdateInterval" Or SettingsKey="StartTime" Or SettingsKey="EndTime" Or SettingsKey="DisplayTime" Or SettingsKey="Enabled")   Then
+								If animationlist.IndexOf(SettingsKey)=-1 Then
+									App.settings.Remove(SettingsKey)
+								End If
+						End If
+					Next
+					
+					File.WriteList(File.Combine(File.DirApp,"Apps"),"Animationlist.txt",animationlist)
+					App.makeSettings
 			End Select
 		End If
 	Catch
@@ -129,5 +150,6 @@ End Sub
 
 'With this sub you build your frame.
 Sub App_genFrame
+	
 	App.customCommand(CreateMap("type":"animation","ID":nextAnimation))
 End Sub
