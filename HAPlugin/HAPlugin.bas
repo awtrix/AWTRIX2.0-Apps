@@ -52,10 +52,10 @@ Public Sub Initialize() As String
 	'Setup Instructions. You can use HTML to format it
 	App.setupDescription = $"
 	First Test<BR>
-	<b>Token:</b>longlived Toke from HomeAssistant<br/>
+	<b>Token:</b>longlived Token from HomeAssistant<br/>
 	<b>URL:</b>The URL of your Home Assistant<br/>
-	<b>Sensor:</b>the entityname of your sensor<br/>
-	<b>Icon:</b>the ID of an Icon<br/>
+	<b>Sensor:</b>The entityname of your sensor<br/>
+	<b>Icon:</b>The ID of an Icon<br/>
 	"$
 	
 	App.Settings=CreateMap("URL":"","Token":"","Sensor":"sun.sun","Icon":423)
@@ -99,13 +99,12 @@ End Sub
 'this sub is called right before AWTRIX will display your App.
 'if you need to another Icon you can set your Iconlist here again.
 Sub App_iconRequest
-	Log(App.name&": Iconreq")
 	App.Icons = Array As Int(App.get("Icon"))
 End Sub
 
 'If the user change any Settings in the webinterface, this sub will be called
 Sub App_settingsChanged
-	Log(App.name&": Settingschanged")
+
 End Sub
 
 'if you create an Game, use this sub to get the button presses from the Weeebinterface or Controller
@@ -122,11 +121,10 @@ End Sub
 'Called with every update from Awtrix
 'return one URL for each downloadhandler
 Sub App_startDownload(jobNr As Int)
-	Log(App.name&": Startdownload")
 	Select jobNr
 		Case 1
-			App.setHeader(CreateMap("Authorization":"Bearer " & App.get("Token")))
 			App.Download(App.Get("URL") & "/api/states/" & App.get("Sensor"))
+			App.setHeader(CreateMap("Authorization":"Bearer " & App.get("Token")))
 	End Select
 End Sub
 
