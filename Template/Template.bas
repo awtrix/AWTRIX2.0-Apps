@@ -119,7 +119,7 @@ End Sub
 
 'It possible to create your own setupscreen in HTML.
 'This is a very dirty workaround, but its works:)
-'Every input must contains an ID with the corresponding settingskey in lowercase
+'Every input must contains an ID with the corresponding settingskey in lowercase 
 Sub App_CustomSetupScreen As String
 	Return ""
 End Sub
@@ -156,7 +156,5 @@ End Sub
 
 'With this sub you build your frame wtih eveery Tick.
 Sub App_genFrame
-	App.genText(App.get("CustomText") & " " & first_name ,True,1,Null,False)
-	App.drawBMP(0,0,App.getIcon(6),8,8)
-
+	App.genSimpleFrame(App.get("CustomText") & " " & first_name,6,True,Null,True)
 End Sub

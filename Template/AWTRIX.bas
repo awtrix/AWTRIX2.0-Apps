@@ -78,7 +78,7 @@ private Sub Class_Globals
 	Private OAuth As Boolean
 	Private oauthmap As Map
 	Private mContentType As String
-	Private customcolor As String 
+	Private customcolor As String
 	Private poll As Map = CreateMap("enable":False,"sub":"")
 	Private mHidden As Boolean
 	
@@ -92,7 +92,6 @@ End Sub
 
 'Initializes the Helperclass.
 Public Sub Initialize(class As Object, Eventname As String)
-
 	oauthmap.Initialize
 	Tag.Initialize
 	httpMap.Initialize
@@ -262,7 +261,7 @@ Public Sub getIcon(ID As Int) As Short()
 End Sub
 #End Region
 
-'This is the interface between AWTRIX and the App
+'This is the interface between AWTRIX Host and the App
 Public Sub interface(function As String, Params As Map) As Object
 	Select Case function
 		Case "start"
@@ -302,11 +301,11 @@ Public Sub interface(function As String, Params As Map) As Object
 				set.Put("show",show)
 			End If
 			If Regex.IsMatch("^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})",customcolor) Then
-					SystemColor=getRGB(customcolor)
-					Log("Set CustomColor")
-				Else
-					SystemColor = Params.Get("SystemColor")
-				End If
+				SystemColor=getRGB(customcolor)
+				Log("Set CustomColor")
+			Else
+				SystemColor = Params.Get("SystemColor")
+			End If
 			set.Put("isGame",Game)
 			set.Put("hold",LockApp)
 			set.Put("iconList",Icon)
@@ -366,12 +365,9 @@ Public Sub interface(function As String, Params As Map) As Object
 				If OAuth And OAuthToken.Length=0 Then isconfigured=False
 			End If
 			infos.Put("isconfigured",isconfigured)
-			
-			
-				If SubExists(Target,event&"_CustomSetupScreen") Then
-					infos.Put("CustomSetup",CallSub(Target,event&"_CustomSetupScreen"))
-				End If
-			
+			If SubExists(Target,event&"_CustomSetupScreen") Then
+				infos.Put("CustomSetup",CallSub(Target,event&"_CustomSetupScreen"))
+			End If
 			infos.Put("AppVersion",AppVersion)
 			infos.Put("tags",Tag)
 			infos.Put("poll",poll)
@@ -446,13 +442,7 @@ Public Sub interface(function As String, Params As Map) As Object
 	Return True
 End Sub
 
-Private Sub getRGB(Color As String) As Int()
-	Dim res(3) As Int
-	res(0) = Bit.ParseInt(Color.SubString2(1,3), 16)
-	res(1) = Bit.ParseInt(Color.SubString2(3,5), 16)
-	res(2) = Bit.ParseInt(Color.SubString2(5,7), 16)
-	Return res
-End Sub
+
 
 'This function calculates the ammount of pixels wich a text needs
 Public Sub calcTextLength(text As String) As Int
@@ -483,16 +473,16 @@ End Sub
 'Color - custom text color. Pass Null to use the Global textcolor (recommended).
 '
 '<code>App.genText("Hello World",True,Array as int(255,0,0),false)</code>
-Public Sub genText(Text As String,IconOffset As Boolean,yPostition As Int,Color() As Int,callFinish As Boolean)
+Public Sub genSimpleFrame(Text As String, iconID As Int,moveIcon As Boolean,Color() As Int,callFinish As Boolean)
 	If Text.Length=0 Then
 		finish
 		Return
 	End If
 	calcTextLength(Text)
 	Dim offset As Int
-	If IconOffset Then offset = 24 Else offset = 32
+	If Not(iconID=0) Then offset = 24 Else offset = 32
 	If TextLength>offset Then
-		drawText(Text,mscrollposition,yPostition,Color)
+		drawText(Text,mscrollposition,1,Color)
 		mscrollposition=mscrollposition-1
 		If mscrollposition< 0-TextLength  Then
 			If LockApp And callFinish Then
@@ -505,13 +495,27 @@ Public Sub genText(Text As String,IconOffset As Boolean,yPostition As Int,Color(
 	Else
 		Dim x As Int
 		If TextLength<offset+1 Then
-			If IconOffset Then
+			If Not(iconID=0) Then
 				x=((MatrixWidth/2)-TextLength/2)+4
 			Else
 				x=(MatrixWidth/2)-TextLength/2
 			End If
 		End If
-		drawText(Text,x,yPostition,Color)
+		drawText(Text,x,1,Color)
+	End If
+	
+	If Not(iconID=0) Then
+		If moveIcon Then
+			If getScrollposition>9 Then
+				drawBMP(0,0,getIcon(iconID),8,8)
+			Else
+				If getScrollposition>-8 Then
+					drawBMP(getScrollposition-9,0,getIcon(iconID),8,8)
+				End If
+			End If
+		Else
+			drawBMP(0,0,getIcon(iconID),8,8)
+		End If
 	End If
 End Sub
 
@@ -586,7 +590,7 @@ public Sub get(SettingsKey As String) As Object
 	End If
 End Sub
 
-Public Sub  saveSingleSetting(key As String, value As Object)
+Public Sub saveSingleSetting(key As String, value As Object)
 	If File.Exists(File.Combine(File.DirApp,"Apps"),appName&".ax") Then
 		Dim data() As Byte = File.ReadBytes(File.Combine(File.DirApp,"Apps"),appName&".ax")
 		Dim m As Map = bc.ConvertBytesToObject(data)
@@ -885,6 +889,7 @@ public Sub InitializeOAuth (AuthorizeURL As String, TokenURL As String, ClientId
 	oauthmap=CreateMap("AuthorizeURL":AuthorizeURL,"TokenURL":TokenURL,"ClientId":ClientId,"ClientSecret":ClientSecret,"Scope":Scope)
 End Sub
 
+'Returns the OAuth2 Token
 Sub getToken As String
 	Return OAuthToken
 End Sub
@@ -983,7 +988,13 @@ Sub setHidden(hide As Boolean)
 End Sub
 
 #Region Colors
-
+Private Sub getRGB(Color As String) As Int()
+	Dim res(3) As Int
+	res(0) = Bit.ParseInt(Color.SubString2(1,3), 16)
+	res(1) = Bit.ParseInt(Color.SubString2(3,5), 16)
+	res(2) = Bit.ParseInt(Color.SubString2(5,7), 16)
+	Return res
+End Sub
 #End Region
 
 
@@ -1072,7 +1083,6 @@ Public Sub FallingText(FrameList As List,callFinish As Boolean, delayBetweenStri
 		'finishing?
 		If frame.TextLength+offset<=MatrixWidth Then
 			If mscrollposition - 38 > 1  Then
-			
 				mscrollposition=MatrixWidth
 				numberOfString = numberOfString + 1
 				timeGenText2 = DateTime.now
