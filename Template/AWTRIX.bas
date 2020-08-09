@@ -66,6 +66,7 @@ private Sub Class_Globals
 	Private Enabled As Boolean = True
 	Private noIcon() As Short = Array As Short(0, 0, 0, 63488, 63488, 0, 0, 0, 0, 0, 63488, 0, 0, 63488, 0, 0, 0, 0, 0, 0, 0, 63488, 0, 0, 0, 0, 0, 0, 63488, 0, 0, 0, 0, 0, 0, 63488, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 63488, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
 	Private isRunning As Boolean
+	Private hideicon As Boolean
 	Private Menu As Map
 	Private MenuList As List
 	Private bc As B4XSerializator
@@ -286,7 +287,7 @@ Public Sub interface(function As String, Params As Map) As Object
 				If SubExists(Target,event&"_Started") Then
 					CallSub(Target,event&"_Started")
 				End If
-				
+				hideicon=False
 				isActive=True
 			Catch
 				Log("Got Error from " & appName)
@@ -473,7 +474,7 @@ End Sub
 'Color - custom text color. Pass Null to use the Global textcolor (recommended).
 '
 '<code>App.genText("Hello World",True,Array as int(255,0,0),false)</code>
-Public Sub genSimpleFrame(Text As String, iconID As Int,moveIcon As Boolean,Color() As Int,callFinish As Boolean)
+Public Sub genSimpleFrame(Text As String, iconID As Int,moveIcon As Boolean,RepeatIcon As Boolean,Color() As Int,callFinish As Boolean)
 	If Text.Length=0 Then
 		finish
 		Return
@@ -506,11 +507,21 @@ Public Sub genSimpleFrame(Text As String, iconID As Int,moveIcon As Boolean,Colo
 	
 	If Not(iconID=0) Then
 		If moveIcon Then
-			If getScrollposition>9 Then
-				drawBMP(0,0,getIcon(iconID),8,8)
-			Else
-				If getScrollposition>-8 Then
-					drawBMP(getScrollposition-9,0,getIcon(iconID),8,8)
+			If hideicon=False Then
+				If getScrollposition>9 Then
+					drawBMP(0,0,getIcon(iconID),8,8)
+				Else
+					If getScrollposition>-8 Then
+						drawBMP(getScrollposition-9,0,getIcon(iconID),8,8)
+					End If
+					If mscrollposition<-8 Then
+						If RepeatIcon Then
+							hideicon=False
+						Else
+							hideicon=True
+						End If
+					
+					End If
 				End If
 			End If
 		Else
@@ -676,6 +687,21 @@ End Sub
 'Plays a soundfile via DFplayer
 Public Sub playSound(soundfile As Int)
 	commandList.Add(CreateMap("type":"sound","file":soundfile))
+End Sub
+
+'Stops a soundfile
+Public Sub stopSound(soundfile As Int)
+	commandList.Add(CreateMap("type":"stopsound"))
+End Sub
+
+'Loops a soundfile
+Public Sub LoopSound(soundfile As Int)
+	commandList.Add(CreateMap("type":"loopsound","file":soundfile))
+End Sub
+
+'Advertise a soundfile
+Public Sub AdvertiseSound(soundfile As Int)
+	commandList.Add(CreateMap("type":"advertisesound","file":soundfile))
 End Sub
 
 'Exits the app and force AWTRIX to switch to the next App
