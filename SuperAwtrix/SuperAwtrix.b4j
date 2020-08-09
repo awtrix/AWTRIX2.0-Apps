@@ -1,0 +1,33 @@
+﻿AppType=StandardJava
+Build1=Default,b4j.example
+Group=Default Group
+Library1=jcore
+Library2=json
+Library3=jrandomaccessfile
+Library4=b4xcollections
+Library5=jokhttputils2
+Module1=AWTRIX
+Module2=Block
+Module3=Enemy
+Module4=SuperAwtrix
+NumberOfFiles=0
+NumberOfLibraries=5
+NumberOfModules=4
+Version=8.31
+@EndOfDesignText@
+#Region Project Attributes 
+	#LibraryName:SuperAwtrix
+#End Region
+
+Sub Process_Globals
+	
+End Sub
+
+Sub AppStart (Args() As String)
+	
+End Sub
+
+'Return true to allow the default exceptions handler to handle the uncaught exception.
+Sub Application_Error (Error As Exception, StackTrace As String) As Boolean
+	Return True
+End Sub
