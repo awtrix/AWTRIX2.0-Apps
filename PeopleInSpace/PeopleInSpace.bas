@@ -55,7 +55,7 @@ End Sub
 Sub App_startDownload(jobNr As Int)
 	Select jobNr
 		Case 1
-			App.Download("http://www.howmanypeopleareinspacerightnow.com/peopleinspace.json")
+			App.Download("https://www.howmanypeopleareinspacerightnow.com/peopleinspace.json")
 	End Select
 End Sub
 
