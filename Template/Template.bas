@@ -156,5 +156,5 @@ End Sub
 
 'With this sub you build your frame wtih eveery Tick.
 Sub App_genFrame
-	App.genSimpleFrame(App.get("CustomText") & " " & first_name,6,True,Null,True)
+	App.genSimpleFrame(App.get("CustomText") & " " & first_name,6,True,False,Null,True)
 End Sub
