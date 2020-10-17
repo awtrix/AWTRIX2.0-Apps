@@ -39,6 +39,8 @@ Public Sub Initialize() As String
 	App.author="Blueforcer"
 			
 	App.coverIcon = 609
+	
+	App.settings=CreateMap("TempOffset":0,"HumOffset":0,"PresOffset":0)
 
 	'IconIDs from AWTRIXER. You can add multiple if you want to display them at the same time
 	App.icons=Array As Int(693,235)

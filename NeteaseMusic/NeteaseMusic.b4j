@@ -5,15 +5,15 @@ Library1=jcore
 Library2=json
 Library3=jrandomaccessfile
 Module1=AWTRIX
-Module2=Wetterdienst
+Module2=NeteaseMusic
 NumberOfFiles=0
 NumberOfLibraries=3
 NumberOfModules=2
-Version=8.31
+Version=8.5
 @EndOfDesignText@
-'Non-UI application (console / server application)
+'Draws a Rectangle'Non-UI application (console / server application)
 #Region Project Attributes 
-#LibraryName:Wetterdienst
+#LibraryName:NeteaseMusic
 #End Region
 
 Sub Process_Globals

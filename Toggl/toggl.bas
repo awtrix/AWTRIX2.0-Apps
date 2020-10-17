@@ -39,12 +39,12 @@ Public Sub Initialize() As String
 	App.name = "Toggl"
 	
 	'Version of the App
-	App.version = "1.1"
+	App.version = "1.2"
 	
 	'Description of the App. You can use HTML to format it
 	App.description = $"
 	Starts or stops a Toggl task.<br>
-	<a href="https://toggl.com/" target="_blank">Powered by Toggl.com</a>
+	Powered by Toggl.com
 	"$
 	
 	App.setupDescription= $"

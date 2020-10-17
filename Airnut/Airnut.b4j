@@ -4,16 +4,16 @@ Group=Default Group
 Library1=jcore
 Library2=json
 Library3=jrandomaccessfile
-Module1=AWTRIX
-Module2=Wetterdienst
+Module1=Airnut
+Module2=AWTRIX
 NumberOfFiles=0
 NumberOfLibraries=3
 NumberOfModules=2
-Version=8.31
+Version=8.5
 @EndOfDesignText@
 'Non-UI application (console / server application)
 #Region Project Attributes 
-#LibraryName:Wetterdienst
+#LibraryName:Airnut
 #End Region
 
 Sub Process_Globals
