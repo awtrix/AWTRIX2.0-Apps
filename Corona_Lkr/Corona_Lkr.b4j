@@ -1,0 +1,39 @@
+﻿AppType=StandardJava
+Build1=Default,b4j.example
+Group=Default Group
+Library1=jcore
+Library2=json
+Library3=jrandomaccessfile
+Library4=simulator
+Library5=jfx
+Module1=AWTRIX
+Module2=Corona_Lkr
+NumberOfFiles=0
+NumberOfLibraries=5
+NumberOfModules=2
+Version=8.5
+@EndOfDesignText@
+
+#Region Project Attributes 
+	#LibraryName:Corona_Lkr
+#End Region
+
+Sub Process_Globals
+	Dim fx As JFX
+End Sub
+
+Sub AppStart (Args() As String)
+	
+	File.MakeDir(File.DirApp,"Apps")
+	Dim sim As Simulator
+	Dim s As Corona_Lkr
+	s.Initialize
+	sim.Initialize(s)
+'	form.Show
+	StartMessageLoop
+End Sub
+
+'Return true to allow the default exceptions handler to handle the uncaught exception.
+Sub Application_Error (Error As Exception, StackTrace As String) As Boolean
+	Return True
+End Sub
