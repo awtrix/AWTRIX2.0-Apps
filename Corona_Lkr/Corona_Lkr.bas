@@ -11,6 +11,7 @@ Sub Class_Globals
 	Dim inzidenz As Double
 	Dim deaths As Int
 	Dim mortality As Double
+	Dim cases As Int
 	Dim landkreis As String
 	Dim framelist As List
 End Sub
@@ -35,7 +36,7 @@ Public Sub Initialize() As String
 	App.name = "Corona_Lkr"
 	
 	'Version of the App
-	App.version = "1.2"
+	App.version = "1.3"
 	
 	'Description of the App. You can use HTML to format it
 	App.description = $"
@@ -49,7 +50,7 @@ Public Sub Initialize() As String
 	App.coverIcon = 1298
 	
 	'needed Settings for this App wich can be configurate from user via webinterface. Dont use spaces here!
-	App.settings = CreateMap("ObjectID":"","Inzidenz":True,"Tote":True,"Sterblichkeit":True)
+	App.settings = CreateMap("ObjectID":"","Inzidenz":True,"Tote":True,"Sterblichkeit":True,"Fälle":True)
 		
 	'Setup Instructions. You can use HTML to format it
 	App.setupDescription = $"
@@ -152,7 +153,7 @@ Sub App_evalJobResponse(Resp As JobResponse)
 					
 					Dim attributes As Map = colfeatures.Get("attributes")
 					Log(attributes)
-
+					cases= attributes.Get("cases")
 					inzidenz = attributes.Get("cases7_per_100k")
 					mortality= attributes.Get("death_rate")
 					deaths= attributes.Get("deaths")
@@ -197,22 +198,31 @@ Sub App_Started
 		framelist.Add(frame1)
 	End If
 	
-	If App.get("Tote") Then
+	If App.get("Fälle") Then
 		Dim frame2 As FrameObject
 		frame2.Initialize
-		frame2.text="Tote: " & deaths
+		frame2.text="Fälle: " & cases
 		frame2.TextLength=App.calcTextLength(frame2.text)
 		frame2.color = Null
 		framelist.Add(frame2)
 	End If
 	
-	If App.get("Sterblichkeit") Then
+	If App.get("Tote") Then
 		Dim frame3 As FrameObject
 		frame3.Initialize
-		frame3.text="Sterblichkeit: " & Round2(mortality,2) & "%"
+		frame3.text="Tote: " & deaths
 		frame3.TextLength=App.calcTextLength(frame3.text)
-		frame3.color=Null
+		frame3.color = Null
 		framelist.Add(frame3)
+	End If
+	
+	If App.get("Sterblichkeit") Then
+		Dim frame4 As FrameObject
+		frame4.Initialize
+		frame4.text="Sterblichkeit: " & Round2(mortality,2) & "%"
+		frame4.TextLength=App.calcTextLength(frame4.text)
+		frame4.color=Null
+		framelist.Add(frame4)
 	End If
 	
 End Sub
