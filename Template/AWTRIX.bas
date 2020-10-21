@@ -85,8 +85,10 @@ private Sub Class_Globals
 	
 	Type FrameObject(text As String,TextLength As Int, Icon As Int, color() As Int)
 	Private nextString As Boolean = False
-	Private waitAfterFallingDown As Boolean = False
+	Private waitAfterFallingDown As Int
 	Private numberOfString As Int = 0
+	Private yScrollPosition As Int = -8
+	Private laststring As Boolean = False
 	Private timeGenText2 As Long
 	Private isActive As Boolean
 End Sub
@@ -1033,22 +1035,28 @@ End Sub
 'frame.Initialize
 'frame.text = "Test"
 'frame.TextLength = App.calcTextLength(frame.text)
-'frame.color=App.globalcolor
+'frame.color=Null
 'frame.Icon = 6
 'FrameList.Add(frame)</code>
-Public Sub FallingText(FrameList As List,callFinish As Boolean, delayBetweenStrings As Int, delayAfterFallingDown As Int)
+Public Sub FallingText(FrameList As List,callFinish As Boolean)
+	Dim frame As FrameObject = FrameList.Get(numberOfString)
 	If nextString Then
-		If DateTime.now - timeGenText2 > delayBetweenStrings Then
+		
+		If DateTime.now - timeGenText2 > 100 Then
 			nextString = False
 		End If
-	Else If waitAfterFallingDown Then
-		If DateTime.now - timeGenText2 > delayAfterFallingDown Then
-			waitAfterFallingDown = False
+		
+	Else If waitAfterFallingDown>0 Then
+		
+		
+		If DateTime.now - timeGenText2 > waitAfterFallingDown Then
+			waitAfterFallingDown = 0
 		End If
+		
+	Else If laststring Then
+		laststring = False
+		finish
 	Else
-		Dim frame As FrameObject
-		frame = FrameList.Get(numberOfString)
-	
 		If  Not (frame.Icon > -1) Then
 			frame.Icon = 0
 		End If
@@ -1068,14 +1076,30 @@ Public Sub FallingText(FrameList As List,callFinish As Boolean, delayBetweenStri
 	
 		If frame.TextLength+offset<=MatrixWidth Then
 			If frame.Icon>0 Then
-				x=((MatrixWidth/2)-frame.TextLength/2)+4
+				x=9
+				'x=((MatrixWidth/2)-frame.TextLength/2)+4
 				drawBMP(0,0,getIcon(frame.Icon),8,8)
 			Else
-				x=(MatrixWidth/2)-frame.TextLength/2
+				x=1
+				'x=(MatrixWidth/2)-frame.TextLength/2
 			End If
 			
-			drawText(frame.text,x,mscrollposition-38,frame.color)
-			mscrollposition=mscrollposition+1
+			drawText(frame.text,x,yScrollPosition,frame.Color)
+			
+			yScrollPosition=yScrollPosition+1
+			If yScrollPosition > 1 Then
+				yScrollPosition=-8
+				waitAfterFallingDown = 2500
+				timeGenText2 = DateTime.now
+				numberOfString = numberOfString + 1
+				nextString = True
+				If numberOfString > FrameList.Size - 1 Then
+					numberOfString = 0
+					laststring = True
+					
+				End If
+				Return
+			End If
 		End If
 	
 		If frame.TextLength+offset>MatrixWidth Then
@@ -1100,7 +1124,7 @@ Public Sub FallingText(FrameList As List,callFinish As Boolean, delayBetweenStri
 			
 			mscrollposition=mscrollposition+1
 			If mscrollposition = 40 Then
-				waitAfterFallingDown = True
+				waitAfterFallingDown = 1000
 				timeGenText2 = DateTime.now
 				Return
 			End If
@@ -1109,13 +1133,15 @@ Public Sub FallingText(FrameList As List,callFinish As Boolean, delayBetweenStri
 		'finishing?
 		If frame.TextLength+offset<=MatrixWidth Then
 			If mscrollposition - 38 > 1  Then
+			
 				mscrollposition=MatrixWidth
 				numberOfString = numberOfString + 1
 				timeGenText2 = DateTime.now
 				nextString = True
 				If numberOfString > FrameList.Size - 1 Then
 					numberOfString = 0
-					finish
+					
+					laststring = True
 				End If
 				
 			End If
@@ -1129,7 +1155,7 @@ Public Sub FallingText(FrameList As List,callFinish As Boolean, delayBetweenStri
 				stop = frame.TextLength + 5
 			End If
 		
-			If mscrollposition - 34 > stop  Then
+			If mscrollposition - 40 > stop  Then
 				mscrollposition=MatrixWidth
 				numberOfString = numberOfString + 1
 				timeGenText2 = DateTime.now
@@ -1137,7 +1163,7 @@ Public Sub FallingText(FrameList As List,callFinish As Boolean, delayBetweenStri
 				nextString = True
 				If numberOfString > FrameList.Size - 1 Then
 					numberOfString = 0
-					finish
+					laststring = True
 				End If
 				
 			End If

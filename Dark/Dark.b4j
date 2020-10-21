@@ -5,7 +5,7 @@ Library1=jcore
 Library2=json
 Library3=jrandomaccessfile
 Module1=AWTRIX
-Module2=Template
+Module2=Dark
 NumberOfFiles=0
 NumberOfLibraries=3
 NumberOfModules=2
@@ -13,7 +13,7 @@ Version=8.5
 @EndOfDesignText@
 
 #Region Project Attributes 
-	#LibraryName:Template
+	#LibraryName:Dark
 #End Region
 
 Sub Process_Globals
