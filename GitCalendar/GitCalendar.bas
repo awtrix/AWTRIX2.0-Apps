@@ -48,11 +48,16 @@ Public Sub Initialize() As String
 	App.CoverIcon = 514
 	
 	'needed Settings for this App wich can be configurate from user via webinterface. Dont use spaces here!
-	App.Settings = CreateMap("host":"http://gitlab.yourhost.com", "account":"dreambt", "session":"xxx", "dateFormat":"yyyy-MM-dd")
+	App.Settings = CreateMap("host":"http://gitlab.yourhost.com", "account":"dreambt", "session":"xxx", "dateFormat":"yyyy-MM-dd", "startDayOfWeek":"0")
 		
 	'Setup Instructions. You can use HTML to format it
 	App.SetupDescription = $"
 	<b>Notice:</b>You need provide your gitlab_session or github private token.<br/>
+	host: gitlab host, ex. http://gitlab.yourhost.com<br/>
+	account: gitlab username, ex. Tom<br/>
+	session: gitlab session<br/>
+	dateFormat: ex. yyyy-MM-dd<br/>
+	startDay of Week: -1=Monday, 0=Sunday, 1=Saturday<br/>
 	"$
 	
 	'define some tags to simplify the search in the Appstore
@@ -177,17 +182,18 @@ Sub App_evalJobResponse(Resp As JobResponse)
 					Dim savedFormat As String= DateTime.DateFormat
 					DateTime.DateFormat = App.get("dateFormat")
 					Dim currentDate As Long = DateTime.Now
-					Dim dayOfWeek As Short = DateTime.GetDayOfWeek(currentDate)
+					Dim dayOfWeek As Int = DateTime.GetDayOfWeek(currentDate)
+					Dim dayOfWeekLocale As Short = App.get("startDayOfWeek")
 					currentDate = currentDate / 1000 / 86400
 					
 					For Each k As String In root.Keys
 						Dim targetDate As Long = DateTime.DateParse(k) / 1000 / 86400
 						Dim diff As Short = currentDate - targetDate
-						Dim offset As Short = diff + 6 - dayOfWeek
+						Dim offset As Short = diff + 7 - dayOfWeek
 						If offset >= 0 And offset < 256 Then
 							Dim v As Short = root.Get(k)
 							Dim x As Int = 32 - offset/7
-							Dim y As Int = 7 - offset Mod 7
+							Dim y As Int = 7 - (offset+dayOfWeekLocale) Mod 7
 							Dim idx As Short = (v + 10) / 10
 							If idx >= 5 Then
 								idx = 4
