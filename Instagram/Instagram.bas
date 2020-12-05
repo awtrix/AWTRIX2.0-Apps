@@ -20,7 +20,7 @@ Public Sub Initialize() As String
 	App.Name="Instagram"
 	
 	'Version of the App
-	App.Version="1.1"
+	App.Version="1.2"
 	
 	'Description of the App. You can use HTML to format it
 	App.Description=$"Shows your Instagram followers"$
@@ -82,12 +82,13 @@ Sub App_evalJobResponse(Resp As JobResponse)
 				Case 1
 					Dim Reader As TextReader
 					Reader.Initialize(Resp.Stream)
+					File.WriteString(File.Combine(File.DirApp,"Apps"),"instagramDebug.txt",Resp.ResponseString)
 					Dim line As String
 					line = Reader.ReadLine
 					Do While line <> Null
-						If line.Contains("userInteractionCount") Then
-							Followers=line.SubString2(line.IndexOf($""userInteractionCount":""$)+24,line.IndexOf($""}},"image""$))
-							Followers=Followers.Replace(",","")
+						If line.Contains("edge_followed_by") Then
+							Followers=line.SubString2(line.IndexOf($""edge_followed_by":{""$)+28,line.IndexOf($"followed_by_viewer"$)-3)
+							Followers=Followers.Replace(",","").Replace(".","")
 							Exit
 						End If
 						line = Reader.ReadLine

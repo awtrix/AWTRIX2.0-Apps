@@ -42,7 +42,7 @@ Public Sub Initialize() As String
 	App.name = "Netatmo"
 	
 	'Version of the App
-	App.version = "1.8"
+	App.version = "1.9"
 	
 	'Description of the App. You can use HTML to format it
 	App.description = $"
@@ -57,7 +57,7 @@ Public Sub Initialize() As String
 	'Icon (ID) to be displayed in the Appstore and MyApps
 	App.coverIcon = 874
 	
-	App.InitializeOAuth("https://api.netatmo.com/oauth2/authorize","https://api.netatmo.com/oauth2/token","XXXXX","XXXXXXXXXXX","read_station")
+	App.InitializeOAuth("https://api.netatmo.com/oauth2/authorize","https://api.netatmo.com/oauth2/token","xxxxxxx","xxxxxxxx","read_station")
 	
 	'define some tags to simplify the search in the Appstore
 	App.tags = Array As String("Netatmo", "Awesome")
@@ -264,12 +264,21 @@ Sub App_evalJobResponse(Resp As JobResponse)
 					If Resp.Success = True Then
 						Dim parser As JSONParser
 						finaldatapoints.Clear
-						parser.Initialize(Resp.ResponseString)
+						parser.Initialize(replaceUmlauts(Resp.ResponseString))
+					
 						Dim root As Map = parser.NextObject
 						Dim body As Map = root.Get("body")
 						devices = body.Get("devices")
 						For Each coldevices As Map In devices
+							
 							Dim station_name As String = coldevices.Get("station_name")
+							
+							If station_name.Contains("(") And  station_name.Contains(")") Then
+								station_name=station_name.SubString2(0,station_name.IndexOf("(")-1)
+								station_name=station_name.Replace(" ","")
+							End If
+													
+							
 							Dim stationreachable As Boolean= coldevices.Get("reachable")
 							If stationreachable=False Then Continue
 							Dim station_datapoints As List = coldevices.Get("data_type")
@@ -299,8 +308,8 @@ Sub App_evalJobResponse(Resp As JobResponse)
 								Next
 							Next
 						Next
-						
-						App. makeSettings
+						File.WriteMap(File.DirApp,"netatmoSettings.txt",App.settings)
+						App.makeSettings
 					End If
 			End Select
 
@@ -321,6 +330,11 @@ Sub App_CustomSetupScreen As String
 	sb.Append("<ul>")
 	For Each device As Map In devices
 		Dim station_name As String = device.Get("station_name")
+		If station_name.Contains("(") And  station_name.Contains(")") Then
+			station_name=station_name.SubString2(0,station_name.IndexOf("(")-1)
+			station_name=station_name.Replace(" ","")
+		End If
+		
 		sb.Append($"<li><h5>${station_name}</h5>"$)
 		sb.Append("<h6>Datapoints</h6><ul>")
 		
@@ -385,4 +399,11 @@ Sub App_genFrame
 	App.FallingText(displaylist,True)
 '	App.drawBMP(0,0,App.getIcon(874),8,8)
 
+End Sub
+
+Sub replaceUmlauts(text As String) As String
+	
+	Dim t As String = text.Replace("\u00fc","ue").Replace("\u00f6","oe").Replace("\u00e4","ae").Replace("\u00dc","UE").Replace("\u00d6","OE").Replace("\u00c4","AE")
+	File.WriteString(File.DirApp,"netatmo.txt",t)
+	Return t
 End Sub

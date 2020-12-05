@@ -20,7 +20,7 @@ Public Sub Initialize() As String
 	App.Name="UpdateNotifier"
 	
 	'Version of the App
-	App.Version="1.1"
+	App.Version="1.2"
 	
 	'Description of the App. You can use HTML to format it
 	App.Description="Notifies you when a new AWTRIX update is available"
@@ -83,7 +83,6 @@ End Sub
 
 Sub App_genFrame
 	App.drawBMP(-1,0,App.getIcon(577),8,8)
-	App.drawBMP(25,0,App.getIcon(577),8,8)
 	App.drawText(newVersion,7,1,App.rainbow)
 End Sub
 

@@ -30,7 +30,7 @@ Public Sub Initialize() As String
 	App.name = "TikTok"
 	
 	'Version of the App
-	App.version = "1.0"
+	App.version = "1.1"
 	
 	'Description of the App. You can use HTML to format it
 	App.description = $"
@@ -108,7 +108,7 @@ End Sub
 Sub App_startDownload(jobNr As Int)
 	Select jobNr
 		Case 1
-			App.Download($"https://cloutmeter.com/report/${App.get("ProfileName")}"$)
+			App.Download($"https://www.tiktok.com/node/share/user/@${App.get("ProfileName")}"$)
 	End Select
 
 End Sub
@@ -122,19 +122,12 @@ Sub App_evalJobResponse(Resp As JobResponse)
 		If Resp.success Then
 			Select Resp.jobNr
 				Case 1
-					Dim Reader As TextReader
-					Reader.Initialize(Resp.Stream)
-					Dim line As String
-					line = Reader.ReadLine
-					Do While line <> Null
-						If line.Contains("report-header-number") Then
-							Followers=line.SubString2(line.IndexOf($"<p class="report-header-number">"$)+32,line.IndexOf($"</p>"$))
-							Followers=Followers.Replace(",","")
-							Exit
-						End If
-						line = Reader.ReadLine
-					Loop
-					Reader.Close
+					Dim Reader As JSONParser
+					Reader.Initialize(Resp.ResponseString)
+					Dim root As Map = Reader.NextObject
+					Dim userInfo As Map = root.Get("userInfo")
+					Dim stats As Map = userInfo.Get("stats")
+					Followers = stats.Get("followerCount")
 			End Select
 		Else
 			App.shouldShow=False
