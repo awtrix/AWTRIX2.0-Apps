@@ -66,7 +66,8 @@ End Sub
 Sub App_startDownload(jobNr As Int)
 	Select jobNr
 		Case 1
-			App.Download("https://www.instagram.com/"&App.get("Profilename")&"/")
+			App.Download("https://www.instagram.com/"&App.get("Profilename")&"/?__a=1")
+			App.Header= CreateMap("User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.135 Safari/537.36")
 	End Select
 End Sub
 
@@ -80,20 +81,13 @@ Sub App_evalJobResponse(Resp As JobResponse)
 		If Resp.success Then
 			Select Resp.jobNr
 				Case 1
-					Dim Reader As TextReader
-					Reader.Initialize(Resp.Stream)
-					File.WriteString(File.Combine(File.DirApp,"Apps"),"instagramDebug.txt",Resp.ResponseString)
-					Dim line As String
-					line = Reader.ReadLine
-					Do While line <> Null
-						If line.Contains("edge_followed_by") Then
-							Followers=line.SubString2(line.IndexOf($""edge_followed_by":{""$)+28,line.IndexOf($"followed_by_viewer"$)-3)
-							Followers=Followers.Replace(",","").Replace(".","")
-							Exit
-						End If
-						line = Reader.ReadLine
-					Loop
-					Reader.Close
+					Dim jp As JSONParser
+					jp.Initialize(Resp.ResponseString)
+					Dim root As Map = jp.NextObject
+					Dim graphql As Map = root.Get("graphql")
+					Dim user As Map = graphql.Get("user")
+					Dim edge_followed_by As Map = user.Get("edge_followed_by")
+					Followers = edge_followed_by.Get("count")
 			End Select
 		End If
 	Catch
