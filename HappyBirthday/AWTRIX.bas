@@ -1237,7 +1237,7 @@ Public Sub showMulticolorText(iconId As Int, text As String, yPosition As Int, c
 	
 	If (iconId > 0) Then
 		drawLine(8,0,8,8, Array As Int(0,0,0))
-		drawBMP(0,0, getIcon(iconId),8,8)
+		drawBMP(0,0, getIcon(iconId),8,8)	
 	End If
 	
 	localTickCount=localTickCount+1
@@ -1271,7 +1271,7 @@ Public Sub showMulticolorFalling(iconId As Int, text As String, colorList As Lis
 	Dim tx, ty As Int
 	Dim c() As Int
 	Dim textLine() As String = Regex.split(" ", text)
-	Dim yOffset As Int = 8
+	Dim yOffset As Int = 8 
 	If (iconId>0) Then yOffset = 15
 	Dim pixelLength As Int = (textLine.Length*8) + yOffset
 	Dim frame As Int= localTickCount Mod pixelLength
@@ -1279,7 +1279,7 @@ Public Sub showMulticolorFalling(iconId As Int, text As String, colorList As Lis
 	Dim revert As Int = -1
 	
 	If (colorList.Size = 0) Then colorList.Add(SystemColor)
-	If (revertDirection) Then
+	If (revertDirection) Then 
 		revert = 1
 		If (iconId>0) Then yOffset = 19
 	End If

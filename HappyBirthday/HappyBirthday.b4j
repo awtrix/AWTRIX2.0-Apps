@@ -3,17 +3,18 @@ Build1=Default,b4j.example
 Group=Default Group
 Library1=jcore
 Library2=json
-Library3=jrandomaccessfile
+Library3=jdateutils
+Library4=jrandomaccessfile
 Module1=AWTRIX
-Module2=Template
+Module2=HappyBirthday
 NumberOfFiles=0
-NumberOfLibraries=3
+NumberOfLibraries=4
 NumberOfModules=2
 Version=8.8
 @EndOfDesignText@
 
 #Region Project Attributes 
-	#LibraryName:Template
+	#LibraryName:HappyBirthday
 #End Region
 
 Sub Process_Globals
