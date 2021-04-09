@@ -39,7 +39,7 @@ Public Sub Initialize() As String
 	App.name = "Corona_Lkr"
 	
 	'Version of the App
-	App.version = "1.6"
+	App.version = "1.7"
 	
 	'Description of the App. You can use HTML to format it
 	App.description = $"
@@ -53,11 +53,12 @@ Public Sub Initialize() As String
 	App.coverIcon = 1298
 	
 	'needed Settings for this App wich can be configurate from user via webinterface. Dont use spaces here!
-	App.settings = CreateMap("ObjectID":"","Landkreis":True,"Inzidenz":True,"Tote":True,"Sterblichkeit":True,"Fälle":True)
+	App.settings = CreateMap("ObjectID":"","Landkreis":True,"Inzidenz":True,"Tote":True,"Sterblichkeit":True,"Fälle":True,"Einfärben":True)
 		
 	'Setup Instructions. You can use HTML to format it
 	App.setupDescription = $"
 	<b>ObjectID:  </b>Klicke auf deinen Landkreis in <a href="https://npgeo-corona-npgeo-de.hub.arcgis.com/datasets/917fc37a709542548cc3be077a786c17_0" target="_blank">dieser Map</a> und kopiere dir die ObjectID die angezeigt wird.<br/>
+	<b>Einfärben: Färbt die inzidenz anhand des Wertes Grün, Gelb, Rot</b>
 	"$
 	
 	'define some tags to simplify the search in the Appstore
@@ -156,7 +157,7 @@ Sub App_evalJobResponse(Resp As JobResponse)
 					inzidenz = attributes.Get("cases7_per_100k")
 					mortality= attributes.Get("death_rate")
 					deaths= attributes.Get("deaths")
-					landkreis=attributes.Get("GEN")			
+					landkreis=attributes.Get("GEN")
 			End Select
 		End If
 	Catch
@@ -173,13 +174,13 @@ Sub App_Started
 	
 	
 	If App.get("Landkreis") Then
-			Dim frame As FrameObject
-			frame.Initialize
-			frame.text=landkreis
-			frame.TextLength=App.calcTextLength(frame.text)
-			frame.Icon=1298
-			frame.color=Null
-			framelist.Add(frame)
+		Dim frame As FrameObject
+		frame.Initialize
+		frame.text=landkreis
+		frame.TextLength=App.calcTextLength(frame.text)
+		frame.Icon=1298
+		frame.color=Null
+		framelist.Add(frame)
 	End If
 	
 	If App.get("Inzidenz") Then
@@ -187,13 +188,20 @@ Sub App_Started
 		frame1.Initialize
 		frame1.text="Inzidenz: " & Round2(inzidenz,2)
 		frame1.TextLength=App.calcTextLength(frame1.text)
-		If inzidenz>50 Then
-			frame1.color= Array As Int(255,0,0)
-		else if inzidenz>35 Then
-			frame1.color= Array As Int(255,255,0)
+		
+		If App.get("Einfärben") Then
+			If inzidenz>50 Then
+				frame1.color= Array As Int(255,0,0)
+			else if inzidenz>35 Then
+				frame1.color= Array As Int(255,255,0)
+			Else
+				frame1.color= Array As Int(0,255,0)
+			End If
 		Else
-			frame1.color= Array As Int(0,255,0)
+			frame1.color= Null
 		End If
+		
+	
 		
 		If Not(App.get("Landkreis")) Then
 			frame1.Icon=1298
