@@ -9,7 +9,7 @@ Module2=StockTicker
 NumberOfFiles=0
 NumberOfLibraries=3
 NumberOfModules=2
-Version=8.5
+Version=8.9
 @EndOfDesignText@
 'Non-UI application (console / server application)
 #Region Project Attributes 
