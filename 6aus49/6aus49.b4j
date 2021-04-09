@@ -1,0 +1,30 @@
+﻿AppType=StandardJava
+Build1=Default,b4j.example
+Group=Default Group
+Library1=jcore
+Library2=json
+Library3=jrandomaccessfile
+Module1=AWTRIX
+Module2=SechsAus49
+NumberOfFiles=0
+NumberOfLibraries=3
+NumberOfModules=2
+Version=8.9
+@EndOfDesignText@
+
+#Region Project Attributes 
+	#LibraryName:SechsAus49
+#End Region
+
+Sub Process_Globals
+	
+End Sub
+
+Sub AppStart (Args() As String)
+	
+End Sub
+
+'Return true to allow the default exceptions handler to handle the uncaught exception.
+Sub Application_Error (Error As Exception, StackTrace As String) As Boolean
+	Return True
+End Sub
