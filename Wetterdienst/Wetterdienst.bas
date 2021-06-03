@@ -19,7 +19,7 @@ Public Sub Initialize() As String
 	App.Name="Wetterdienst"
 	
 	'Version of the App
-	App.Version="1.0"
+	App.Version="1.1"
 	
 	'Description of the App. You can use HTML to format it
 	App.Description=$"
@@ -44,6 +44,8 @@ Public Sub Initialize() As String
 	
 	'Tickinterval in ms (should be 65 by default, for smooth scrolling))
 	App.Tick=65
+	
+	App.lock=True
 	
 	'needed Settings for this App (Wich can be configurate from user via webinterface)
 	App.settings=CreateMap("CellID":"")
@@ -81,20 +83,23 @@ Sub App_evalJobResponse(Resp As JobResponse)
 		If Resp.success Then
 			Select Resp.jobNr
 				Case 1
-				sb.Initialize
-				Dim parser As JSONParser
-				parser.Initialize(Resp.ResponseString.Replace(");","").Replace("warnWetter.loadWarnings(",""))
-				Dim root As Map = parser.NextObject
-				Dim warnings As Map = root.Get("warnings")
+					sb.Initialize
+					Dim parser As JSONParser
+					parser.Initialize(Resp.ResponseString.Replace(");","").Replace("warnWetter.loadWarnings(",""))
+					Dim root As Map = parser.NextObject
+					Dim warnings As Map = root.Get("warnings")
 					If warnings.ContainsKey(App.get("CellID")) Then
-					App.ShouldShow=True
-					Dim weather As List = warnings.Get(App.get("CellID"))
-					For Each col As Map In weather
-						sb.Append(col.Get("headline")).Append("          ")
-					Next
+						App.ShouldShow=True
+						Dim weather As List = warnings.Get(App.get("CellID"))
+						Dim count As Int = 1
+						For Each col As Map In weather
+							sb.Append(count & ". " & col.Get("headline") & "  ")
+							count=count+1
+						Next
+					
 					Else
-					App.ShouldShow=False
-				End If
+						App.ShouldShow=False
+					End If
 			End Select
 		End If
 	Catch

@@ -40,7 +40,7 @@ private Sub Class_Globals
 	Private MatrixWidth As Int = 32
 	Private MatrixHeight As Int = 8
 	Private DownloadHeader As Map
-	Private pluginversion as int = 1
+	Private pluginversion As Int = 1
 	Private Tag As List = Array As String()
 	Private playdescription As String
 	Private Cover As Int
@@ -66,6 +66,7 @@ private Sub Class_Globals
 	Private Enabled As Boolean = True
 	Private noIcon() As Short = Array As Short(0, 0, 0, 63488, 63488, 0, 0, 0, 0, 0, 63488, 0, 0, 63488, 0, 0, 0, 0, 0, 0, 0, 63488, 0, 0, 0, 0, 0, 0, 63488, 0, 0, 0, 0, 0, 0, 63488, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 63488, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
 	Private isRunning As Boolean
+	Private hideicon As Boolean
 	Private Menu As Map
 	Private MenuList As List
 	Private bc As B4XSerializator
@@ -78,14 +79,22 @@ private Sub Class_Globals
 	Private OAuth As Boolean
 	Private oauthmap As Map
 	Private mContentType As String
-
+	Private customcolor As String
 	Private poll As Map = CreateMap("enable":False,"sub":"")
 	Private mHidden As Boolean
+	Private laststring As Boolean = False
+	Type FrameObject(text As String,TextLength As Int, Icon As Int, color() As Int)
+	Private nextString As Boolean = False
+	Private waitAfterFallingDown As Int
+	Private numberOfString As Int = 0
+	Private timeGenText2 As Long
+	Private yScrollPosition As Int = -8
+	Private isActive As Boolean
+	Private isSimulator As Boolean
 End Sub
 
 'Initializes the Helperclass.
 Public Sub Initialize(class As Object, Eventname As String)
-
 	oauthmap.Initialize
 	Tag.Initialize
 	httpMap.Initialize
@@ -255,14 +264,11 @@ Public Sub getIcon(ID As Int) As Short()
 End Sub
 #End Region
 
-'This is the interface between AWTRIX and the App
+'This is the interface between AWTRIX Host and the App
 Public Sub interface(function As String, Params As Map) As Object
 	Select Case function
 		Case "start"
 			mscrollposition=MatrixWidth
-			If SubExists(Target,event&"_Started") Then
-				CallSub(Target,event&"_Started")
-			End If
 			Try
 				Appduration = Params.Get("AppDuration")
 				If DisplayTime>0 Then
@@ -274,12 +280,21 @@ Public Sub interface(function As String, Params As Map) As Object
 				MatrixHeight = Params.Get("MatrixHeight")
 				UppercaseLetters = Params.Get("UppercaseLetters")
 				CharMap = Params.Get("CharMap")
-				SystemColor = Params.Get("SystemColor")
 				MatrixInfo=Params.Get("MatrixInfo")
 				set.Put("interval",TickInterval)
 				set.Put("needDownload",NeedDownloads)
 				set.Put("DisplayTime", DisplayTime)
 				set.Put("forceDownload", forceDown)
+				numberOfString=0
+				If SubExists(Target,event&"_Started") Then
+					CallSub(Target,event&"_Started")
+				End If
+				hideicon=False
+				If Params.ContainsKey("simulator") Then
+					isSimulator=True
+					
+				End If
+					
 			Catch
 				Log("Got Error from " & appName)
 				Log("Error in start procedure")
@@ -293,6 +308,12 @@ Public Sub interface(function As String, Params As Map) As Object
 				set.Put("show",show)
 			End If
 			
+			If Regex.IsMatch("^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})",customcolor) Then
+				SystemColor=getRGB(customcolor)
+				Log("Set CustomColor")
+			Else
+				SystemColor = Params.Get("SystemColor")
+			End If
 			set.Put("isGame",Game)
 			set.Put("hold",LockApp)
 			set.Put("iconList",Icon)
@@ -352,6 +373,10 @@ Public Sub interface(function As String, Params As Map) As Object
 				If OAuth And OAuthToken.Length=0 Then isconfigured=False
 			End If
 			infos.Put("isconfigured",isconfigured)
+			If SubExists(Target,event&"_CustomSetupScreen") Then
+				infos.Put("CustomSetup",CallSub(Target,event&"_CustomSetupScreen"))
+			End If
+			infos.Put("AppName",appName)
 			infos.Put("AppVersion",AppVersion)
 			infos.Put("tags",Tag)
 			infos.Put("poll",poll)
@@ -385,13 +410,16 @@ Public Sub interface(function As String, Params As Map) As Object
 			If SubExists(Target,event&"_Exited") Then
 				CallSub(Target,event&"_Exited")
 			End If
+			isActive=False
 		Case "getIcon"
 			If SubExists(Target,event&"_iconRequest") Then
 				CallSub(Target,event&"_iconRequest")
 			End If
 			Return CreateMap("iconList":Icon)
 		Case "iconList"
-			addToIconRenderer(Params)
+			If isActive = False Or isSimulator Then
+				addToIconRenderer(Params)
+			End If
 		Case "externalCommand"
 			externalCommand(Params)
 		Case "controller"
@@ -410,17 +438,22 @@ Public Sub interface(function As String, Params As Map) As Object
 			Else
 				Return True
 			End If
-			
+		Case "buttonPush"
+			If SubExists(Target,event&"_buttonPush") Then
+				CallSub(Target,event&"_buttonPush")
+			End If
 		Case "shouldShow"
 			Return show
 		Case "poll"
 			Dim s As String=Params.Get("sub")
 			If SubExists(Target,event & "_" & s) Then
 				CallSub(Target,event & "_" & s)
-			End If			
+			End If
 	End Select
 	Return True
 End Sub
+
+
 
 'This function calculates the ammount of pixels wich a text needs
 Public Sub calcTextLength(text As String) As Int
@@ -451,16 +484,16 @@ End Sub
 'Color - custom text color. Pass Null to use the Global textcolor (recommended).
 '
 '<code>App.genText("Hello World",True,Array as int(255,0,0),false)</code>
-Public Sub genText(Text As String,IconOffset As Boolean,yPostition As Int,Color() As Int,callFinish As Boolean)
+Public Sub genSimpleFrame(Text As String, iconID As Int,moveIcon As Boolean,RepeatIcon As Boolean,Color() As Int,callFinish As Boolean)
 	If Text.Length=0 Then
 		finish
 		Return
 	End If
 	calcTextLength(Text)
 	Dim offset As Int
-	If IconOffset Then offset = 24 Else offset = 32
+	If Not(iconID=0) Then offset = 24 Else offset = 32
 	If TextLength>offset Then
-		drawText(Text,mscrollposition,yPostition,Color)
+		drawText(Text,mscrollposition,1,Color)
 		mscrollposition=mscrollposition-1
 		If mscrollposition< 0-TextLength  Then
 			If LockApp And callFinish Then
@@ -473,13 +506,48 @@ Public Sub genText(Text As String,IconOffset As Boolean,yPostition As Int,Color(
 	Else
 		Dim x As Int
 		If TextLength<offset+1 Then
-			If IconOffset Then
+			If Not(iconID=0) Then
 				x=((MatrixWidth/2)-TextLength/2)+4
 			Else
 				x=(MatrixWidth/2)-TextLength/2
 			End If
 		End If
-		drawText(Text,x,yPostition,Color)
+		drawText(Text,x,1,Color)
+	End If
+	
+	If Not(iconID=0) Then
+		If moveIcon Then
+			If hideicon=False Then
+				If getScrollposition>9 Then
+					drawBMP(0,0,getIcon(iconID),8,8)
+				Else
+					If getScrollposition>-8 Then
+						drawBMP(getScrollposition-9,0,getIcon(iconID),8,8)
+					End If
+					If mscrollposition<-8 Then
+						If RepeatIcon Then
+							hideicon=False
+						Else
+							hideicon=True
+						End If
+					
+					End If
+				End If
+			End If
+		Else
+			drawBMP(0,0,getIcon(iconID),8,8)
+		End If
+	End If
+End Sub
+
+
+Public Sub progressBar(percent As Int, x As Int, y As Int,maxLength As Int, barColor()As Int,backColor()As Int)
+	Dim progress As Int = Min(percent,100)/(100/Min(maxLength,32))
+	If Not(backColor = Null) Then
+		drawLine(x,y,maxLength,y,backColor)
+	End If
+	If progress>0 Then
+		drawLine(x,y,progress,y,barColor)
 	End If
 End Sub
 
@@ -498,11 +566,12 @@ Public Sub makeSettings
 		Next
 		For Counter = m.Size -1 To 0 Step -1
 			Dim SettingsKey As String = m.GetKeyAt(Counter)
-			If Not(SettingsKey="UpdateInterval" Or SettingsKey="StartTime" Or SettingsKey="EndTime" Or SettingsKey="DisplayTime" Or SettingsKey="Enabled")   Then
+			If Not(SettingsKey="UpdateInterval" Or SettingsKey="StartTime" Or SettingsKey="EndTime" Or SettingsKey="DisplayTime" Or SettingsKey="Enabled" Or SettingsKey="CustomColor")   Then
 				If Not(appSettings.ContainsKey(SettingsKey)) Then m.Remove(SettingsKey)
 			End If
 		Next
 		Try
+			customcolor=m.Get("CustomColor")
 			Enabled=m.Get("Enabled")
 			startTime=m.Get("StartTime")
 			endtime=m.Get("EndTime")
@@ -520,6 +589,7 @@ Public Sub makeSettings
 	Else
 		Dim m As Map
 		m.Initialize
+		m.Put("CustomColor","0")
 		m.Put("UpdateInterval",UpdateInterval)
 		m.Put("StartTime","00:00")
 		m.Put("EndTime","00:00")
@@ -542,7 +612,7 @@ public Sub get(SettingsKey As String) As Object
 	End If
 End Sub
 
-Public Sub  saveSingleSetting(key As String, value As Object)
+Public Sub saveSingleSetting(key As String, value As Object)
 	If File.Exists(File.Combine(File.DirApp,"Apps"),appName&".ax") Then
 		Dim data() As Byte = File.ReadBytes(File.Combine(File.DirApp,"Apps"),appName&".ax")
 		Dim m As Map = bc.ConvertBytesToObject(data)
@@ -560,7 +630,7 @@ End Sub
 'Draws a Text
 Public Sub drawText(text As String,x As Int, y As Int,Color() As Int)
 	If Color=Null Then
-		commandList.Add(CreateMap("type":"text","text":text,"x":x,"y":y))
+		commandList.Add(CreateMap("type":"text","text":text,"x":x,"y":y,"color":SystemColor))
 	Else
 		commandList.Add(CreateMap("type":"text","text":text,"x":x,"y":y,"color":Color))
 	End If
@@ -623,6 +693,26 @@ Public Sub fill(Color() As Int)
 	Else
 		commandList.Add(CreateMap("type":"fill","color":Color))
 	End If
+End Sub
+
+'Plays a soundfile via DFplayer
+Public Sub playSound(soundfile As Int)
+	commandList.Add(CreateMap("type":"sound","file":soundfile))
+End Sub
+
+'Stops a soundfile
+Public Sub stopSound(soundfile As Int)
+	commandList.Add(CreateMap("type":"stopsound"))
+End Sub
+
+'Loops a soundfile
+Public Sub LoopSound(soundfile As Int)
+	commandList.Add(CreateMap("type":"loopsound","file":soundfile))
+End Sub
+
+'Advertise a soundfile
+Public Sub AdvertiseSound(soundfile As Int)
+	commandList.Add(CreateMap("type":"advertisesound","file":soundfile))
 End Sub
 
 'Exits the app and force AWTRIX to switch to the next App
@@ -698,7 +788,7 @@ Private Sub externalCommand(cmd As Map)
 End Sub
 
 Public Sub throwError(message As String)
-	Logger(message)
+	Log(DateTime.Date(DateTime.Now) &"      " & appName & ":" & CRLF &  message)
 End Sub
 
 'Returns the timestamp when the app was started.
@@ -805,6 +895,10 @@ Sub setsettings(settings As Map)
 	appSettings=settings
 End Sub
 
+Sub getTextcolor As Int()
+	Return SystemColor
+End Sub
+
 'returns the version of the serever
 Sub getserver As String
 	Return ServerVersion
@@ -836,6 +930,7 @@ public Sub InitializeOAuth (AuthorizeURL As String, TokenURL As String, ClientId
 	oauthmap=CreateMap("AuthorizeURL":AuthorizeURL,"TokenURL":TokenURL,"ClientId":ClientId,"ClientSecret":ClientSecret,"Scope":Scope)
 End Sub
 
+'Returns the OAuth2 Token
 Sub getToken As String
 	Return OAuthToken
 End Sub
@@ -882,7 +977,7 @@ End Sub
 'Sends a multipart POST request.
 'NameValues - A map with the keys and values. Pass Null if not needed.
 'Files - List of MultipartFileData items. Pass Null if not needed.
-Public Sub PostMultipart(Link As String, NameValues As Map, Files As List)
+Public Sub PostMultipart(Link As String, NameValues As Map, Files As Object)
 	httpMap=CreateMap("type":"PostMultipart","Link":Link,"NameValues":NameValues,"Files":Files)
 End Sub
 
@@ -933,6 +1028,157 @@ Sub setHidden(hide As Boolean)
 	mHidden=hide
 End Sub
 
+#Region Colors
+Private Sub getRGB(Color As String) As Int()
+	Dim res(3) As Int
+	res(0) = Bit.ParseInt(Color.SubString2(1,3), 16)
+	res(1) = Bit.ParseInt(Color.SubString2(3,5), 16)
+	res(2) = Bit.ParseInt(Color.SubString2(5,7), 16)
+	Return res
+End Sub
+#End Region
 
-
-
+'With this funtion you can show as many infos as you like. 
+'Build your frames and add them to a list
+'<code>
+'Dim FrameList as List
+'FrameList.Initialize
+'Dim frame As FrameObject
+'frame.Initialize
+'frame.text = "Test"
+'frame.TextLength = App.calcTextLength(frame.text)
+'frame.color=Null
+'frame.Icon = 6
+'FrameList.Add(frame)</code>
+Public Sub FallingText(FrameList As List,callFinish As Boolean)
+	Dim frame As FrameObject = FrameList.Get(numberOfString)
+	If nextString Then
+		
+		If DateTime.now - timeGenText2 > 100 Then
+			nextString = False
+		End If
+		
+	Else If waitAfterFallingDown>0 Then
+		
+		
+		If DateTime.now - timeGenText2 > waitAfterFallingDown Then
+			waitAfterFallingDown = 0
+		End If
+		
+	Else If laststring Then
+		laststring = False
+		finish
+	Else
+		If  Not (frame.Icon > -1) Then
+			frame.Icon = 0
+		End If
+		
+		If frame.text.Length=0 Then
+			numberOfString = numberOfString + 1
+			
+			If numberOfString > FrameList.Size - 1 Then
+				numberOfString = 0
+			End If
+			Return
+		End If
+		'Text in Pixel
+		Dim x As Int
+		Dim offset As Int
+		If frame.Icon>0 Then offset = 9 Else offset = 0
+	
+		If frame.TextLength+offset<=MatrixWidth Then
+			If frame.Icon>0 Then
+				x=9
+				'x=((MatrixWidth/2)-frame.TextLength/2)+4
+				drawBMP(0,0,getIcon(frame.Icon),8,8)
+			Else
+				x=1
+				'x=(MatrixWidth/2)-frame.TextLength/2
+			End If
+			
+			drawText(frame.text,x,yScrollPosition,frame.Color)
+			
+			yScrollPosition=yScrollPosition+1
+			If yScrollPosition > 1 Then
+				yScrollPosition=-8
+				waitAfterFallingDown = 2500
+				timeGenText2 = DateTime.now
+				numberOfString = numberOfString + 1
+				nextString = True
+				If numberOfString > FrameList.Size - 1 Then
+					numberOfString = 0
+					laststring = True
+					
+				End If
+				Return
+			End If
+		End If
+	
+		If frame.TextLength+offset>MatrixWidth Then
+			If frame.Icon>0 Then
+				x = 9
+			Else
+				x = 1
+			End If
+			If mscrollposition-38 > 1 Then
+				If (8-(mscrollposition-38)+1)>=0 Then
+					If frame.Icon>0 Then
+						drawBMP(0-(mscrollposition-38)+1,0,getIcon(frame.Icon),8,8)
+					End If
+				End If
+				drawText(frame.text,x-(mscrollposition-39),1,frame.Color)
+			Else
+				If frame.Icon>0 Then
+					drawBMP(0,0,getIcon(frame.Icon),8,8)
+				End If
+				drawText(frame.text,x,mscrollposition-38,frame.Color)
+			End If
+			
+			mscrollposition=mscrollposition+1
+			If mscrollposition = 40 Then
+				waitAfterFallingDown = 1000
+				timeGenText2 = DateTime.now
+				Return
+			End If
+		End If
+		
+		'finishing?
+		If frame.TextLength+offset<=MatrixWidth Then
+			If mscrollposition - 38 > 1  Then
+			
+				mscrollposition=MatrixWidth
+				numberOfString = numberOfString + 1
+				timeGenText2 = DateTime.now
+				nextString = True
+				If numberOfString > FrameList.Size - 1 Then
+					numberOfString = 0
+					
+					laststring = True
+				End If
+				
+			End If
+		End If
+	
+		If frame.TextLength+offset+1>MatrixWidth Then
+			Dim stop As Int
+			If frame.Icon>0 Then
+				stop = frame.TextLength + 9 + 5
+			Else
+				stop = frame.TextLength + 5
+			End If
+		
+			If mscrollposition - 40 > stop  Then
+				mscrollposition=MatrixWidth
+				numberOfString = numberOfString + 1
+				timeGenText2 = DateTime.now
+				'hier nicht warten?!
+				nextString = True
+				If numberOfString > FrameList.Size - 1 Then
+					numberOfString = 0
+					laststring = True
+				End If
+				
+			End If
+		End If
+	End If
+End Sub

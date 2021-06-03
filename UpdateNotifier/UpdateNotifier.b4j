@@ -9,7 +9,7 @@ Module2=UpdateNotifier
 NumberOfFiles=0
 NumberOfLibraries=3
 NumberOfModules=2
-Version=8.1
+Version=8.5
 @EndOfDesignText@
 'Draws a Rectangle'Non-UI application (console / server application)
 #Region Project Attributes 

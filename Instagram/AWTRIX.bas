@@ -29,7 +29,7 @@ private Sub Class_Globals
 	Private AppVersion As String
 	Private TickInterval As Int
 	Private NeedDownloads As Int = 0
-	Private UpdateInterval As Int = 0
+	Private UpdateInterval As Int = 7200
 	Private AppDescription As String
 	Private AppAuthor As String
 	Private SetupInfos As String
@@ -506,7 +506,7 @@ Public Sub makeSettings
 			Enabled=m.Get("Enabled")
 			startTime=m.Get("StartTime")
 			endtime=m.Get("EndTime")
-			UpdateInterval=m.Get("UpdateInterval")
+			UpdateInterval=7200
 			DisplayTime=m.Get("DisplayTime")
 			File.WriteBytes(File.Combine(File.DirApp,"Apps"),appName&".ax",bc.ConvertObjectToBytes(m))
 			If SubExists(Target,event&"_settingsChanged") Then
@@ -520,7 +520,7 @@ Public Sub makeSettings
 	Else
 		Dim m As Map
 		m.Initialize
-		m.Put("UpdateInterval",UpdateInterval)
+		m.Put("UpdateInterval",7200)
 		m.Put("StartTime","00:00")
 		m.Put("EndTime","00:00")
 		m.Put("DisplayTime","0")

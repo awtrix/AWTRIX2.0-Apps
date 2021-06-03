@@ -85,10 +85,13 @@ private Sub Class_Globals
 	
 	Type FrameObject(text As String,TextLength As Int, Icon As Int, color() As Int)
 	Private nextString As Boolean = False
-	Private waitAfterFallingDown As Boolean = False
+	Private waitAfterFallingDown As Int
 	Private numberOfString As Int = 0
+	Private yScrollPosition As Int = -8
+	Private laststring As Boolean = False
 	Private timeGenText2 As Long
 	Private isActive As Boolean
+	Private localTickCount As Int = 0
 End Sub
 
 'Initializes the Helperclass.
@@ -497,10 +500,11 @@ Public Sub genSimpleFrame(Text As String, iconID As Int,moveIcon As Boolean,Repe
 		Dim x As Int
 		If TextLength<offset+1 Then
 			If Not(iconID=0) Then
-				x=((MatrixWidth/2)-TextLength/2)+4
+				x=(MatrixWidth-TextLength)/2+4
 			Else
-				x=(MatrixWidth/2)-TextLength/2
+				x=(MatrixWidth-TextLength)/2
 			End If
+
 		End If
 		drawText(Text,x,1,Color)
 	End If
@@ -1033,22 +1037,28 @@ End Sub
 'frame.Initialize
 'frame.text = "Test"
 'frame.TextLength = App.calcTextLength(frame.text)
-'frame.color=App.globalcolor
+'frame.color=Null
 'frame.Icon = 6
 'FrameList.Add(frame)</code>
-Public Sub FallingText(FrameList As List,callFinish As Boolean, delayBetweenStrings As Int, delayAfterFallingDown As Int)
+Public Sub FallingText(FrameList As List,callFinish As Boolean)
+	Dim frame As FrameObject = FrameList.Get(numberOfString)
 	If nextString Then
-		If DateTime.now - timeGenText2 > delayBetweenStrings Then
+		
+		If DateTime.now - timeGenText2 > 100 Then
 			nextString = False
 		End If
-	Else If waitAfterFallingDown Then
-		If DateTime.now - timeGenText2 > delayAfterFallingDown Then
-			waitAfterFallingDown = False
+		
+	Else If waitAfterFallingDown>0 Then
+		
+		
+		If DateTime.now - timeGenText2 > waitAfterFallingDown Then
+			waitAfterFallingDown = 0
 		End If
+		
+	Else If laststring Then
+		laststring = False
+		finish
 	Else
-		Dim frame As FrameObject
-		frame = FrameList.Get(numberOfString)
-	
 		If  Not (frame.Icon > -1) Then
 			frame.Icon = 0
 		End If
@@ -1068,14 +1078,30 @@ Public Sub FallingText(FrameList As List,callFinish As Boolean, delayBetweenStri
 	
 		If frame.TextLength+offset<=MatrixWidth Then
 			If frame.Icon>0 Then
-				x=((MatrixWidth/2)-frame.TextLength/2)+4
+				x=9
+				'x=((MatrixWidth/2)-frame.TextLength/2)+4
 				drawBMP(0,0,getIcon(frame.Icon),8,8)
 			Else
-				x=(MatrixWidth/2)-frame.TextLength/2
+				x=1
+				'x=(MatrixWidth/2)-frame.TextLength/2
 			End If
 			
-			drawText(frame.text,x,mscrollposition-38,frame.color)
-			mscrollposition=mscrollposition+1
+			drawText(frame.text,x,yScrollPosition,frame.Color)
+			
+			yScrollPosition=yScrollPosition+1
+			If yScrollPosition > 1 Then
+				yScrollPosition=-8
+				waitAfterFallingDown = 2500
+				timeGenText2 = DateTime.now
+				numberOfString = numberOfString + 1
+				nextString = True
+				If numberOfString > FrameList.Size - 1 Then
+					numberOfString = 0
+					laststring = True
+					
+				End If
+				Return
+			End If
 		End If
 	
 		If frame.TextLength+offset>MatrixWidth Then
@@ -1100,7 +1126,7 @@ Public Sub FallingText(FrameList As List,callFinish As Boolean, delayBetweenStri
 			
 			mscrollposition=mscrollposition+1
 			If mscrollposition = 40 Then
-				waitAfterFallingDown = True
+				waitAfterFallingDown = 1000
 				timeGenText2 = DateTime.now
 				Return
 			End If
@@ -1109,13 +1135,15 @@ Public Sub FallingText(FrameList As List,callFinish As Boolean, delayBetweenStri
 		'finishing?
 		If frame.TextLength+offset<=MatrixWidth Then
 			If mscrollposition - 38 > 1  Then
+			
 				mscrollposition=MatrixWidth
 				numberOfString = numberOfString + 1
 				timeGenText2 = DateTime.now
 				nextString = True
 				If numberOfString > FrameList.Size - 1 Then
 					numberOfString = 0
-					finish
+					
+					laststring = True
 				End If
 				
 			End If
@@ -1129,7 +1157,7 @@ Public Sub FallingText(FrameList As List,callFinish As Boolean, delayBetweenStri
 				stop = frame.TextLength + 5
 			End If
 		
-			If mscrollposition - 34 > stop  Then
+			If mscrollposition - 40 > stop  Then
 				mscrollposition=MatrixWidth
 				numberOfString = numberOfString + 1
 				timeGenText2 = DateTime.now
@@ -1137,10 +1165,140 @@ Public Sub FallingText(FrameList As List,callFinish As Boolean, delayBetweenStri
 				nextString = True
 				If numberOfString > FrameList.Size - 1 Then
 					numberOfString = 0
-					finish
+					laststring = True
 				End If
 				
 			End If
 		End If
 	End If
+End Sub
+
+'Reset the TickCounter for animations and force a restart of the animation. 
+'This is required when switching between several animations.
+'The counter is used in showMulticolorText and showMulticolorFalling
+Public Sub resetLocalTickCount
+	localTickCount = 0
+End Sub
+
+' Returns a List of rainbow colors
+Public Sub rainbowList() As List
+	Dim colorList As List
+	colorList.Initialize()
+	colorList.Add(Array As Int(255,0,0))
+	colorList.Add(Array As Int(255,127,0))
+	colorList.Add(Array As Int(255,255,0))
+	colorList.Add(Array As Int(0,255,0))
+	colorList.Add(Array As Int(0,0,255))
+	colorList.Add(Array As Int(75,0,130))
+	colorList.Add(Array As Int(143,0,255))
+	
+	Return colorList
+End Sub
+
+
+'This helper displays multicolored text.
+'Each letter can be displayed in a different color
+'If the text is longer than the matrix width, the text is scrolled
+'
+'Parameter:
+'iconId - ID of an icon. Id = 0 shows the text without a symbol
+'Text - the text to be displayed
+'yPostition - y position of the text (ideally 1 or 2)
+'colorList - a custom text color as a list of colors as an array of int (r, g, b)
+'<code>
+'App.showMulticolorText(1302, "Happy Birthday", 1 , App.rainbowList)
+'</code>
+'<code>
+'Dim colorList As List
+'colorList.Initialize()
+'colorList.Add(Array As Int(255,0,0))
+'colorList.Add(Array As Int(0,255,0))
+'colorList.Add(Array As Int(0,0,255))
+'App.showMulticolorText(0, "Happy Birthday", 1 , colorList)
+'</code>
+Public Sub showMulticolorText(iconId As Int, text As String, yPosition As Int, colorList As List) As Int
+	Dim tx, tl As Int
+	Dim maxLength As Int = (calcTextLength(text)+32)
+	If (colorList.Size = 0) Then colorList.Add(SystemColor)
+	
+	If ((iconId=0) And (TextLength <= MatrixWidth)) Then
+		tx=(MatrixWidth-TextLength)/2
+	Else if ((iconId>0) And (TextLength <= MatrixWidth-8)) Then
+		tx=(MatrixWidth-TextLength)/2 + 4
+	Else
+		tx = MatrixWidth - (localTickCount Mod maxLength)
+	End If
+	
+	tl = 0
+	For i = 0 To text.Length-1
+		drawText(text.CharAt(i), tx+tl , yPosition, colorList.Get(i Mod colorList.Size))
+		tl = tl + calcTextLength(text.CharAt(i))
+	Next
+	
+	If (iconId > 0) Then
+		drawLine(8,0,8,8, Array As Int(0,0,0))
+		drawBMP(0,0, getIcon(iconId),8,8)
+	End If
+	
+	localTickCount=localTickCount+1
+	If localTickCount > maxLength Then
+		localTickCount=0
+	End If
+	
+	Return localTickCount
+End Sub
+
+'This helper displays falling, multicolored text.
+'Each word of the text Is displayed on a new line And each line can have a different color.
+'Currently only words are supported that are no longer than the matrix width
+'
+'Parameter:
+'iconId - ID of an icon. Id = 0 shows the text without a symbol
+'Text - the text to be displayed
+'colorList - a custom text color as a list of colors as an array of int (r, g, b)
+'<code>
+'App.showMulticolorFalling(1302, "Happy Birthday", App.rainbowList)
+'</code>
+'<code>
+'Dim colorList As List
+'colorList.Initialize()
+'colorList.Add(Array As Int(255,0,0))
+'colorList.Add(Array As Int(0,255,0))
+'colorList.Add(Array As Int(0,0,255))
+'App.showMulticolorFalling(0, "Happy Birthday", colorList)
+'</code>
+Public Sub showMulticolorFalling(iconId As Int, text As String, colorList As List, revertDirection As Boolean) As Int
+	Dim tx, ty As Int
+	Dim c() As Int
+	Dim textLine() As String = Regex.split(" ", text)
+	Dim yOffset As Int = 8
+	If (iconId>0) Then yOffset = 15
+	Dim pixelLength As Int = (textLine.Length*8) + yOffset
+	Dim frame As Int= localTickCount Mod pixelLength
+	Dim rCount As Int= (localTickCount / pixelLength)
+	Dim revert As Int = -1
+	
+	If (colorList.Size = 0) Then colorList.Add(SystemColor)
+	If (revertDirection) Then
+		revert = 1
+		If (iconId>0) Then yOffset = 19
+	End If
+	
+	If ((iconId > 0) And (frame < 16)) Then
+		drawBMP(12,revert*(8-frame),getIcon(iconId),8,8)
+	End If
+	
+	For i = 0 To textLine.Length-1
+		c = colorList.Get((i+(rCount*textLine.Length)) Mod colorList.Size)
+		tx = (MatrixWidth - calcTextLength(textLine(i)))/2
+		ty = 0 + revert*(-frame + i*8 + yOffset)
+		drawText(textLine(i), tx, ty, c)
+	Next
+	
+	localTickCount=localTickCount+1
+	If localTickCount > pixelLength*colorList.Size Then
+		localTickCount=0
+	End If
+	
+	Return (localTickCount Mod pixelLength)
 End Sub

@@ -35,13 +35,12 @@ Public Sub Initialize() As String
 	App.name = "COVID19"
 	
 	'Version of the App
-	App.version = "1.2"
+	App.version = "1.3"
 	
 	'Description of the App. You can use HTML to format it
 	App.description = $"
 	Displays Corona virus cases for your Country<br/>
 	Data from the <i>Center for Systems Science and Engineering (CSSE)</i> at Johns Hopkins University in Baltimore, Maryland, USA<br/>
-	<a href="https://systems.jhu.edu/research/public-health/ncov/">Coronavirus Dashboard</a>
 	"$
 	
 	'The developer if this App

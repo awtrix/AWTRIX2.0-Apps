@@ -1,0 +1,37 @@
+﻿AppType=StandardJava
+Build1=Default,b4j.example
+Group=Default Group
+Library1=jcore
+Library10=javaobject
+Library2=json
+Library3=jrandomaccessfile
+Library4=jokhttputils2
+Library5=okhttp
+Library6=jmqtt
+Library7=jmqttbroker
+Library8=byteconverter
+Library9=b4xcollections
+Module1=AWTRIX
+Module2=Netatmo
+NumberOfFiles=0
+NumberOfLibraries=10
+NumberOfModules=2
+Version=8.5
+@EndOfDesignText@
+
+#Region Project Attributes 
+	#LibraryName:Netatmo
+#End Region
+
+Sub Process_Globals
+	
+End Sub
+
+Sub AppStart (Args() As String)
+
+End Sub
+
+'Return true to allow the default exceptions handler to handle the uncaught exception.
+Sub Application_Error (Error As Exception, StackTrace As String) As Boolean
+	Return True
+End Sub

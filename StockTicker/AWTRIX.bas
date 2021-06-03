@@ -66,6 +66,7 @@ private Sub Class_Globals
 	Private Enabled As Boolean = True
 	Private noIcon() As Short = Array As Short(0, 0, 0, 63488, 63488, 0, 0, 0, 0, 0, 63488, 0, 0, 63488, 0, 0, 0, 0, 0, 0, 0, 63488, 0, 0, 0, 0, 0, 0, 63488, 0, 0, 0, 0, 0, 0, 63488, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 63488, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
 	Private isRunning As Boolean
+	Private hideicon As Boolean
 	Private Menu As Map
 	Private MenuList As List
 	Private bc As B4XSerializator
@@ -78,14 +79,23 @@ private Sub Class_Globals
 	Private OAuth As Boolean
 	Private oauthmap As Map
 	Private mContentType As String
-
+	Private customcolor As String
 	Private poll As Map = CreateMap("enable":False,"sub":"")
 	Private mHidden As Boolean
+	
+	Type FrameObject(text As String,TextLength As Int, Icon As Int, color() As Int)
+	Private nextString As Boolean = False
+	Private waitAfterFallingDown As Int
+	Private numberOfString As Int = 0
+	Private yScrollPosition As Int = -8
+	Private laststring As Boolean = False
+	Private timeGenText2 As Long
+	Private isActive As Boolean
+	Private localTickCount As Int = 0
 End Sub
 
 'Initializes the Helperclass.
 Public Sub Initialize(class As Object, Eventname As String)
-
 	oauthmap.Initialize
 	Tag.Initialize
 	httpMap.Initialize
@@ -255,17 +265,12 @@ Public Sub getIcon(ID As Int) As Short()
 End Sub
 #End Region
 
-'This is the interface between AWTRIX and the App
+'This is the interface between AWTRIX Host and the App
 Public Sub interface(function As String, Params As Map) As Object
 	Select Case function
 		Case "start"
-			If SubExists(Target,event&"_Started") Then
-				CallSub(Target,event&"_Started")
-			End If
-			Try
 			mscrollposition=MatrixWidth
-			
-			
+			Try
 				Appduration = Params.Get("AppDuration")
 				If DisplayTime>0 Then
 					Appduration=DisplayTime
@@ -276,32 +281,39 @@ Public Sub interface(function As String, Params As Map) As Object
 				MatrixHeight = Params.Get("MatrixHeight")
 				UppercaseLetters = Params.Get("UppercaseLetters")
 				CharMap = Params.Get("CharMap")
-				SystemColor = Params.Get("SystemColor")
 				MatrixInfo=Params.Get("MatrixInfo")
 				set.Put("interval",TickInterval)
 				set.Put("needDownload",NeedDownloads)
 				set.Put("DisplayTime", DisplayTime)
 				set.Put("forceDownload", forceDown)
-				startTimestamp=DateTime.now
-				noIconMessage=False
-				If show Then
-					set.Put("show",timesComparative)
-				Else
-					set.Put("show",show)
+				numberOfString=0
+				If SubExists(Target,event&"_Started") Then
+					CallSub(Target,event&"_Started")
 				End If
-			
-				set.Put("isGame",Game)
-				set.Put("hold",LockApp)
-				set.Put("iconList",Icon)
-				Return set
+				hideicon=False
+				isActive=True
 			Catch
 				Log("Got Error from " & appName)
 				Log("Error in start procedure")
 				Log(LastException)
-				Return Null
 			End Try
-			
-		
+			startTimestamp=DateTime.now
+			noIconMessage=False
+			If show Then
+				set.Put("show",timesComparative)
+			Else
+				set.Put("show",show)
+			End If
+			If Regex.IsMatch("^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})",customcolor) Then
+				SystemColor=getRGB(customcolor)
+				Log("Set CustomColor")
+			Else
+				SystemColor = Params.Get("SystemColor")
+			End If
+			set.Put("isGame",Game)
+			set.Put("hold",LockApp)
+			set.Put("iconList",Icon)
+			Return set
 		Case "downloadCount"
 			Return NeedDownloads
 		Case "startDownload"
@@ -357,6 +369,9 @@ Public Sub interface(function As String, Params As Map) As Object
 				If OAuth And OAuthToken.Length=0 Then isconfigured=False
 			End If
 			infos.Put("isconfigured",isconfigured)
+			If SubExists(Target,event&"_CustomSetupScreen") Then
+				infos.Put("CustomSetup",CallSub(Target,event&"_CustomSetupScreen"))
+			End If
 			infos.Put("AppVersion",AppVersion)
 			infos.Put("tags",Tag)
 			infos.Put("poll",poll)
@@ -390,13 +405,14 @@ Public Sub interface(function As String, Params As Map) As Object
 			If SubExists(Target,event&"_Exited") Then
 				CallSub(Target,event&"_Exited")
 			End If
+			isActive=False
 		Case "getIcon"
 			If SubExists(Target,event&"_iconRequest") Then
 				CallSub(Target,event&"_iconRequest")
 			End If
 			Return CreateMap("iconList":Icon)
 		Case "iconList"
-			addToIconRenderer(Params)
+			If isActive= False Then addToIconRenderer(Params)
 		Case "externalCommand"
 			externalCommand(Params)
 		Case "controller"
@@ -415,7 +431,10 @@ Public Sub interface(function As String, Params As Map) As Object
 			Else
 				Return True
 			End If
-			
+		Case "buttonPush"
+			If SubExists(Target,event&"_buttonPush") Then
+				CallSub(Target,event&"_buttonPush")
+			End If
 		Case "shouldShow"
 			Return show
 		Case "poll"
@@ -427,23 +446,30 @@ Public Sub interface(function As String, Params As Map) As Object
 	Return True
 End Sub
 
+
+
 'This function calculates the ammount of pixels wich a text needs
 Public Sub calcTextLength(text As String) As Int
-	If UppercaseLetters Then text = text.ToUpperCase
-	If TextBuffer<>text Then
-		Dim Length As Int
-		For i=0 To text.Length-1
-			If CharMap.ContainsKey(Asc(text.CharAt(i))) Then
-				Length=Length+(CharMap.Get(Asc(text.CharAt(i))))
-			Else
-				Length=Length+4
-			End If
-		Next
-		TextBuffer=text
-		TextLength=Length
-		Return Length
-	End If
-	Return TextLength
+	Try
+		If UppercaseLetters Then text = text.ToUpperCase
+		If TextBuffer<>text Then
+			Dim Length As Int
+			For i=0 To text.Length-1
+				If CharMap.ContainsKey(Asc(text.CharAt(i))) Then
+					Length=Length+(CharMap.Get(Asc(text.CharAt(i))))
+				Else
+					Length=Length+4
+				End If
+			Next
+			TextBuffer=text
+			TextLength=Length
+			Return Length
+		End If
+		Return TextLength
+	Catch
+		Log("error calcTextLength")
+	End Try
+	Return 0
 End Sub
 
 'This Helper automaticly display a text in a default app style
@@ -456,16 +482,16 @@ End Sub
 'Color - custom text color. Pass Null to use the Global textcolor (recommended).
 '
 '<code>App.genText("Hello World",True,Array as int(255,0,0),false)</code>
-Public Sub genText(Text As String,IconOffset As Boolean,yPostition As Int,Color() As Int,callFinish As Boolean)
+Public Sub genSimpleFrame(Text As String, iconID As Int,moveIcon As Boolean,RepeatIcon As Boolean,Color() As Int,callFinish As Boolean)
 	If Text.Length=0 Then
 		finish
 		Return
 	End If
 	calcTextLength(Text)
 	Dim offset As Int
-	If IconOffset Then offset = 24 Else offset = 32
+	If Not(iconID=0) Then offset = 24 Else offset = 32
 	If TextLength>offset Then
-		drawText(Text,mscrollposition,yPostition,Color)
+		drawText(Text,mscrollposition,1,Color)
 		mscrollposition=mscrollposition-1
 		If mscrollposition< 0-TextLength  Then
 			If LockApp And callFinish Then
@@ -478,13 +504,48 @@ Public Sub genText(Text As String,IconOffset As Boolean,yPostition As Int,Color(
 	Else
 		Dim x As Int
 		If TextLength<offset+1 Then
-			If IconOffset Then
-				x=((MatrixWidth/2)-TextLength/2)+4
+			If Not(iconID=0) Then
+				x=(MatrixWidth-TextLength)/2+4
 			Else
-				x=(MatrixWidth/2)-TextLength/2
+				x=(MatrixWidth-TextLength)/2
 			End If
+
 		End If
-		drawText(Text,x,yPostition,Color)
+		drawText(Text,x,1,Color)
+	End If
+	
+	If Not(iconID=0) Then
+		If moveIcon Then
+			If hideicon=False Then
+				If getScrollposition>9 Then
+					drawBMP(0,0,getIcon(iconID),8,8)
+				Else
+					If getScrollposition>-8 Then
+						drawBMP(getScrollposition-9,0,getIcon(iconID),8,8)
+					End If
+					If mscrollposition<-8 Then
+						If RepeatIcon Then
+							hideicon=False
+						Else
+							hideicon=True
+						End If
+					
+					End If
+				End If
+			End If
+		Else
+			drawBMP(0,0,getIcon(iconID),8,8)
+		End If
+	End If
+End Sub
+
+Public Sub progressBar(percent As Int, x As Int, y As Int,maxLength As Int, barColor()As Int,backColor()As Int)
+	Dim progress As Int = Min(percent,100)/(100/Min(maxLength,32))
+	If Not(backColor = Null) Then
+		drawLine(x,y,maxLength,y,backColor)
+	End If
+	If progress>0 Then
+		drawLine(x,y,progress,y,barColor)
 	End If
 End Sub
 
@@ -503,11 +564,12 @@ Public Sub makeSettings
 		Next
 		For Counter = m.Size -1 To 0 Step -1
 			Dim SettingsKey As String = m.GetKeyAt(Counter)
-			If Not(SettingsKey="UpdateInterval" Or SettingsKey="StartTime" Or SettingsKey="EndTime" Or SettingsKey="DisplayTime" Or SettingsKey="Enabled")   Then
+			If Not(SettingsKey="UpdateInterval" Or SettingsKey="StartTime" Or SettingsKey="EndTime" Or SettingsKey="DisplayTime" Or SettingsKey="Enabled" Or SettingsKey="CustomColor")   Then
 				If Not(appSettings.ContainsKey(SettingsKey)) Then m.Remove(SettingsKey)
 			End If
 		Next
 		Try
+			customcolor=m.Get("CustomColor")
 			Enabled=m.Get("Enabled")
 			startTime=m.Get("StartTime")
 			endtime=m.Get("EndTime")
@@ -525,6 +587,7 @@ Public Sub makeSettings
 	Else
 		Dim m As Map
 		m.Initialize
+		m.Put("CustomColor","0")
 		m.Put("UpdateInterval",UpdateInterval)
 		m.Put("StartTime","00:00")
 		m.Put("EndTime","00:00")
@@ -547,7 +610,7 @@ public Sub get(SettingsKey As String) As Object
 	End If
 End Sub
 
-Public Sub  saveSingleSetting(key As String, value As Object)
+Public Sub saveSingleSetting(key As String, value As Object)
 	If File.Exists(File.Combine(File.DirApp,"Apps"),appName&".ax") Then
 		Dim data() As Byte = File.ReadBytes(File.Combine(File.DirApp,"Apps"),appName&".ax")
 		Dim m As Map = bc.ConvertBytesToObject(data)
@@ -565,7 +628,7 @@ End Sub
 'Draws a Text
 Public Sub drawText(text As String,x As Int, y As Int,Color() As Int)
 	If Color=Null Then
-		commandList.Add(CreateMap("type":"text","text":text,"x":x,"y":y))
+		commandList.Add(CreateMap("type":"text","text":text,"x":x,"y":y,"color":SystemColor))
 	Else
 		commandList.Add(CreateMap("type":"text","text":text,"x":x,"y":y,"color":Color))
 	End If
@@ -628,6 +691,26 @@ Public Sub fill(Color() As Int)
 	Else
 		commandList.Add(CreateMap("type":"fill","color":Color))
 	End If
+End Sub
+
+'Plays a soundfile via DFplayer
+Public Sub playSound(soundfile As Int)
+	commandList.Add(CreateMap("type":"sound","file":soundfile))
+End Sub
+
+'Stops a soundfile
+Public Sub stopSound(soundfile As Int)
+	commandList.Add(CreateMap("type":"stopsound"))
+End Sub
+
+'Loops a soundfile
+Public Sub LoopSound(soundfile As Int)
+	commandList.Add(CreateMap("type":"loopsound","file":soundfile))
+End Sub
+
+'Advertise a soundfile
+Public Sub AdvertiseSound(soundfile As Int)
+	commandList.Add(CreateMap("type":"advertisesound","file":soundfile))
 End Sub
 
 'Exits the app and force AWTRIX to switch to the next App
@@ -841,6 +924,7 @@ public Sub InitializeOAuth (AuthorizeURL As String, TokenURL As String, ClientId
 	oauthmap=CreateMap("AuthorizeURL":AuthorizeURL,"TokenURL":TokenURL,"ClientId":ClientId,"ClientSecret":ClientSecret,"Scope":Scope)
 End Sub
 
+'Returns the OAuth2 Token
 Sub getToken As String
 	Return OAuthToken
 End Sub
@@ -887,7 +971,7 @@ End Sub
 'Sends a multipart POST request.
 'NameValues - A map with the keys and values. Pass Null if not needed.
 'Files - List of MultipartFileData items. Pass Null if not needed.
-Public Sub PostMultipart(Link As String, NameValues As Map, Files As List)
+Public Sub PostMultipart(Link As String, NameValues As Map, Files As Object)
 	httpMap=CreateMap("type":"PostMultipart","Link":Link,"NameValues":NameValues,"Files":Files)
 End Sub
 
@@ -938,6 +1022,288 @@ Sub setHidden(hide As Boolean)
 	mHidden=hide
 End Sub
 
+#Region Colors
+Private Sub getRGB(Color As String) As Int()
+	Dim res(3) As Int
+	res(0) = Bit.ParseInt(Color.SubString2(1,3), 16)
+	res(1) = Bit.ParseInt(Color.SubString2(3,5), 16)
+	res(2) = Bit.ParseInt(Color.SubString2(5,7), 16)
+	Return res
+End Sub
+#End Region
 
 
+'With this funtion you can show as many infos as you like. 
+'Build your frames and add them to a list
+'<code>
+'Dim FrameList as List
+'FrameList.Initialize
+'Dim frame As FrameObject
+'frame.Initialize
+'frame.text = "Test"
+'frame.TextLength = App.calcTextLength(frame.text)
+'frame.color=Null
+'frame.Icon = 6
+'FrameList.Add(frame)</code>
+Public Sub FallingText(FrameList As List,callFinish As Boolean)
+	Dim frame As FrameObject = FrameList.Get(numberOfString)
+	If nextString Then
+		
+		If DateTime.now - timeGenText2 > 100 Then
+			nextString = False
+		End If
+		
+	Else If waitAfterFallingDown>0 Then
+		
+		
+		If DateTime.now - timeGenText2 > waitAfterFallingDown Then
+			waitAfterFallingDown = 0
+		End If
+		
+	Else If laststring Then
+		laststring = False
+		finish
+	Else
+		If  Not (frame.Icon > -1) Then
+			frame.Icon = 0
+		End If
+		
+		If frame.text.Length=0 Then
+			numberOfString = numberOfString + 1
+			
+			If numberOfString > FrameList.Size - 1 Then
+				numberOfString = 0
+			End If
+			Return
+		End If
+		'Text in Pixel
+		Dim x As Int
+		Dim offset As Int
+		If frame.Icon>0 Then offset = 9 Else offset = 0
+	
+		If frame.TextLength+offset<=MatrixWidth Then
+			If frame.Icon>0 Then
+				x=9
+				'x=((MatrixWidth/2)-frame.TextLength/2)+4
+				drawBMP(0,0,getIcon(frame.Icon),8,8)
+			Else
+				
+				x=(MatrixWidth/2)-frame.TextLength/2
+			End If
+			
+			drawText(frame.text,x,yScrollPosition,frame.Color)
+			
+			yScrollPosition=yScrollPosition+1
+			If yScrollPosition > 1 Then
+				yScrollPosition=-8
+				waitAfterFallingDown = 2500
+				timeGenText2 = DateTime.now
+				numberOfString = numberOfString + 1
+				nextString = True
+				If numberOfString > FrameList.Size - 1 Then
+					numberOfString = 0
+					laststring = True
+					
+				End If
+				Return
+			End If
+		End If
+	
+		If frame.TextLength+offset>MatrixWidth Then
+			If frame.Icon>0 Then
+				x = 9
+			Else
+				x = 1
+			End If
+			If mscrollposition-38 > 1 Then
+				If (8-(mscrollposition-38)+1)>=0 Then
+					If frame.Icon>0 Then
+						drawBMP(0-(mscrollposition-38)+1,0,getIcon(frame.Icon),8,8)
+					End If
+				End If
+				drawText(frame.text,x-(mscrollposition-39),1,frame.Color)
+			Else
+				If frame.Icon>0 Then
+					drawBMP(0,0,getIcon(frame.Icon),8,8)
+				End If
+				drawText(frame.text,x,mscrollposition-38,frame.Color)
+			End If
+			
+			mscrollposition=mscrollposition+1
+			If mscrollposition = 40 Then
+				waitAfterFallingDown = 1000
+				timeGenText2 = DateTime.now
+				Return
+			End If
+		End If
+		
+		'finishing?
+		If frame.TextLength+offset<=MatrixWidth Then
+			If mscrollposition - 38 > 1  Then
+			
+				mscrollposition=MatrixWidth
+				numberOfString = numberOfString + 1
+				timeGenText2 = DateTime.now
+				nextString = True
+				If numberOfString > FrameList.Size - 1 Then
+					numberOfString = 0
+					
+					laststring = True
+				End If
+				
+			End If
+		End If
+	
+		If frame.TextLength+offset+1>MatrixWidth Then
+			Dim stop As Int
+			If frame.Icon>0 Then
+				stop = frame.TextLength + 9 + 5
+			Else
+				stop = frame.TextLength + 5
+			End If
+		
+			If mscrollposition - 40 > stop  Then
+				mscrollposition=MatrixWidth
+				numberOfString = numberOfString + 1
+				timeGenText2 = DateTime.now
+				'hier nicht warten?!
+				nextString = True
+				If numberOfString > FrameList.Size - 1 Then
+					numberOfString = 0
+					laststring = True
+				End If
+				
+			End If
+		End If
+	End If
+End Sub
 
+'Reset the TickCounter for animations and force a restart of the animation. 
+'This is required when switching between several animations.
+'The counter is used in showMulticolorText and showMulticolorFalling
+Public Sub resetLocalTickCount
+	localTickCount = 0
+End Sub
+
+' Returns a List of rainbow colors
+Public Sub rainbowList() As List
+	Dim colorList As List
+	colorList.Initialize()
+	colorList.Add(Array As Int(255,0,0))
+	colorList.Add(Array As Int(255,127,0))
+	colorList.Add(Array As Int(255,255,0))
+	colorList.Add(Array As Int(0,255,0))
+	colorList.Add(Array As Int(0,0,255))
+	colorList.Add(Array As Int(75,0,130))
+	colorList.Add(Array As Int(143,0,255))
+	
+	Return colorList
+End Sub
+
+
+'This helper displays multicolored text.
+'Each letter can be displayed in a different color
+'If the text is longer than the matrix width, the text is scrolled
+'
+'Parameter:
+'iconId - ID of an icon. Id = 0 shows the text without a symbol
+'Text - the text to be displayed
+'yPostition - y position of the text (ideally 1 or 2)
+'colorList - a custom text color as a list of colors as an array of int (r, g, b)
+'<code>
+'App.showMulticolorText(1302, "Happy Birthday", 1 , App.rainbowList)
+'</code>
+'<code>
+'Dim colorList As List
+'colorList.Initialize()
+'colorList.Add(Array As Int(255,0,0))
+'colorList.Add(Array As Int(0,255,0))
+'colorList.Add(Array As Int(0,0,255))
+'App.showMulticolorText(0, "Happy Birthday", 1 , colorList)
+'</code>
+Public Sub showMulticolorText(iconId As Int, text As String, yPosition As Int, colorList As List) As Int
+	Dim tx, tl As Int
+	Dim maxLength As Int = (calcTextLength(text)+32)
+	If (colorList.Size = 0) Then colorList.Add(SystemColor)
+	
+	If ((iconId=0) And (TextLength <= MatrixWidth)) Then
+		tx=(MatrixWidth-TextLength)/2
+	Else if ((iconId>0) And (TextLength <= MatrixWidth-8)) Then
+		tx=(MatrixWidth-TextLength)/2 + 4
+	Else
+		tx = MatrixWidth - (localTickCount Mod maxLength)
+	End If
+	
+	tl = 0
+	For i = 0 To text.Length-1
+		drawText(text.CharAt(i), tx+tl , yPosition, colorList.Get(i Mod colorList.Size))
+		tl = tl + calcTextLength(text.CharAt(i))
+	Next
+	
+	If (iconId > 0) Then
+		drawLine(8,0,8,8, Array As Int(0,0,0))
+		drawBMP(0,0, getIcon(iconId),8,8)
+	End If
+	
+	localTickCount=localTickCount+1
+	If localTickCount > maxLength Then
+		localTickCount=0
+	End If
+	
+	Return localTickCount
+End Sub
+
+'This helper displays falling, multicolored text.
+'Each word of the text Is displayed on a new line And each line can have a different color.
+'Currently only words are supported that are no longer than the matrix width
+'
+'Parameter:
+'iconId - ID of an icon. Id = 0 shows the text without a symbol
+'Text - the text to be displayed
+'colorList - a custom text color as a list of colors as an array of int (r, g, b)
+'<code>
+'App.showMulticolorFalling(1302, "Happy Birthday", App.rainbowList)
+'</code>
+'<code>
+'Dim colorList As List
+'colorList.Initialize()
+'colorList.Add(Array As Int(255,0,0))
+'colorList.Add(Array As Int(0,255,0))
+'colorList.Add(Array As Int(0,0,255))
+'App.showMulticolorFalling(0, "Happy Birthday", colorList)
+'</code>
+Public Sub showMulticolorFalling(iconId As Int, text As String, colorList As List, revertDirection As Boolean) As Int
+	Dim tx, ty As Int
+	Dim c() As Int
+	Dim textLine() As String = Regex.split(" ", text)
+	Dim yOffset As Int = 8
+	If (iconId>0) Then yOffset = 15
+	Dim pixelLength As Int = (textLine.Length*8) + yOffset
+	Dim frame As Int= localTickCount Mod pixelLength
+	Dim rCount As Int= (localTickCount / pixelLength)
+	Dim revert As Int = -1
+	
+	If (colorList.Size = 0) Then colorList.Add(SystemColor)
+	If (revertDirection) Then
+		revert = 1
+		If (iconId>0) Then yOffset = 19
+	End If
+	
+	If ((iconId > 0) And (frame < 16)) Then
+		drawBMP(12,revert*(8-frame),getIcon(iconId),8,8)
+	End If
+	
+	For i = 0 To textLine.Length-1
+		c = colorList.Get((i+(rCount*textLine.Length)) Mod colorList.Size)
+		tx = (MatrixWidth - calcTextLength(textLine(i)))/2
+		ty = 0 + revert*(-frame + i*8 + yOffset)
+		drawText(textLine(i), tx, ty, c)
+	Next
+	
+	localTickCount=localTickCount+1
+	If localTickCount > pixelLength*colorList.Size Then
+		localTickCount=0
+	End If
+	
+	Return (localTickCount Mod pixelLength)
+End Sub
