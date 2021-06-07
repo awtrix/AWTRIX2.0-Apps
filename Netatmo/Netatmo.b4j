@@ -2,21 +2,19 @@
 Build1=Default,b4j.example
 Group=Default Group
 Library1=jcore
-Library10=javaobject
 Library2=json
 Library3=jrandomaccessfile
 Library4=jokhttputils2
 Library5=okhttp
 Library6=jmqtt
-Library7=jmqttbroker
-Library8=byteconverter
-Library9=b4xcollections
+Library7=b4xcollections
+Library8=javaobject
 Module1=AWTRIX
 Module2=Netatmo
 NumberOfFiles=0
-NumberOfLibraries=10
+NumberOfLibraries=8
 NumberOfModules=2
-Version=8.5
+Version=9
 @EndOfDesignText@
 
 #Region Project Attributes 
