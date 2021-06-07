@@ -42,7 +42,7 @@ Public Sub Initialize() As String
 	App.name = "Netatmo"
 	
 	'Version of the App
-	App.version = "1.9"
+	App.version = "1.96"
 	
 	'Description of the App. You can use HTML to format it
 	App.description = $"
@@ -57,7 +57,7 @@ Public Sub Initialize() As String
 	'Icon (ID) to be displayed in the Appstore and MyApps
 	App.coverIcon = 874
 	
-	App.InitializeOAuth("https://api.netatmo.com/oauth2/authorize","https://api.netatmo.com/oauth2/token","xxxxxxx","xxxxxxxx","read_station")
+	App.InitializeOAuth("https://api.netatmo.com/oauth2/authorize","https://api.netatmo.com/oauth2/token","xxxxxx","xxxxxxxx","read_station")
 	
 	'define some tags to simplify the search in the Appstore
 	App.tags = Array As String("Netatmo", "Awesome")
@@ -276,6 +276,7 @@ Sub App_evalJobResponse(Resp As JobResponse)
 							If station_name.Contains("(") And  station_name.Contains(")") Then
 								station_name=station_name.SubString2(0,station_name.IndexOf("(")-1)
 								station_name=station_name.Replace(" ","")
+								station_name=station_name.Replace(".","")
 							End If
 													
 							
@@ -333,6 +334,7 @@ Sub App_CustomSetupScreen As String
 		If station_name.Contains("(") And  station_name.Contains(")") Then
 			station_name=station_name.SubString2(0,station_name.IndexOf("(")-1)
 			station_name=station_name.Replace(" ","")
+			station_name=station_name.Replace(".","")
 		End If
 		
 		sb.Append($"<li><h5>${station_name}</h5>"$)
