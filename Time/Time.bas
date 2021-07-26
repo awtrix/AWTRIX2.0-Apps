@@ -103,7 +103,7 @@ End Sub
 Sub App_genFrame
 	If App.get("12hrFormat") Then
 		DateTime.TimeFormat="KK:mm a"
-		Dim xpos As Int =2
+		Dim xpos As Int =1
 	Else
 		If  App.get("ShowSeconds") Then
 			DateTime.TimeFormat = "HH:mm:ss"
@@ -124,9 +124,9 @@ Sub App_genFrame
 			Dim month As String=NumberFormat(DateTime.GetMonth(DateTime.Now),2,0)
 			'Sets the Date Format
 			If App.get("DateFormat")= "MM/DD" Then
-				App.drawText(month&"."& day&".",7,scroll-8,Null)
+				App.drawText(month&"."& day,7,scroll-8,Null)
 			Else
-				App.drawText(day&"."& month&".",7,scroll-8,Null)
+				App.drawText(day&"."& month,7,scroll-8,Null)
 			End If
 			If  App.get("ShowSeconds") Then
 				App.drawText(timeString,xpos,scroll,Null)
