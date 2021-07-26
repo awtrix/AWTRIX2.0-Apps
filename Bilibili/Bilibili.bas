@@ -96,6 +96,6 @@ End Sub
 'Generate your Frame. This Sub is called with every Tick
 Sub App_genFrame
 	App.genText(subs,True,1,Array As Int(98,214,255),True)
-	App.drawBMP(0,0,App.getIcon(9),8,8)
-    App.drawLine(9,7,29,7,Array As Int(98,214,255))
+	App.drawBMP(1,0,App.getIcon(9),8,8)
+    	App.drawLine(10,7,30,7,Array As Int(98,214,255))
 End Sub
