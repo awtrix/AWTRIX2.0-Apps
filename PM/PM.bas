@@ -85,7 +85,9 @@ Sub App_evalJobResponse(Resp As JobResponse)
 					For Each colresults As Map In results
 						Dim measurements As List = colresults.Get("measurements")
 						For Each colmeasurements As Map In measurements
-							pmValue = colmeasurements.Get("value")
+							If colmeasurements.Get("parameter") = "pm25" Then
+								pmValue = colmeasurements.Get("value")
+							End If
 						Next
 					Next
 			End Select
