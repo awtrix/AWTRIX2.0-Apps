@@ -18,6 +18,7 @@ Sub Class_Globals
 	Dim ampmFormat As Boolean
 	Dim niceDate As Boolean
 	Dim Widgets As List
+	Dim fahrenheit As Boolean
 End Sub
 
 'Initializes the object. You can NOT add parameters to this method!
@@ -46,11 +47,12 @@ Public Sub Initialize() As String
 	<b>ShowSeconds:</b>  Display seconds as a progress bar (true/false).<br />
 	<b>12hrFormat:</b>  Switch from 24hr to 24h timeformat (true/false).<br />
 	<b>DisableBlinking:</b>  Disable the colon blinking (true/false).<br />
-	<b>NiceDate:</b>  Displays the date as a nice calendar (when not using CalendarIcon).<br />
+	<b>NiceDate:</b>  Display the date as a nice calendar (when not using CalendarIcon).<br />
 	<b>StartsSunday:</b>  Week begins on sunday .<br />
 	<b>CurrentDayColor:</b> Color of the current day highlight (R,G,B) .<br />
 	<b>WeekdaysColor:</b>  Color of the other days highlight (R,G,B) .<br />
-	<b>TemperatureIcon:</b>  Whether the temperature icon should be displayed or not (true/false) .<br />
+	<b>TemperatureIcon:</b>  Whether the temperature icon should be displayed or not. Temporary disabled if temperature is 3 digits. (true/false) .<br />
+	<b>Fahrenheit:</b>  Display temperature as Fahrenheit (true/false) .<br />
 	<b>CalendarIcon:</b>  Whether the calendar icon should be displayed or not (true/false) .<br />
 	<b>WidgetTemperature:</b>  Whether the temperature widget should be displayed or not (true/false) .<br />
 	<b>WidgetCalendar:</b>  Whether the calendar widget should be displayed or not (true/false) .<br />
@@ -60,7 +62,7 @@ Public Sub Initialize() As String
 	App.Tick=65
 	
 	'needed Settings for this App (Wich can be configurate from user via webinterface)
-	App.Settings= CreateMap("ShowSeconds":True,"ShowWeekday":True,"12hrFormat":False,"DisableBlinking":False,"NiceDate":True,"StartsSunday":False,"WeekdaysColor":"80,80,80","CurrentDayColor":"255,255,255","TemperatureIcon": True,"CalendarIcon":True,"WidgetCalendar":True,"WidgetTemperature":True) 'needed Settings for this Plugin
+	App.Settings= CreateMap("ShowSeconds":True,"ShowWeekday":True,"12hrFormat":False,"DisableBlinking":False,"NiceDate":True,"StartsSunday":False,"WeekdaysColor":"80,80,80","CurrentDayColor":"255,255,255","Fahrenheit":False,"TemperatureIcon": True,"CalendarIcon":True,"WidgetCalendar":True,"WidgetTemperature":True) 'needed Settings for this Plugin
 	App.MakeSettings
 	Return "AWTRIX20"
 End Sub
@@ -96,6 +98,7 @@ Sub App_Started
 	temperatureIcon = App.get("TemperatureIcon")
 	calendarIcon = App.get("CalendarIcon")
 	niceDate = App.get("NiceDate")
+	fahrenheit = App.get("Fahrenheit")
 	
 	Dim weekcolor As String = App.get("WeekdaysColor")
 	WeekdaysColor = Array As Int(80,80,80)
@@ -195,17 +198,7 @@ Private Sub widget_temperature(offset As Int)
 	
 	Dim xpos As Int = 19
 
-	Dim temp As Int = 0
-
-	If App.matrix.Get("Temp") = Null Then
-		' temporary workaround
-		For Each value As Map In App.matrix.Values
-			temp = NumberFormat(value.GetDefault("Temp", 0),0,0)
-			Exit
-		Next
-	Else
-		temp = NumberFormat(App.matrix.GetDefault("Temp", 0),0,0)
-	End If
+	Dim temp As Int = NumberFormat(getTemperature,0,0)
 
 	Dim tempNegative As Boolean = False
 	If temp < 0 Then
@@ -217,7 +210,12 @@ Private Sub widget_temperature(offset As Int)
 		xpos = xpos + 4
 	End If
 	
-	If temperatureIcon Then
+	Dim tooLarge As Boolean = temp > 99
+	If tooLarge Then
+		xpos = xpos - 4
+	End If
+	
+	If temperatureIcon And Not(tooLarge) Then
 		App.drawBMP(IIf(tempNegative, IIf(temp > 9, xpos-1,xpos-3), xpos),offset,App.getIcon(1738),8,8)
 		xpos = xpos + 2
 	End If
@@ -233,7 +231,7 @@ Private Sub widget_temperature(offset As Int)
 	End If
 	App.drawText(temp,xpos + 3,1+offset,Null)
 	' smaller ° sign
-	If Not(temperatureIcon) Then
+	If Not(temperatureIcon) Or tooLarge Then
 		App.drawPixel(31, 1+offset, Null)
 	End If
 End Sub
@@ -280,4 +278,22 @@ End Sub
 
 Private Sub outboundOffset(offset As Int) As Boolean
 	Return Abs(offset) > 7
+End Sub
+
+Private Sub celciusToFahrenheit(celcius As Double) As Double
+	Return celcius * 1.8 + 32	
+End Sub
+
+Private Sub getTemperature As Double
+	Dim temp As Double = 0
+	If App.matrix.Get("Temp") = Null Then
+		' temporary workaround
+		For Each value As Map In App.matrix.Values
+			temp = value.GetDefault("Temp", 0)
+			Exit
+		Next
+	Else
+		temp = App.matrix.GetDefault("Temp", 0)
+	End If
+	Return IIf(fahrenheit, celciusToFahrenheit(temp), temp)
 End Sub

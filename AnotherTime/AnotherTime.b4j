@@ -2,8 +2,8 @@
 Build1=Default,b4j.example
 Group=Default Group
 Library1=jcore
-Library2=json
-Library3=jrandomaccessfile
+Library2=jrandomaccessfile
+Library3=json
 Module1=AnotherTime
 Module2=AWTRIX
 Module3=Scroll
