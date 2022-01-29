@@ -100,31 +100,8 @@ Sub App_Started
 	niceDate = App.get("NiceDate")
 	fahrenheit = App.get("Fahrenheit")
 	
-	Dim weekcolor As String = App.get("WeekdaysColor")
-	WeekdaysColor = Array As Int(80,80,80)
-	
-	If weekcolor.Contains(",") Then
-		Dim c() As String = Regex.Split(",",weekcolor)
-		
-		If c.Length=3 Then
-			WeekdaysColor(0)=c(0)
-			WeekdaysColor(1)=c(1)
-			WeekdaysColor(2)=c(2)
-		End If
-	End If
-	
-	Dim currentday As String = App.get("CurrentDayColor")
-	CurrentDayColor = Array As Int(255,255,255)
-	If currentday.Contains(",") Then
-		Dim c1() As String = Regex.Split(",",currentday)
-		
-		If c1.Length=3 Then
-			CurrentDayColor(0)=c1(0)
-			CurrentDayColor(1)=c1(1)
-			CurrentDayColor(2)=c1(2)
-		End If
-	
-	End If
+	WeekdaysColor = parseColor(App.get("WeekdaysColor"), Array As Int(80,80,80))
+	CurrentDayColor = parseColor(App.get("CurrentDayColor"), Null)
 	
 End Sub
 
@@ -158,10 +135,14 @@ End Sub
 
 Private Sub drawSeconds
 	
+	' Todo : customize
+	Dim secondsBackgroundColor() As Int = Array As Int(80,80,80)
+	
+	
 	Dim second As Int = DateTime.GetSecond(DateTime.Now)
 	Dim secondsProgressSize As Int = 17
-	If Not(WeekdaysColor = Null) Then
-		App.drawLine(0, 7, secondsProgressSize - 1, 7, WeekdaysColor)
+	If Not(secondsBackgroundColor = Null) Then
+		App.drawLine(0, 7, secondsProgressSize - 1, 7, secondsBackgroundColor)
 	End If
 	If second > 0 Then
 		App.drawLine(0, 7, Floor(second * secondsProgressSize / 60), 7, CurrentDayColor)
@@ -296,4 +277,35 @@ Private Sub getTemperature As Double
 		temp = App.matrix.GetDefault("Temp", 0)
 	End If
 	Return IIf(fahrenheit, celciusToFahrenheit(temp), temp)
+End Sub
+
+Private Sub parseColor(color As String, default() As Int) As Int()
+	If color = Null Then
+		Return default
+	End If
+	
+	Dim res(3) As Int
+
+	If Regex.IsMatch2("#[a-f0-9]+", Regex.CASE_INSENSITIVE, color) Then
+		If color.Length = 4 Then
+			For i=0 To 2
+				res(i) = Bit.ParseInt(color.CharAt(i+1)&color.CharAt(i+1), 16)
+			Next
+		Else If color.Length = 7 Then
+			For i=0 To 2
+				res(i) = Bit.ParseInt(color.SubString2(i*2+1, i*2+3), 16)
+			Next
+		End If
+	Else if color.Length = 11 And Regex.IsMatch("\d{3},\d{3},\d{3}", color) Then
+		For i=0 To 2
+			res(i) = color.SubString2(i*4, (i+1)*4-1).As(Int)
+			If res(i) > 255 Then
+				Return default
+			End If
+		Next
+	Else
+		Return default
+	End If
+
+	Return res
 End Sub
