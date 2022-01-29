@@ -19,6 +19,11 @@ Sub Class_Globals
 	Dim niceDate As Boolean
 	Dim Widgets As List
 	Dim fahrenheit As Boolean
+	Dim settings As Map
+	Dim OPTION_BOOL As Int = 0
+	Dim OPTION_COLOR As Int = 1
+	Type Option (description As String, style As Int, value As Object)
+	Dim options As Map
 End Sub
 
 'Initializes the object. You can NOT add parameters to this method!
@@ -42,27 +47,34 @@ Public Sub Initialize() As String
 	App.icons = Array As Int (1738, 1740)
 		
 	'SetupInstructions. You can use HTML to format it
-	App.setupDescription= $"
-	<b>ShowWeekday:</b>  Display week day as 7 dots (true/false).<br />
-	<b>ShowSeconds:</b>  Display seconds as a progress bar (true/false).<br />
-	<b>12hrFormat:</b>  Switch from 24hr to 24h timeformat (true/false).<br />
-	<b>DisableBlinking:</b>  Disable the colon blinking (true/false).<br />
-	<b>NiceDate:</b>  Display the date as a nice calendar (when not using CalendarIcon).<br />
-	<b>StartsSunday:</b>  Week begins on sunday .<br />
-	<b>CurrentDayColor:</b> Color of the current day highlight (R,G,B) .<br />
-	<b>WeekdaysColor:</b>  Color of the other days highlight (R,G,B) .<br />
-	<b>TemperatureIcon:</b>  Whether the temperature icon should be displayed or not. Temporary disabled if temperature is 3 digits. (true/false) .<br />
-	<b>Fahrenheit:</b>  Display temperature as Fahrenheit (true/false) .<br />
-	<b>CalendarIcon:</b>  Whether the calendar icon should be displayed or not (true/false) .<br />
-	<b>WidgetTemperature:</b>  Whether the temperature widget should be displayed or not (true/false) .<br />
-	<b>WidgetCalendar:</b>  Whether the calendar widget should be displayed or not (true/false) .<br />
-	"$
+	App.setupDescription= $""$
 	
 	'Tickinterval in ms (should be 65 by default)
 	App.Tick=65
+
+	options.Initialize
+	options.Put("ShowSeconds", newOption("Show seconds|Display seconds as a progress bar", OPTION_BOOL, True))
+	options.Put("ShowWeekday", newOption("Show Week|Display week day as 7 dots", OPTION_BOOL, True))
+	options.Put("12hrFormat", newOption("Switch from 24hr to 12h timeformat", OPTION_BOOL, False))
+	options.Put("DisableBlinking", newOption("Disable the colon blinking", OPTION_BOOL, False))
+	options.Put("NiceDate", newOption("Nice Date|Display the date as a nice calendar if calendar icon is disabled", OPTION_BOOL, True))
+	options.Put("StartsSunday", newOption("Week begins on sunday", OPTION_BOOL, False))
+	options.Put("WeekdaysColor", newOption("Color of the other days highlight", OPTION_COLOR, "#555555"))
+	options.Put("CurrentDayColor", newOption("Color of the current day highlight", OPTION_COLOR, "255,255,255"))
+	options.Put("Fahrenheit", newOption("Display temperature as Fahrenheit", OPTION_BOOL, False))
+	options.Put("TemperatureIcon", newOption("Temperature icon|Won't be displayed if temperature &gt; 100°", OPTION_BOOL, True))
+	options.Put("CalendarIcon", newOption("Calendar icon", OPTION_BOOL, True))
+	options.Put("WidgetCalendar", newOption("Enable calendar", OPTION_BOOL, True))
+	options.Put("WidgetTemperature", newOption($"Enable temperature|<a target="_blank" href="https://awtrixdocs.blueforcer.de/#/en-en/hardware?id=temperature-and-humidity-sensor-optional">Temperature sensor</a> required"$, OPTION_BOOL, True))
+	
+
+	settings.Initialize
+	For Each option In options.Keys
+		settings.Put(option, options.Get(option).As(Option).value)
+	Next
 	
 	'needed Settings for this App (Wich can be configurate from user via webinterface)
-	App.Settings= CreateMap("ShowSeconds":True,"ShowWeekday":True,"12hrFormat":False,"DisableBlinking":False,"NiceDate":True,"StartsSunday":False,"WeekdaysColor":"80,80,80","CurrentDayColor":"255,255,255","Fahrenheit":False,"TemperatureIcon": True,"CalendarIcon":True,"WidgetCalendar":True,"WidgetTemperature":True) 'needed Settings for this Plugin
+	App.Settings=settings 'needed Settings for this Plugin
 	App.MakeSettings
 	Return "AWTRIX20"
 End Sub
@@ -308,4 +320,99 @@ Private Sub parseColor(color As String, default() As Int) As Int()
 	End If
 
 	Return res
+End Sub
+
+Sub App_CustomSetupScreen As String
+	Dim sb As StringBuilder
+	sb.Initialize
+
+'	options.Put("WeekdaysColor", newOption("Color of the other days highlight", OPTION_COLOR, "#555555"))
+'	options.Put("CurrentDayColor", newOption("Color of the current day highlight", OPTION_COLOR, "255,255,255"))
+	
+	sb.Append("<h4>Time</h4>")
+	sb.Append($"<div class="row">"$)
+	appendOption(sb, "ShowSeconds")
+	appendOption(sb, "12hrFormat")
+	appendOption(sb, "DisableBlinking")
+	sb.Append($"</div>"$)
+
+
+	sb.Append("<h4>Week days</h4>")
+	sb.Append($"<div class="row">"$)
+	appendOption(sb, "ShowWeekday")
+	appendOption(sb, "StartsSunday")
+	sb.Append($"</div>"$)
+
+	
+	sb.Append("<h4>Temperature Widget</h4>")
+	sb.Append($"<div class="row">"$)
+	appendOption(sb, "WidgetTemperature")
+	appendOption(sb, "TemperatureIcon")
+	appendOption(sb, "Fahrenheit")
+	sb.Append($"</div>"$)
+	
+	sb.Append("<h4>Calendar Widget</h4>")
+	sb.Append($"<div class="row">"$)
+	appendOption(sb, "WidgetCalendar")
+	appendOption(sb, "CalendarIcon")
+	appendOption(sb, "NiceDate")
+	sb.Append($"</div>"$)
+	
+	sb.append($"
+	<script>
+    $(function() {
+        $('.option-colorpicker').colorpicker();
+		$('.colorpicker').css("z-index", 1080)
+    });
+	
+	</script>
+	"$)
+	
+	Return sb.ToString
+End Sub
+
+Private Sub appendOption(sb As StringBuilder, setting As String)
+
+	Dim option As Option = options.Get(setting)
+	
+	Dim description As String = option.description
+	Dim helpText As String = ""
+	
+	Dim helpPos As Int = description.IndexOf("|")
+	If helpPos > 0 Then
+		helpText = description.SubString(helpPos+1)
+		description = description.SubString2(0,helpPos)
+	End If
+	
+	If option.style = OPTION_BOOL Then
+	sb.Append($"
+		<div class="col-md-3">
+		<label for="${setting.ToLowerCase}">${description}</label>
+		<div class="switch">
+			<label>
+				<input id="${setting.ToLowerCase}" Type="checkbox"${IIf(App.get(setting)," checked","")}/>
+				<span class="lever switch-col-blue"></span>
+			</label>
+		</div>
+		<small class="form-text text-muted">${helpText}</small>
+	</div>
+	"$)
+	Else If option.style = OPTION_COLOR Then
+		sb.Append($"
+			<div class="col-md-3">
+				<label For="${setting.ToLowerCase}">${description}</label>
+				<input id="${setting.ToLowerCase}" Type="text" class="form-control form-line option-colorpicker" value="${App.get(setting)}" data-format="hex" />
+				<small class="form-text text-muted">${helpText}</small>
+			</div>
+	"$)
+	End If
+End Sub
+
+Private Sub newOption(description As String, style As Int, value As Object) As Option
+	Dim option As Option
+	option.Initialize
+	option.description = description
+	option.style = style
+	option.value = value
+	Return option
 End Sub
