@@ -60,7 +60,7 @@ Public Sub Initialize() As String
 	options.Put("NiceDate", newOption("Nice Date|Display the date as a nice calendar if calendar icon is disabled", OPTION_BOOL, True))
 	options.Put("StartsSunday", newOption("Week begins on sunday", OPTION_BOOL, False))
 	options.Put("WeekdaysColor", newOption("Color of the other days highlight", OPTION_COLOR, "#555555"))
-	options.Put("CurrentDayColor", newOption("Color of the current day highlight", OPTION_COLOR, "255,255,255"))
+	options.Put("CurrentDayColor", newOption("Color of the current day highlight", OPTION_COLOR, "0"))
 	options.Put("Fahrenheit", newOption("Display temperature as Fahrenheit", OPTION_BOOL, False))
 	options.Put("TemperatureIcon", newOption("Temperature icon|Won't be displayed if temperature &gt; 100°", OPTION_BOOL, True))
 	options.Put("CalendarIcon", newOption("Calendar icon", OPTION_BOOL, True))
@@ -325,15 +325,20 @@ End Sub
 Sub App_CustomSetupScreen As String
 	Dim sb As StringBuilder
 	sb.Initialize
-
-'	options.Put("WeekdaysColor", newOption("Color of the other days highlight", OPTION_COLOR, "#555555"))
-'	options.Put("CurrentDayColor", newOption("Color of the current day highlight", OPTION_COLOR, "255,255,255"))
+	
+	sb.Append($"
+		<p class="text-info">When choosing colors, type '0' to use system or application default</p>
+	 "$)
 	
 	sb.Append("<h4>Time</h4>")
 	sb.Append($"<div class="row">"$)
 	appendOption(sb, "ShowSeconds")
 	appendOption(sb, "12hrFormat")
 	appendOption(sb, "DisableBlinking")
+	sb.Append($"</div>"$)
+	sb.Append($"<div class="row">"$)
+	appendOption(sb, "CurrentDayColor")
+	appendOption(sb, "WeekdaysColor")
 	sb.Append($"</div>"$)
 
 
@@ -358,11 +363,20 @@ Sub App_CustomSetupScreen As String
 	appendOption(sb, "NiceDate")
 	sb.Append($"</div>"$)
 	
+	' little hack : use color #000001 as default system color
 	sb.append($"
 	<script>
     $(function() {
-        $('.option-colorpicker').colorpicker();
-		$('.colorpicker').css("z-index", 1080)
+		$('.option-colorpicker').on('changeColor', function(e) {
+			var id = $(e.target).attr('aria-describedby')
+			$('#'+id).find('.material-icons').css("color",e.target.value)
+		}).trigger('changeColor');
+        $('.option-colorpicker').colorpicker({
+			colorSelectors: {
+				'0': '#000001'
+			}
+		});
+		$('.colorpicker').css("z-index", 1080);
     });
 	
 	</script>
@@ -401,7 +415,12 @@ Private Sub appendOption(sb As StringBuilder, setting As String)
 		sb.Append($"
 			<div class="col-md-3">
 				<label For="${setting.ToLowerCase}">${description}</label>
-				<input id="${setting.ToLowerCase}" Type="text" class="form-control form-line option-colorpicker" value="${App.get(setting)}" data-format="hex" />
+				<div class="input-group">
+					<span class="input-group-addon" id="${setting.ToLowerCase}-addon"><i class="material-icons" style="color: 0">color_lens</i></span>
+					<div class="form-line">
+			        <input id="${setting.ToLowerCase}" type="text" class="option-colorpicker" value="${App.get(setting)}" data-format="hex" aria-describedby="${setting.ToLowerCase}-addon" />
+					</div>
+				</div>
 				<small class="form-text text-muted">${helpText}</small>
 			</div>
 	"$)
