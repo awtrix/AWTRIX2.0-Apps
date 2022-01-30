@@ -62,7 +62,7 @@ Public Sub Initialize() As String
 	options.Put("ShowWeekday", newOption("Show Week|Display week day as 7 dots", OPTION_BOOL, True))
 	options.Put("12hrFormat", newOption("Switch from 24hr to 12h timeformat", OPTION_BOOL, False))
 	options.Put("DisableBlinking", newOption("Disable the colon blinking", OPTION_BOOL, False))
-	options.Put("NiceDate", newOption("Nice Calendar|Display the date if a nice calendar if calendar icon is disabled", OPTION_BOOL, True))
+	options.Put("NiceDate", newOption("Nice Calendar|Display a nice calendar if calendar icon is disabled", OPTION_BOOL, True))
 	options.Put("StartsSunday", newOption("Week begins on sunday", OPTION_BOOL, False))
 	options.Put("SecondsColor", newOption("Seconds progress color", OPTION_COLOR, "0"))
 	options.Put("SecondsBackgroundColor", newOption("Seconds background color", OPTION_COLOR, "#555555"))
