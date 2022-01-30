@@ -13,6 +13,8 @@ Sub Class_Globals
 	Dim scrollObj As Scroll
 	Dim disableBlinking As Boolean
 	Dim showSeconds As Boolean
+	Dim secondsColor() As Int
+	Dim secondsBackgroundColor() As Int
 	Dim showWeekDay As Boolean
 	Dim startsSunday As Boolean
 	Dim ampmFormat As Boolean
@@ -24,6 +26,9 @@ Sub Class_Globals
 	Dim OPTION_COLOR As Int = 1
 	Type Option (description As String, style As Int, value As Object)
 	Dim options As Map
+	Dim calendarTextColor() As Int
+	Dim calendarHeadColor() As Int
+	Dim calendarBodyColor() As Int
 End Sub
 
 'Initializes the object. You can NOT add parameters to this method!
@@ -57,13 +62,18 @@ Public Sub Initialize() As String
 	options.Put("ShowWeekday", newOption("Show Week|Display week day as 7 dots", OPTION_BOOL, True))
 	options.Put("12hrFormat", newOption("Switch from 24hr to 12h timeformat", OPTION_BOOL, False))
 	options.Put("DisableBlinking", newOption("Disable the colon blinking", OPTION_BOOL, False))
-	options.Put("NiceDate", newOption("Nice Date|Display the date as a nice calendar if calendar icon is disabled", OPTION_BOOL, True))
+	options.Put("NiceDate", newOption("Nice Calendar|Display the date if a nice calendar if calendar icon is disabled", OPTION_BOOL, True))
 	options.Put("StartsSunday", newOption("Week begins on sunday", OPTION_BOOL, False))
-	options.Put("WeekdaysColor", newOption("Color of the other days highlight", OPTION_COLOR, "#555555"))
-	options.Put("CurrentDayColor", newOption("Color of the current day highlight", OPTION_COLOR, "0"))
+	options.Put("SecondsColor", newOption("Seconds progress color", OPTION_COLOR, "0"))
+	options.Put("SecondsBackgroundColor", newOption("Seconds background color", OPTION_COLOR, "#555555"))
+	options.Put("WeekdaysColor", newOption("Other days color", OPTION_COLOR, "#555555"))
+	options.Put("CurrentDayColor", newOption("Current day color", OPTION_COLOR, "0"))
 	options.Put("Fahrenheit", newOption("Display temperature as Fahrenheit", OPTION_BOOL, False))
 	options.Put("TemperatureIcon", newOption("Temperature icon|Won't be displayed if temperature &gt; 100°", OPTION_BOOL, True))
 	options.Put("CalendarIcon", newOption("Calendar icon", OPTION_BOOL, True))
+	options.Put("CalendarTextColor", newOption("Calendar text color", OPTION_COLOR, "#000000"))
+	options.Put("CalendarHeadColor", newOption("Calendar head color", OPTION_COLOR, "#0000ff"))
+	options.Put("CalendarBodyColor", newOption("Calendar body color", OPTION_COLOR, "#ffffff"))
 	options.Put("WidgetCalendar", newOption("Enable calendar", OPTION_BOOL, True))
 	options.Put("WidgetTemperature", newOption($"Enable temperature|<a target="_blank" href="https://awtrixdocs.blueforcer.de/#/en-en/hardware?id=temperature-and-humidity-sensor-optional">Temperature sensor</a> required"$, OPTION_BOOL, True))
 	
@@ -112,8 +122,15 @@ Sub App_Started
 	niceDate = App.get("NiceDate")
 	fahrenheit = App.get("Fahrenheit")
 	
+	secondsColor = parseColor(App.get("SecondsColor"), Null)
+	secondsBackgroundColor = parseColor(App.get("SecondsBackgroundColor"), Array As Int(80,80,80))
+	
 	WeekdaysColor = parseColor(App.get("WeekdaysColor"), Array As Int(80,80,80))
 	CurrentDayColor = parseColor(App.get("CurrentDayColor"), Null)
+	
+	calendarTextColor = parseColor(App.get("CalendarTextColor"), Array As Int(0,0,0))
+	calendarHeadColor = parseColor(App.get("CalendarHeadColor"), Array As Int(0,0,255))
+	calendarBodyColor = parseColor(App.get("CalendarBodyColor"), Array As Int(255,255,255))
 	
 End Sub
 
@@ -147,17 +164,13 @@ End Sub
 
 Private Sub drawSeconds
 	
-	' Todo : customize
-	Dim secondsBackgroundColor() As Int = Array As Int(80,80,80)
-	
-	
 	Dim second As Int = DateTime.GetSecond(DateTime.Now)
 	Dim secondsProgressSize As Int = 17
 	If Not(secondsBackgroundColor = Null) Then
 		App.drawLine(0, 7, secondsProgressSize - 1, 7, secondsBackgroundColor)
 	End If
 	If second > 0 Then
-		App.drawLine(0, 7, Floor(second * secondsProgressSize / 60), 7, CurrentDayColor)
+		App.drawLine(0, 7, Floor(second * secondsProgressSize / 60), 7, secondsColor)
 	End If
 	
 End Sub
@@ -249,22 +262,19 @@ Private Sub widget_calendar(offset As Int)
 	If calendarIcon Then
 		App.drawBMP(ipos,offset,App.getIcon(1740),8,8)
 	Else If niceDate Then
-		Dim CalendarColor() As Int = Array As Int(0,0,0)
 		drawCalendarBackground(offset)
 	End If
 	
-	App.drawText(currentDay, tpos, 1+offset, CalendarColor)
+	App.drawText(currentDay, tpos, 1+offset, IIf(niceDate, calendarTextColor, Null))
 End Sub
 
 Private Sub drawCalendarBackground(offset As Int)
-	Dim CalendarColorTop() As Int = Array As Int(128,128,255)
-	Dim CalendarColorBottom() As Int = Array As Int(255,255,255)
 
 	For i=0 To 1
-		App.drawLine(23, offset+i, 31, offset+i, CalendarColorTop)
+		App.drawLine(23, offset+i, 31, offset+i, calendarHeadColor)
 	Next
 	For i=2 To 6
-		App.drawLine(23, offset+i, 31, offset+i, CalendarColorBottom)
+		App.drawLine(23, offset+i, 31, offset+i, calendarBodyColor)
 	Next
 
 End Sub
@@ -337,8 +347,8 @@ Sub App_CustomSetupScreen As String
 	appendOption(sb, "DisableBlinking")
 	sb.Append($"</div>"$)
 	sb.Append($"<div class="row">"$)
-	appendOption(sb, "CurrentDayColor")
-	appendOption(sb, "WeekdaysColor")
+	appendOption(sb, "SecondsColor")
+	appendOption(sb, "SecondsBackgroundColor")
 	sb.Append($"</div>"$)
 
 
@@ -347,7 +357,10 @@ Sub App_CustomSetupScreen As String
 	appendOption(sb, "ShowWeekday")
 	appendOption(sb, "StartsSunday")
 	sb.Append($"</div>"$)
-
+	sb.Append($"<div class="row">"$)
+	appendOption(sb, "CurrentDayColor")
+	appendOption(sb, "WeekdaysColor")
+	sb.Append($"</div>"$)
 	
 	sb.Append("<h4>Temperature Widget</h4>")
 	sb.Append($"<div class="row">"$)
@@ -361,6 +374,11 @@ Sub App_CustomSetupScreen As String
 	appendOption(sb, "WidgetCalendar")
 	appendOption(sb, "CalendarIcon")
 	appendOption(sb, "NiceDate")
+	sb.Append($"</div>"$)
+	sb.Append($"<div class="row">"$)
+	appendOption(sb, "CalendarTextColor")
+	appendOption(sb, "CalendarHeadColor")
+	appendOption(sb, "CalendarBodyColor")
 	sb.Append($"</div>"$)
 	
 	' little hack : use color #000001 as default system color
