@@ -306,7 +306,7 @@ Public Sub interface(function As String, Params As Map) As Object
 			End If
 			If Regex.IsMatch("^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})",customcolor) Then
 				SystemColor=getRGB(customcolor)
-				Log("Set CustomColor")
+'				Log("Set CustomColor")
 			Else
 				SystemColor = Params.Get("SystemColor")
 			End If
