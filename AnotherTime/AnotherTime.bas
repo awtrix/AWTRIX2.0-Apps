@@ -8,8 +8,8 @@ Sub Class_Globals
 	Dim App As AWTRIX
 	Dim WeekdaysColor() As Int
 	Dim CurrentDayColor() As Int
+	Dim weekdaysStyle As String
 	Dim temperatureIcon As Boolean
-	Dim calendarIcon As Boolean
 	Dim scrollObj As Scroll
 	Dim disableBlinking As Boolean
 	Dim showSeconds As Boolean
@@ -18,17 +18,18 @@ Sub Class_Globals
 	Dim showWeekDay As Boolean
 	Dim startsSunday As Boolean
 	Dim ampmFormat As Boolean
-	Dim niceDate As Boolean
 	Dim Widgets As List
 	Dim fahrenheit As Boolean
 	Dim settings As Map
 	Dim OPTION_BOOL As Int = 0
 	Dim OPTION_COLOR As Int = 1
+	Dim OPTION_SELECT As Int = 2
 	Type Option (description As String, style As Int, value As Object)
 	Dim options As Map
 	Dim calendarTextColor() As Int
 	Dim calendarHeadColor() As Int
 	Dim calendarBodyColor() As Int
+	Dim calendarStyle As String
 End Sub
 
 'Initializes the object. You can NOT add parameters to this method!
@@ -62,25 +63,32 @@ Public Sub Initialize() As String
 	options.Put("ShowWeekday", newOption("Show Week|Display week day as 7 dots", OPTION_BOOL, True))
 	options.Put("12hrFormat", newOption("Switch from 24hr to 12h timeformat", OPTION_BOOL, False))
 	options.Put("DisableBlinking", newOption("Disable the colon blinking", OPTION_BOOL, False))
-	options.Put("NiceDate", newOption("Nice Calendar|Display a nice calendar if calendar icon is disabled", OPTION_BOOL, True))
 	options.Put("StartsSunday", newOption("Week begins on sunday", OPTION_BOOL, False))
 	options.Put("SecondsColor", newOption("Seconds progress color", OPTION_COLOR, "0"))
 	options.Put("SecondsBackgroundColor", newOption("Seconds background color", OPTION_COLOR, "#555555"))
 	options.Put("WeekdaysColor", newOption("Other days color", OPTION_COLOR, "#555555"))
+	options.Put("WeekdaysStyle", newOption("Week style", OPTION_SELECT, Array As String ("dotted", "large", "progress")))
 	options.Put("CurrentDayColor", newOption("Current day color", OPTION_COLOR, "0"))
 	options.Put("Fahrenheit", newOption("Display temperature as Fahrenheit", OPTION_BOOL, False))
 	options.Put("TemperatureIcon", newOption("Temperature icon|Won't be displayed if temperature &gt; 100°", OPTION_BOOL, True))
-	options.Put("CalendarIcon", newOption("Calendar icon", OPTION_BOOL, True))
 	options.Put("CalendarTextColor", newOption("Calendar text color", OPTION_COLOR, "#000000"))
 	options.Put("CalendarHeadColor", newOption("Calendar head color", OPTION_COLOR, "#0000ff"))
 	options.Put("CalendarBodyColor", newOption("Calendar body color", OPTION_COLOR, "#ffffff"))
+	options.Put("CalendarStyle", newOption("Calendar style", OPTION_SELECT, Array As String("icon","small","large")))
 	options.Put("WidgetCalendar", newOption("Enable calendar", OPTION_BOOL, True))
 	options.Put("WidgetTemperature", newOption($"Enable temperature|<a target="_blank" href="https://awtrixdocs.blueforcer.de/#/en-en/hardware?id=temperature-and-humidity-sensor-optional">Temperature sensor</a> required"$, OPTION_BOOL, True))
 	
 
 	settings.Initialize
 	For Each option In options.Keys
-		settings.Put(option, options.Get(option).As(Option).value)
+		Dim opt As Option = options.Get(option)
+		Dim value As Object = opt.value
+		If opt.style = OPTION_SELECT Then
+			Dim values() As String = value
+			settings.Put(option, values(0))
+		Else
+			settings.Put(option, value)
+		End If
 	Next
 	
 	'needed Settings for this App (Wich can be configurate from user via webinterface)
@@ -118,8 +126,6 @@ Sub App_Started
 	startsSunday = App.get("StartsSunday")
 	ampmFormat = App.get("12hrFormat")
 	temperatureIcon = App.get("TemperatureIcon")
-	calendarIcon = App.get("CalendarIcon")
-	niceDate = App.get("NiceDate")
 	fahrenheit = App.get("Fahrenheit")
 	
 	secondsColor = parseColor(App.get("SecondsColor"), Null)
@@ -127,10 +133,12 @@ Sub App_Started
 	
 	WeekdaysColor = parseColor(App.get("WeekdaysColor"), Array As Int(80,80,80))
 	CurrentDayColor = parseColor(App.get("CurrentDayColor"), Null)
+	weekdaysStyle = App.get("WeekdaysStyle")
 	
 	calendarTextColor = parseColor(App.get("CalendarTextColor"), Array As Int(0,0,0))
 	calendarHeadColor = parseColor(App.get("CalendarHeadColor"), Array As Int(0,0,255))
 	calendarBodyColor = parseColor(App.get("CalendarBodyColor"), Array As Int(255,255,255))
+	calendarStyle = App.get("CalendarStyle")
 	
 End Sub
 
@@ -184,17 +192,31 @@ Private Sub drawWeek
 		End If
 	End If
 	
-	Dim xpos As Int = 17
+	Dim xpos As Int = 18
 	
-	App.drawLine(xpos,7,31,7,Array As Int(0,0,0))
+	Select Case weekdaysStyle
+
+		Case "large"
+			App.drawLine(xpos,7,31,7,WeekdaysColor)
+			App.drawLine(xpos+(weekday-1)*2,7, xpos+(weekday-1)*2+1,7,CurrentDayColor)
+
+		Case "progress"
+			App.drawLine(xpos,7,31,7,WeekdaysColor)
+			App.drawLine(xpos,7, xpos+(weekday-1)*2+1,7,CurrentDayColor)
+			
+		Case Else ' "dotted"
+			App.drawLine(xpos,7,31,7,Array As Int(0,0,0))
 	
-	For i=0 To 6
-		If i=weekday-1 Then
-			App.drawPixel(xpos+i*2+1,7,CurrentDayColor)
-		Else
-			App.drawPixel(xpos+i*2+1,7,WeekdaysColor)
-		End If
-	Next
+			For i=0 To 6
+				If i=weekday-1 Then
+					App.drawPixel(xpos+i*2,7,CurrentDayColor)
+				Else
+					App.drawPixel(xpos+i*2,7,WeekdaysColor)
+				End If
+			Next
+
+	End Select
+	
 End Sub
 
 Private Sub widget_temperature(offset As Int)
@@ -248,35 +270,61 @@ Private Sub widget_calendar(offset As Int)
 	End If
 
 	Dim currentDay As Int = DateTime.GetDayOfMonth(DateTime.Now)
-	
-	' icon position
-	Dim ipos As Int = 19
+
 	' text position
-	Dim tpos As Int = IIf(calendarIcon, 24, IIf(niceDate, 23, 24))
+	Dim tpos As Int
 	
-	If (currentDay < 10) Then
-		ipos = 23
-		tpos = IIf(calendarIcon, 28, IIf(niceDate, 25, 28))
-	End If
+	Select Case calendarStyle
+		Case "icon"
+
+			' icon position
+			Dim ipos As Int = 19
+
+			tpos = 23
+			
+			If (currentDay < 10) Then
+				ipos = 23
+				tpos = 27
+			End If
+			
+			App.drawBMP(ipos,offset,App.getIcon(1740),8,8)
+			App.drawText(currentDay, tpos+1, offset+1,  Null)
+
+		Case "large"
+			
+			tpos = 21
+			
+			If (currentDay < 10) Then
+				tpos = tpos + 2
+			End If
+
+			For i=0 To 1
+				App.drawLine(18, offset+i, 31, offset+i, calendarHeadColor)
+			Next
+			For i=2 To 6
+				App.drawLine(18, offset+i, 31, offset+i, calendarBodyColor)
+			Next
+			App.drawText(currentDay, tpos, 1+offset,  calendarTextColor)
+			
+		Case Else ' "small"
+
+			tpos = 23
+
+			If (currentDay < 10) Then
+				tpos = tpos + 2
+			End If
+
+			For i=0 To 1
+				App.drawLine(23, offset+i, 31, offset+i, calendarHeadColor)
+			Next
+			For i=2 To 6
+				App.drawLine(23, offset+i, 31, offset+i, calendarBodyColor)
+			Next
+			App.drawText(currentDay, tpos, 1+offset,  calendarTextColor)
+			
+	End Select
 	
-	If calendarIcon Then
-		App.drawBMP(ipos,offset,App.getIcon(1740),8,8)
-	Else If niceDate Then
-		drawCalendarBackground(offset)
-	End If
 	
-	App.drawText(currentDay, tpos, 1+offset, IIf(niceDate, calendarTextColor, Null))
-End Sub
-
-Private Sub drawCalendarBackground(offset As Int)
-
-	For i=0 To 1
-		App.drawLine(23, offset+i, 31, offset+i, calendarHeadColor)
-	Next
-	For i=2 To 6
-		App.drawLine(23, offset+i, 31, offset+i, calendarBodyColor)
-	Next
-
 End Sub
 
 Private Sub outboundOffset(offset As Int) As Boolean
@@ -345,6 +393,7 @@ Sub App_CustomSetupScreen As String
 	appendOption(sb, "ShowSeconds")
 	appendOption(sb, "12hrFormat")
 	appendOption(sb, "DisableBlinking")
+	
 	sb.Append($"</div>"$)
 	sb.Append($"<div class="row">"$)
 	appendOption(sb, "SecondsColor")
@@ -356,6 +405,7 @@ Sub App_CustomSetupScreen As String
 	sb.Append($"<div class="row">"$)
 	appendOption(sb, "ShowWeekday")
 	appendOption(sb, "StartsSunday")
+	appendOption(sb, "WeekdaysStyle")
 	sb.Append($"</div>"$)
 	sb.Append($"<div class="row">"$)
 	appendOption(sb, "CurrentDayColor")
@@ -372,8 +422,7 @@ Sub App_CustomSetupScreen As String
 	sb.Append("<h4>Calendar Widget</h4>")
 	sb.Append($"<div class="row">"$)
 	appendOption(sb, "WidgetCalendar")
-	appendOption(sb, "CalendarIcon")
-	appendOption(sb, "NiceDate")
+	appendOption(sb, "CalendarStyle")
 	sb.Append($"</div>"$)
 	sb.Append($"<div class="row">"$)
 	appendOption(sb, "CalendarTextColor")
@@ -417,18 +466,18 @@ Private Sub appendOption(sb As StringBuilder, setting As String)
 	End If
 	
 	If option.style = OPTION_BOOL Then
-	sb.Append($"
-		<div class="col-md-3">
-		<label for="${setting.ToLowerCase}">${description}</label>
-		<div class="switch">
-			<label>
-				<input id="${setting.ToLowerCase}" Type="checkbox"${IIf(App.get(setting)," checked","")}/>
-				<span class="lever switch-col-blue"></span>
-			</label>
+		sb.Append($"
+			<div class="col-md-3">
+			<label for="${setting.ToLowerCase}">${description}</label>
+			<div class="switch">
+				<label>
+					<input id="${setting.ToLowerCase}" Type="checkbox"${IIf(App.get(setting)," checked","")}/>
+					<span class="lever switch-col-blue"></span>
+				</label>
+			</div>
+			<small class="form-text text-muted">${helpText}</small>
 		</div>
-		<small class="form-text text-muted">${helpText}</small>
-	</div>
-	"$)
+		"$)
 	Else If option.style = OPTION_COLOR Then
 		sb.Append($"
 			<div class="col-md-3">
@@ -441,6 +490,20 @@ Private Sub appendOption(sb As StringBuilder, setting As String)
 				</div>
 				<small class="form-text text-muted">${helpText}</small>
 			</div>
+	"$)
+	Else If option.style = OPTION_SELECT Then
+		sb.Append($"
+		<div class="col-md-3">
+			<label For="${setting.ToLowerCase}">${description}</label>
+			<select id="${setting.ToLowerCase}" class="form-control">"$)
+		Dim choices() As String = option.value
+		For Each o As String In choices
+			sb.Append($"<option value="${o}"${IIf(o = App.get(setting)," selected","")}>${o}</option>"$)
+		Next
+		sb.Append($"
+			</select>
+			<small class="form-text text-muted">${helpText}</small>
+		</div>
 	"$)
 	End If
 End Sub
