@@ -10,6 +10,7 @@ Sub Class_Globals
 	Dim CurrentDayColor() As Int
 	Dim weekdaysStyle As String
 	Dim temperatureIcon As Boolean
+	Dim temperatureIconId As Int
 	Dim scrollObj As Scroll
 	Dim disableBlinking As Boolean
 	Dim showSeconds As Boolean
@@ -24,12 +25,14 @@ Sub Class_Globals
 	Dim OPTION_BOOL As Int = 0
 	Dim OPTION_COLOR As Int = 1
 	Dim OPTION_SELECT As Int = 2
+	Dim OPTION_TEXT As Int = 3
 	Type Option (description As String, style As Int, value As Object)
 	Dim options As Map
 	Dim calendarTextColor() As Int
 	Dim calendarHeadColor() As Int
 	Dim calendarBodyColor() As Int
 	Dim calendarStyle As String
+	Dim calendarIconId As Int
 End Sub
 
 'Initializes the object. You can NOT add parameters to this method!
@@ -50,8 +53,6 @@ Public Sub Initialize() As String
 	
 	App.CoverIcon = 1742
 	
-	App.icons = Array As Int (1738, 1740)
-		
 	'SetupInstructions. You can use HTML to format it
 	App.setupDescription= $""$
 	
@@ -71,10 +72,12 @@ Public Sub Initialize() As String
 	options.Put("CurrentDayColor", newOption("Current day color", OPTION_COLOR, "0"))
 	options.Put("Fahrenheit", newOption("Display temperature as Fahrenheit", OPTION_BOOL, False))
 	options.Put("TemperatureIcon", newOption("Temperature icon|Won't be displayed if temperature &gt; 100°", OPTION_BOOL, True))
+	options.Put("TemperatureIconID", newOption("Temperature icon ID|Default value : 1738", OPTION_TEXT, 1738))
 	options.Put("CalendarTextColor", newOption("Calendar text color", OPTION_COLOR, "#000000"))
 	options.Put("CalendarHeadColor", newOption("Calendar head color", OPTION_COLOR, "#0000ff"))
 	options.Put("CalendarBodyColor", newOption("Calendar body color", OPTION_COLOR, "#ffffff"))
 	options.Put("CalendarStyle", newOption("Calendar style", OPTION_SELECT, Array As String("icon","small","large")))
+	options.Put("CalendarIconID", newOption("Calendar icon ID|Default value : 1740", OPTION_TEXT, 1740))
 	options.Put("WidgetCalendar", newOption("Enable calendar", OPTION_BOOL, True))
 	options.Put("WidgetTemperature", newOption($"Enable temperature|<a target="_blank" href="https://awtrixdocs.blueforcer.de/#/en-en/hardware?id=temperature-and-humidity-sensor-optional">Temperature sensor</a> required"$, OPTION_BOOL, True))
 	
@@ -103,7 +106,6 @@ public Sub GetNiceName() As String
 	Return App.Name
 End Sub
 
-
 ' ignore
 public Sub Run(Tag As String, Params As Map) As Object
 	Return App.interface(Tag,Params)
@@ -126,6 +128,7 @@ Sub App_Started
 	startsSunday = App.get("StartsSunday")
 	ampmFormat = App.get("12hrFormat")
 	temperatureIcon = App.get("TemperatureIcon")
+	temperatureIconId = App.get("TemperatureIconID")
 	fahrenheit = App.get("Fahrenheit")
 	
 	secondsColor = parseColor(App.get("SecondsColor"), Null)
@@ -139,9 +142,15 @@ Sub App_Started
 	calendarHeadColor = parseColor(App.get("CalendarHeadColor"), Array As Int(0,0,255))
 	calendarBodyColor = parseColor(App.get("CalendarBodyColor"), Array As Int(255,255,255))
 	calendarStyle = App.get("CalendarStyle")
+	calendarIconId = App.get("CalendarIconID")
 	
 End Sub
 
+	App.icons = Array As Int (1738, 1740)
+'this sub is called right before AWTRIX will display your App
+Sub App_iconRequest
+	App.Icons = Array As Int(App.get("TemperatureIconID"), App.get("CalendarIconID"))
+End Sub
 
 Sub App_genFrame
 	DateTime.TimeFormat = IIf(ampmFormat,"KK", "HH")&IIf(Not(disableBlinking) And DateTime.GetSecond(DateTime.Now) Mod 2 > 0, " ", ":")&"mm"
@@ -244,7 +253,7 @@ Private Sub widget_temperature(offset As Int)
 	End If
 	
 	If temperatureIcon And Not(tooLarge) Then
-		App.drawBMP(IIf(tempNegative, IIf(temp > 9, xpos-1,xpos-3), xpos),offset,App.getIcon(1738),8,8)
+		App.drawBMP(IIf(tempNegative, IIf(temp > 9, xpos-1,xpos-3), xpos),offset,App.getIcon(temperatureIconId),8,8)
 		xpos = xpos + 2
 	End If
 	
@@ -287,7 +296,7 @@ Private Sub widget_calendar(offset As Int)
 				tpos = 27
 			End If
 			
-			App.drawBMP(ipos,offset,App.getIcon(1740),8,8)
+			App.drawBMP(ipos,offset,App.getIcon(calendarIconId),8,8)
 			App.drawText(currentDay, tpos+1, offset+1,  Null)
 
 		Case "large"
@@ -416,6 +425,7 @@ Sub App_CustomSetupScreen As String
 	sb.Append($"<div class="row">"$)
 	appendOption(sb, "WidgetTemperature")
 	appendOption(sb, "TemperatureIcon")
+	appendOption(sb, "TemperatureIconID")
 	appendOption(sb, "Fahrenheit")
 	sb.Append($"</div>"$)
 	
@@ -423,6 +433,7 @@ Sub App_CustomSetupScreen As String
 	sb.Append($"<div class="row">"$)
 	appendOption(sb, "WidgetCalendar")
 	appendOption(sb, "CalendarStyle")
+	appendOption(sb, "CalendarIconID")
 	sb.Append($"</div>"$)
 	sb.Append($"<div class="row">"$)
 	appendOption(sb, "CalendarTextColor")
@@ -504,6 +515,18 @@ Private Sub appendOption(sb As StringBuilder, setting As String)
 			</select>
 			<small class="form-text text-muted">${helpText}</small>
 		</div>
+	"$)
+	Else If option.style = OPTION_TEXT Then
+		sb.Append($"
+			<div class="col-md-3">
+				<label For="${setting.ToLowerCase}">${description}</label>
+				<div class="input-group">
+					<div class="form-line">
+			        <input id="${setting.ToLowerCase}" type="text" value="${App.get(setting)}" />
+					</div>
+				</div>
+				<small class="form-text text-muted">${helpText}</small>
+			</div>
 	"$)
 	End If
 End Sub
