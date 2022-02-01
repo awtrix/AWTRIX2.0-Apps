@@ -375,13 +375,6 @@ Private Sub parseColor(color As String, default() As Int) As Int()
 				res(i) = Bit.ParseInt(color.SubString2(i*2+1, i*2+3), 16)
 			Next
 		End If
-	Else if color.Length = 11 And Regex.IsMatch("\d{3},\d{3},\d{3}", color) Then
-		For i=0 To 2
-			res(i) = color.SubString2(i*4, (i+1)*4-1).As(Int)
-			If res(i) > 255 Then
-				Return default
-			End If
-		Next
 	Else
 		Return default
 	End If
