@@ -4,6 +4,8 @@ ModulesStructureVersion=1
 Type=Class
 Version=4.2
 @EndOfDesignText@
+
+
 Sub Class_Globals
 	Dim App As AWTRIX
 	Dim WeekdaysColor() As Int
@@ -11,15 +13,16 @@ Sub Class_Globals
 	Dim weekdaysStyle As String
 	Dim temperatureIcon As Boolean
 	Dim temperatureIconId As Int
-	Dim scrollObj As Scroll
+	Dim widgetsScroll As Scroll
 	Dim disableBlinking As Boolean
+	Dim animateTime As Boolean
 	Dim showSeconds As Boolean
 	Dim secondsColor() As Int
 	Dim secondsBackgroundColor() As Int
 	Dim showWeekDay As Boolean
 	Dim startsSunday As Boolean
 	Dim ampmFormat As Boolean
-	Dim Widgets As List
+	Dim widgets As List
 	Dim fahrenheit As Boolean
 	Dim settings As Map
 	Dim OPTION_BOOL As Int = 0
@@ -38,6 +41,9 @@ End Sub
 'Initializes the object. You can NOT add parameters to this method!
 Public Sub Initialize() As String
 	
+	
+	
+
 	App.Initialize(Me,"App")
 	
 	'change plugin name (must be unique, avoid spaces)
@@ -62,6 +68,7 @@ Public Sub Initialize() As String
 	options.Initialize
 	options.Put("ShowSeconds", newOption("Show seconds|Display seconds as a progress bar", OPTION_BOOL, True))
 	options.Put("ShowWeekday", newOption("Show Week|Display week day as 7 dots", OPTION_BOOL, True))
+	options.Put("AnimateTime", newOption("Time animations", OPTION_BOOL, True))
 	options.Put("12hrFormat", newOption("Switch from 24hr to 12h timeformat", OPTION_BOOL, False))
 	options.Put("DisableBlinking", newOption("Disable the colon blinking", OPTION_BOOL, False))
 	options.Put("StartsSunday", newOption("Week begins on sunday", OPTION_BOOL, False))
@@ -113,16 +120,17 @@ End Sub
 
 Sub App_Started
 	
-	Widgets.Initialize
+	widgets.Initialize
 	If (App.get("WidgetCalendar")) Then
-		Widgets.Add("calendar")
+		widgets.Add("calendar")
 	End If
 	If (App.get("WidgetTemperature")) Then
-		Widgets.Add("temperature")
+		widgets.Add("temperature")
 	End If
 
-	scrollObj.Initialize(App.duration, Widgets.Size)
+	widgetsScroll.Initialize(App.duration, widgets.Size)
 	disableBlinking = App.get("DisableBlinking")
+	animateTime = App.get("AnimateTime")
 	showSeconds = App.get("ShowSeconds")
 	showWeekDay = App.get("ShowWeekday")
 	startsSunday = App.get("StartsSunday")
@@ -153,20 +161,16 @@ Sub App_iconRequest
 End Sub
 
 Sub App_genFrame
-	DateTime.TimeFormat = IIf(ampmFormat,"KK", "HH")&IIf(Not(disableBlinking) And DateTime.GetSecond(DateTime.Now) Mod 2 > 0, " ", ":")&"mm"
-	
-	Dim timeString As String= DateTime.Time(DateTime.Now)
 
-		App.drawText(timeString,IIf(Widgets.Size > 0, -1, 6), 1,Null)
+	drawTime
 
-
-	If Widgets.Size = 1 Then
-		CallSub2(Me, "widget_"&Widgets.Get(0), 0)
-	Else If Widgets.Size > 1 Then
-		For i=0 To Widgets.Size-1
-			CallSub2(Me, "widget_"&Widgets.Get(i), scrollObj.getOffset(i))
+	If widgets.Size = 1 Then
+		CallSub2(Me, "widget_"&widgets.Get(0), 0)
+	Else If widgets.Size > 1 Then
+		For i=0 To widgets.Size-1
+			CallSub2(Me, "widget_"&widgets.Get(i), widgetsScroll.getOffset(i))
 		Next
-		scrollObj.update
+		widgetsScroll.update
 	End If	
 
 	If showSeconds Then
@@ -177,6 +181,66 @@ Sub App_genFrame
 		drawWeek
 	End If
 
+End Sub
+
+Private Sub drawTime
+	Dim now As Long = DateTime.Now
+
+	' number of ms since the beginning of this second
+	Dim millis As Int
+	If animateTime Then
+		DateTime.TimeFormat = "S"
+		millis = DateTime.Time(now) + DateTime.GetSecond(now) * 1000
+	End If
+	
+	Dim separator As String = IIf(Not(disableBlinking) And DateTime.GetSecond(now) Mod 2 > 0, " ", ":")
+	DateTime.TimeFormat = IIf(ampmFormat,"KK", "HH")&separator&"mm"
+	Dim timeString As String = DateTime.Time(now)
+		
+	Dim ypos As Int = 0
+	Dim xpos As Int = IIf(widgets.Size > 0, -1, 6)
+	
+	' Animation during the first App.tick * 8 ms of the first minute
+	If animateTime And millis < App.tick * 8 Then
+		
+		' every tick, change ypos
+		ypos = millis / App.tick
+
+		Dim previous As String = DateTime.Time(now - 8 * App.tick)
+		
+		' calculate which digits changed
+		Dim o() As Int = Array As Int(0,0,0,0,0)
+		For i = 0 To 4
+			If Not(timeString.CharAt(i) = previous.CharAt(i)) Then
+				o(i) = ypos
+			End If
+		Next
+
+		' animate only digits that changed		
+		For i = 0 To 4
+			
+			If (o(i) > 0) Then
+				' digit changed : draw next on top of previous
+				App.drawText(timeString.CharAt(i),xpos , 1+ypos-8,Null)
+				App.drawText(previous.CharAt(i),xpos, 1+ypos,Null)
+			Else
+				' digit did not change : draw previous one
+				App.drawText(previous.CharAt(i),xpos , 1,Null)
+			End If
+			' shift 4 characters for a digit, 2 only for the separator ':' or ' '
+			If i = 2 Then
+				xpos = xpos + 2
+			Else
+				xpos = xpos + 4
+			End If
+		Next
+	Else
+		' No animation
+		App.drawText(timeString,xpos, 1,Null)
+	End If
+	
+	
+	
 End Sub
 
 Private Sub drawSeconds
@@ -392,6 +456,7 @@ Sub App_CustomSetupScreen As String
 	
 	sb.Append("<h4>Time</h4>")
 	sb.Append($"<div class="row">"$)
+	appendOption(sb, "AnimateTime")
 	appendOption(sb, "ShowSeconds")
 	appendOption(sb, "12hrFormat")
 	appendOption(sb, "DisableBlinking")
