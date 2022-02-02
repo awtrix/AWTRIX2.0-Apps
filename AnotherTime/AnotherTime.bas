@@ -36,6 +36,9 @@ Sub Class_Globals
 	Dim calendarBodyColor() As Int
 	Dim calendarStyle As String
 	Dim calendarIconId As Int
+	Dim iconIconId As Int
+	Dim iconXpos As Int
+	Dim iconYpos As Int
 End Sub
 
 'Initializes the object. You can NOT add parameters to this method!
@@ -87,6 +90,10 @@ Public Sub Initialize() As String
 	options.Put("CalendarIconID", newOption("Calendar icon ID|Default value : 1740", OPTION_TEXT, 1740))
 	options.Put("WidgetCalendar", newOption("Enable calendar", OPTION_BOOL, True))
 	options.Put("WidgetTemperature", newOption($"Enable temperature|<a target="_blank" href="https://awtrixdocs.blueforcer.de/#/en-en/hardware?id=temperature-and-humidity-sensor-optional">Temperature sensor</a> required"$, OPTION_BOOL, True))
+	options.Put("WidgetIcon", newOption("Enable custom icon", OPTION_BOOL, False))
+	options.Put("IconIconID", newOption("Custom icon ID", OPTION_TEXT, "6"))
+	options.Put("IconXpos", newOption("Custom icon x position|Between 17 and 31", OPTION_TEXT, 20))
+	options.Put("IconYpos", newOption("Custom icon y position|Between -7 and 7", OPTION_TEXT, 0))
 	
 
 	settings.Initialize
@@ -127,6 +134,9 @@ Sub App_Started
 	If (App.get("WidgetTemperature")) Then
 		widgets.Add("temperature")
 	End If
+	If (App.get("WidgetIcon")) Then
+		widgets.Add("icon")
+	End If
 
 	widgetsScroll.Initialize(App.duration, widgets.Size)
 	disableBlinking = App.get("DisableBlinking")
@@ -152,12 +162,16 @@ Sub App_Started
 	calendarStyle = App.get("CalendarStyle")
 	calendarIconId = App.get("CalendarIconID")
 	
+	iconIconId = App.get("IconIconID")
+	iconXpos = App.get("IconXpos")
+	iconYpos = App.get("IconYpos")
+	
 End Sub
 
 	App.icons = Array As Int (1738, 1740)
 'this sub is called right before AWTRIX will display your App
 Sub App_iconRequest
-	App.Icons = Array As Int(App.get("TemperatureIconID"), App.get("CalendarIconID"))
+	App.Icons = Array As Int(App.get("TemperatureIconID"), App.get("CalendarIconID"), App.get("IconIconID"))
 End Sub
 
 Sub App_genFrame
@@ -413,6 +427,17 @@ Private Sub widget_calendar(offset As Int)
 	
 End Sub
 
+Private Sub widget_icon(offset As Int)
+	If outboundOffset(offset) Then
+		Return
+	End If
+	
+	Dim xpos As Int = Max(17,Min(31,iconXpos))
+	Dim ypos As Int = Max(-7,Min(7,iconYpos))
+
+	App.drawBMP(xpos,ypos + offset,App.getIcon(iconIconId),8,8)
+End Sub
+
 Private Sub outboundOffset(offset As Int) As Boolean
 	Return Abs(offset) > 7
 End Sub
@@ -510,6 +535,14 @@ Sub App_CustomSetupScreen As String
 	appendOption(sb, "CalendarTextColor")
 	appendOption(sb, "CalendarHeadColor")
 	appendOption(sb, "CalendarBodyColor")
+	sb.Append($"</div>"$)
+	
+	sb.Append("<h4>Custom Icon Widget</h4>")
+	sb.Append($"<div class="row">"$)
+	appendOption(sb, "WidgetIcon")
+	appendOption(sb, "IconIconID")
+	appendOption(sb, "IconXpos")
+	appendOption(sb, "IconYpos")
 	sb.Append($"</div>"$)
 	
 	' little hack : use color #000001 as default system color
