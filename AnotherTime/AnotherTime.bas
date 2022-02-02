@@ -75,7 +75,7 @@ Public Sub Initialize() As String
 	options.Put("SecondsColor", newOption("Seconds progress color", OPTION_COLOR, "0"))
 	options.Put("SecondsBackgroundColor", newOption("Seconds background color", OPTION_COLOR, "#555555"))
 	options.Put("WeekdaysColor", newOption("Other days color", OPTION_COLOR, "#555555"))
-	options.Put("WeekdaysStyle", newOption("Week style", OPTION_SELECT, Array As String ("dotted", "large", "progress")))
+	options.Put("WeekdaysStyle", newOption("Week style", OPTION_SELECT, Array As String ("dotted", "dotted2", "large", "progress")))
 	options.Put("CurrentDayColor", newOption("Current day color", OPTION_COLOR, "0"))
 	options.Put("Fahrenheit", newOption("Display temperature as Fahrenheit", OPTION_BOOL, False))
 	options.Put("TemperatureIcon", newOption("Temperature icon|Won't be displayed if temperature &gt; 100°", OPTION_BOOL, True))
@@ -276,6 +276,19 @@ Private Sub drawWeek
 		Case "progress"
 			App.drawLine(xpos,7,31,7,WeekdaysColor)
 			App.drawLine(xpos,7, xpos+(weekday-1)*2+1,7,CurrentDayColor)
+
+		Case "dotted2"
+			App.drawLine(xpos,7,31,7,Array As Int(0,0,0))
+	
+			For i=0 To 6
+				If i=weekday-1 Then
+					App.drawLine(xpos,7, xpos+1, 7,CurrentDayColor)
+					xpos = xpos + 3
+				Else
+					App.drawPixel(xpos,7,WeekdaysColor) 
+					xpos = xpos + 2
+				End If
+			Next
 			
 		Case Else ' "dotted"
 			App.drawLine(xpos,7,31,7,Array As Int(0,0,0))
