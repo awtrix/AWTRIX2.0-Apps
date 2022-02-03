@@ -6,10 +6,11 @@ Library2=jrandomaccessfile
 Library3=json
 Module1=AnotherTime
 Module2=AWTRIX
-Module3=Scroll
+Module3=Button
+Module4=Scroll
 NumberOfFiles=0
 NumberOfLibraries=3
-NumberOfModules=3
+NumberOfModules=4
 Version=9.3
 @EndOfDesignText@
 'Non-UI application (console / server application)

@@ -4,8 +4,6 @@ ModulesStructureVersion=1
 Type=Class
 Version=4.2
 @EndOfDesignText@
-
-
 Sub Class_Globals
 	Dim App As AWTRIX
 	Dim WeekdaysColor() As Int
@@ -39,14 +37,13 @@ Sub Class_Globals
 	Dim iconIconId As Int
 	Dim iconXpos As Int
 	Dim iconYpos As Int
+	Dim middleButton As Button
+	Dim drawDateEndTime As Long
 End Sub
 
 'Initializes the object. You can NOT add parameters to this method!
 Public Sub Initialize() As String
 	
-	
-	
-
 	App.Initialize(Me,"App")
 	
 	'change plugin name (must be unique, avoid spaces)
@@ -67,6 +64,9 @@ Public Sub Initialize() As String
 	
 	'Tickinterval in ms (should be 65 by default)
 	App.Tick=65
+	
+	' duration = 0 to capture the pression in one Tick, but could be longer to keep the pression registered as as timer
+	middleButton.Initialize(0, 2, 500)
 
 	options.Initialize
 	options.Put("ShowSeconds", newOption("Show seconds|Display seconds as a progress bar", OPTION_BOOL, True))
@@ -175,7 +175,29 @@ End Sub
 
 Sub App_genFrame
 
-	drawTime
+	middleButton.update
+
+	' double press = toggle date (1 hour pax)
+	If middleButton.DoublePressed Then
+		If DateTime.Now < drawDateEndTime Then
+			drawDateEndTime = 0
+		Else
+			drawDateEndTime = DateTime.Now + 3600 * 1000
+		End If
+		
+	End If
+
+	' simple press = show date for 5 seconds
+	If middleButton.Pressed Then
+		drawDateEndTime = DateTime.Now + 5000
+	End If
+
+	If DateTime.Now < drawDateEndTime Then
+		drawDate
+	Else
+		drawTime
+	End If
+	
 
 	If widgets.Size = 1 Then
 		CallSub2(Me, "widget_"&widgets.Get(0), 0)
@@ -194,6 +216,12 @@ Sub App_genFrame
 		drawWeek
 	End If
 
+End Sub
+
+Private Sub drawDate
+	DateTime.TimeFormat = "dd.MM"
+	Dim xpos As Int = IIf(widgets.Size > 0, -1, 6)
+	App.drawText(DateTime.Time(DateTime.Now),xpos, 1,Null)
 End Sub
 
 Private Sub drawTime
@@ -641,4 +669,8 @@ Private Sub newOption(description As String, style As Int, value As Object) As O
 	option.style = style
 	option.value = value
 	Return option
+End Sub
+
+Sub App_buttonPush
+	middleButton.push()
 End Sub
