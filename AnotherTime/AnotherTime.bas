@@ -168,7 +168,6 @@ Sub App_Started
 	
 End Sub
 
-	App.icons = Array As Int (1738, 1740)
 'this sub is called right before AWTRIX will display your App
 Sub App_iconRequest
 	App.Icons = Array As Int(App.get("TemperatureIconID"), App.get("CalendarIconID"), App.get("IconIconID"))
