@@ -564,7 +564,7 @@ Sub App_CustomSetupScreen As String
 	sb.Initialize
 	
 	sb.Append($"
-		<p class="text-info">When choosing colors, type '0' to use system or application default</p>
+		<p class="text-info">When choosing colors, type '0' to use system or application default. Middle button 1 click : show date with month during 5 seconds, 2 clicks shows it during 1 hour</p>
 	 "$)
 	
 	sb.Append("<h4>Time</h4>")
