@@ -11,6 +11,8 @@ Sub Class_Globals
 	Dim weekdaysStyle As String
 	Dim temperatureIcon As Boolean
 	Dim temperatureIconId As Int
+	Dim humidityIcon As Boolean
+	Dim humidityIconId As Int
 	Dim widgetsScroll As Scroll
 	Dim disableBlinking As Boolean
 	Dim animateTime As Boolean
@@ -50,7 +52,7 @@ Public Sub Initialize() As String
 	App.Name="AnotherTime"
 	
 	'Version of the App
-	App.Version="1.0"
+	App.Version="1.1"
 	
 	'Description of the App. You can use HTML to format it
 	App.Description="Shows time with temperature and date, maybe more..."
@@ -83,6 +85,8 @@ Public Sub Initialize() As String
 	options.Put("Fahrenheit", newOption("Display temperature as Fahrenheit", OPTION_BOOL, False))
 	options.Put("TemperatureIcon", newOption("Temperature icon|Won't be displayed if temperature &gt; 100°", OPTION_BOOL, True))
 	options.Put("TemperatureIconID", newOption("Temperature icon ID|Default value : 1738", OPTION_TEXT, 1738))
+	options.Put("HumidityIcon", newOption("Humidity icon", OPTION_BOOL, True))
+	options.Put("HumidityIconID", newOption("Humidity icon ID|Default value : 1746", OPTION_TEXT, 1746))
 	options.Put("CalendarTextColor", newOption("Calendar text color", OPTION_COLOR, "#000000"))
 	options.Put("CalendarHeadColor", newOption("Calendar head color", OPTION_COLOR, "#0000ff"))
 	options.Put("CalendarBodyColor", newOption("Calendar body color", OPTION_COLOR, "#ffffff"))
@@ -90,6 +94,7 @@ Public Sub Initialize() As String
 	options.Put("CalendarIconID", newOption("Calendar icon ID|Default value : 1740", OPTION_TEXT, 1740))
 	options.Put("WidgetCalendar", newOption("Enable calendar", OPTION_BOOL, True))
 	options.Put("WidgetTemperature", newOption($"Enable temperature|<a target="_blank" href="https://awtrixdocs.blueforcer.de/#/en-en/hardware?id=temperature-and-humidity-sensor-optional">Temperature sensor</a> required"$, OPTION_BOOL, True))
+	options.Put("WidgetHumidity", newOption($"Enable humidity|<a target="_blank" href="https://awtrixdocs.blueforcer.de/#/en-en/hardware?id=temperature-and-humidity-sensor-optional">Humidity sensor</a> required"$, OPTION_BOOL, True))
 	options.Put("WidgetIcon", newOption("Enable custom icon", OPTION_BOOL, False))
 	options.Put("IconIconID", newOption("Custom icon ID", OPTION_TEXT, "6"))
 	options.Put("IconXpos", newOption("Custom icon x position|Between 17 and 31", OPTION_TEXT, 20))
@@ -134,6 +139,9 @@ Sub App_Started
 	If (App.get("WidgetTemperature")) Then
 		widgets.Add("temperature")
 	End If
+	If (App.get("WidgetHumidity")) Then
+		widgets.Add("humidity")
+	End If
 	If (App.get("WidgetIcon")) Then
 		widgets.Add("icon")
 	End If
@@ -148,6 +156,8 @@ Sub App_Started
 	temperatureIcon = App.get("TemperatureIcon")
 	temperatureIconId = App.get("TemperatureIconID")
 	fahrenheit = App.get("Fahrenheit")
+	humidityIcon = App.get("HumidityIcon")
+	humidityIconId = App.get("HumidityIconID")
 	
 	secondsColor = parseColor(App.get("SecondsColor"), Null)
 	secondsBackgroundColor = parseColor(App.get("SecondsBackgroundColor"), Array As Int(80,80,80))
@@ -170,14 +180,14 @@ End Sub
 
 'this sub is called right before AWTRIX will display your App
 Sub App_iconRequest
-	App.Icons = Array As Int(App.get("TemperatureIconID"), App.get("CalendarIconID"), App.get("IconIconID"))
+	App.Icons = Array As Int(App.get("TemperatureIconID"), App.get("HumidityIconID"), App.get("CalendarIconID"), App.get("IconIconID"))
 End Sub
 
 Sub App_genFrame
 
 	middleButton.update
 
-	' double press = toggle date (1 hour pax)
+	' double press = toggle date (1 hour max)
 	If middleButton.DoublePressed Then
 		If DateTime.Now < drawDateEndTime Then
 			drawDateEndTime = 0
@@ -391,6 +401,29 @@ Private Sub widget_temperature(offset As Int)
 	End If
 End Sub
 
+Private Sub widget_humidity(offset As Int)
+	If outboundOffset(offset) Then
+		Return
+	End If
+	
+	Dim xpos As Int = 19
+
+	' Won't manage 100%, cap to 99%
+	Dim hum As Int = Min(NumberFormat(getHumidity,0,0),99)
+
+	If hum < 10 Then
+		xpos = xpos + 4
+	End If
+	
+	If humidityIcon Then
+		App.drawBMP(xpos,offset,App.getIcon(humidityIconId),8,8)
+		App.drawText(hum,xpos + 5,1+offset,Null)
+	Else
+		App.drawText(hum&"%",xpos+1,1+offset,Null)
+	End If
+	
+End Sub
+
 Private Sub widget_calendar(offset As Int)
 	If outboundOffset(offset) Then
 		Return
@@ -487,6 +520,21 @@ Private Sub getTemperature As Double
 	Return IIf(fahrenheit, celciusToFahrenheit(temp), temp)
 End Sub
 
+Private Sub getHumidity As Double
+	Dim hum As Double = 0
+	If App.matrix.Get("Hum") = Null Then
+		' temporary workaround
+		For Each value As Map In App.matrix.Values
+			hum = value.GetDefault("Hum", 0)
+			Exit
+		Next
+	Else
+		hum = App.matrix.GetDefault("Hum", 0)
+	End If
+	Return hum
+End Sub
+
+
 Private Sub parseColor(color As String, default() As Int) As Int()
 	If color = Null Then
 		Return default
@@ -550,6 +598,13 @@ Sub App_CustomSetupScreen As String
 	appendOption(sb, "TemperatureIcon")
 	appendOption(sb, "TemperatureIconID")
 	appendOption(sb, "Fahrenheit")
+	sb.Append($"</div>"$)
+
+	sb.Append("<h4>Humidity Widget</h4>")
+	sb.Append($"<div class="row">"$)
+	appendOption(sb, "WidgetHumidity")
+	appendOption(sb, "HumidityIcon")
+	appendOption(sb, "HumidityIconID")
 	sb.Append($"</div>"$)
 	
 	sb.Append("<h4>Calendar Widget</h4>")
