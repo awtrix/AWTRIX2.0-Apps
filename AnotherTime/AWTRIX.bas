@@ -1302,3 +1302,7 @@ Public Sub showMulticolorFalling(iconId As Int, text As String, colorList As Lis
 	
 	Return (localTickCount Mod pixelLength)
 End Sub
+
+Sub getAppColor As Int()
+	Return SystemColor
+End Sub

@@ -15,7 +15,8 @@ Sub Class_Globals
 	Dim humidityIconId As Int
 	Dim widgetsScroll As Scroll
 	Dim disableBlinking As Boolean
-	Dim animateTime As Boolean
+	Dim timeAnimation As String
+	Dim timeAnimationDuration As Int
 	Dim showSeconds As Boolean
 	Dim secondsColor() As Int
 	Dim secondsBackgroundColor() As Int
@@ -46,6 +47,7 @@ End Sub
 'Initializes the object. You can NOT add parameters to this method!
 Public Sub Initialize() As String
 	
+
 	App.Initialize(Me,"App")
 	
 	'change plugin name (must be unique, avoid spaces)
@@ -69,11 +71,12 @@ Public Sub Initialize() As String
 	
 	' duration = 0 to capture the pression in one Tick, but could be longer to keep the pression registered as as timer
 	middleButton.Initialize(0, 2, 500)
+	
 
 	options.Initialize
 	options.Put("ShowSeconds", newOption("Show seconds|Display seconds as a progress bar", OPTION_BOOL, True))
 	options.Put("ShowWeekday", newOption("Show Week|Display week day as 7 dots", OPTION_BOOL, True))
-	options.Put("AnimateTime", newOption("Time animations", OPTION_BOOL, True))
+	options.Put("TimeAnimation", newOption("Time animation", OPTION_SELECT, Array As String ("scroll", "fade", "none")))
 	options.Put("12hrFormat", newOption("Switch from 24hr to 12h timeformat", OPTION_BOOL, False))
 	options.Put("DisableBlinking", newOption("Disable the colon blinking", OPTION_BOOL, False))
 	options.Put("StartsSunday", newOption("Week begins on sunday", OPTION_BOOL, False))
@@ -148,7 +151,18 @@ Sub App_Started
 
 	widgetsScroll.Initialize(App.duration, widgets.Size)
 	disableBlinking = App.get("DisableBlinking")
-	animateTime = App.get("AnimateTime")
+	timeAnimation = App.get("TimeAnimation")
+	Select Case timeAnimation
+		Case "scroll"
+			timeAnimationDuration = 8 * App.tick
+		Case "fade"
+			timeAnimationDuration = 16 * App.tick
+		Case Else
+			timeAnimationDuration = 0
+	End Select
+	
+	
+	
 	showSeconds = App.get("ShowSeconds")
 	showWeekDay = App.get("ShowWeekday")
 	startsSunday = App.get("StartsSunday")
@@ -237,9 +251,9 @@ End Sub
 Private Sub drawTime
 	Dim now As Long = DateTime.Now
 
-	' number of ms since the beginning of this second
+	' number of ms since the beginning of this minute
 	Dim millis As Int
-	If animateTime Then
+	If timeAnimationDuration > 0 Then
 		DateTime.TimeFormat = "S"
 		millis = DateTime.Time(now) + DateTime.GetSecond(now) * 1000
 	End If
@@ -247,33 +261,47 @@ Private Sub drawTime
 	Dim separator As String = IIf(Not(disableBlinking) And DateTime.GetSecond(now) Mod 2 > 0, " ", ":")
 	DateTime.TimeFormat = IIf(ampmFormat,"KK", "HH")&separator&"mm"
 	Dim timeString As String = DateTime.Time(now)
+	
 		
-	Dim ypos As Int = 0
 	Dim xpos As Int = IIf(widgets.Size > 0, -1, 6)
 	
-	' Animation during the first App.tick * 8 ms of the first minute
-	If animateTime And millis < App.tick * 8 Then
-		
-		' every tick, change ypos
-		ypos = millis / App.tick
+	' Animation during the first animationDuration in ms of the first minute
+	If millis < timeAnimationDuration Then
 
-		Dim previous As String = DateTime.Time(now - 8 * App.tick)
+		' percentage of the animation (0 = started, 1 = finished)
+		Dim animationPct As Float = millis / timeAnimationDuration
+		
+		Dim previous As String = DateTime.Time(now - timeAnimationDuration)
 		
 		' calculate which digits changed
-		Dim o() As Int = Array As Int(0,0,0,0,0)
+		Dim o() As Boolean = Array As Boolean(False,False,False,False,False)
 		For i = 0 To 4
-			If Not(timeString.CharAt(i) = previous.CharAt(i)) Then
-				o(i) = ypos
-			End If
+			o(i) = Not(timeString.CharAt(i) = previous.CharAt(i))
 		Next
-
+		
 		' animate only digits that changed		
 		For i = 0 To 4
 			
-			If (o(i) > 0) Then
-				' digit changed : draw next on top of previous
-				App.drawText(timeString.CharAt(i),xpos , 1+ypos-8,Null)
-				App.drawText(previous.CharAt(i),xpos, 1+ypos,Null)
+			' digit changed
+			If o(i) Then
+				' draw next on top of previous
+				Select Case timeAnimation
+					Case "scroll"
+						Dim ypos As Int = animationPct * 8
+						App.drawText(timeString.CharAt(i), xpos, 1+ypos-8, Null)
+						App.drawText(previous.CharAt(i), xpos, 1+ypos, Null)
+						
+					Case Else "fade"
+						If animationPct < 0.5 Then
+							Dim pct As Float = 1 - 2 * animationPct
+							App.drawText(previous.CharAt(i),xpos, 1,Array As Int(App.AppColor(0) * pct, App.AppColor(1) * pct, App.AppColor(2) * pct))
+						Else
+							Dim pct As Float = 2 * animationPct - 1
+							App.drawText(timeString.CharAt(i),xpos , 1,Array As Int(App.AppColor(0) * pct, App.AppColor(1) * pct, App.AppColor(2) * pct))
+						End If
+
+				End Select
+
 			Else
 				' digit did not change : draw previous one
 				App.drawText(previous.CharAt(i),xpos , 1,Null)
@@ -569,7 +597,7 @@ Sub App_CustomSetupScreen As String
 	
 	sb.Append("<h4>Time</h4>")
 	sb.Append($"<div class="row">"$)
-	appendOption(sb, "AnimateTime")
+	appendOption(sb, "TimeAnimation")
 	appendOption(sb, "ShowSeconds")
 	appendOption(sb, "12hrFormat")
 	appendOption(sb, "DisableBlinking")
