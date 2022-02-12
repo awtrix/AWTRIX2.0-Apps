@@ -259,7 +259,7 @@ Private Sub drawTime
 	End If
 	
 	Dim separator As String = IIf(Not(disableBlinking) And DateTime.GetSecond(now) Mod 2 > 0, " ", ":")
-	DateTime.TimeFormat = IIf(ampmFormat,"KK", "HH")&separator&"mm"
+	DateTime.TimeFormat = IIf(ampmFormat,"KK", "HH")&"mm"
 	Dim timeString As String = DateTime.Time(now)
 	
 		
@@ -274,13 +274,13 @@ Private Sub drawTime
 		Dim previous As String = DateTime.Time(now - timeAnimationDuration)
 		
 		' calculate which digits changed
-		Dim o() As Boolean = Array As Boolean(False,False,False,False,False)
-		For i = 0 To 4
+		Dim o() As Boolean = Array As Boolean(False,False,False,False)
+		For i = 0 To 3
 			o(i) = Not(timeString.CharAt(i) = previous.CharAt(i))
 		Next
 		
 		' animate only digits that changed		
-		For i = 0 To 4
+		For i = 0 To 3
 			
 			' digit changed
 			If o(i) Then
@@ -306,16 +306,19 @@ Private Sub drawTime
 				' digit did not change : draw previous one
 				App.drawText(previous.CharAt(i),xpos , 1,Null)
 			End If
-			' shift 4 characters for a digit, 2 only for the separator ':' or ' '
-			If i = 2 Then
+
+			' shift 4 characters after drawing for a digit
+			xpos = xpos + 4
+		
+			' add the separator after the second digit
+			If i = 1 Then
+				App.drawText(separator,xpos , 1,Null)
 				xpos = xpos + 2
-			Else
-				xpos = xpos + 4
 			End If
 		Next
 	Else
 		' No animation
-		App.drawText(timeString,xpos, 1,Null)
+		App.drawText(timeString.CharAt(0)&timeString.CharAt(1)&separator&timeString.CharAt(2)&timeString.CharAt(3),xpos, 1,Null)
 	End If
 	
 	
