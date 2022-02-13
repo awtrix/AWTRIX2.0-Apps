@@ -14,7 +14,7 @@ Sub Class_Globals
 	Dim humidityIcon As Boolean
 	Dim humidityIconId As Int
 	Dim widgetsScroll As Scroll
-	Dim disableBlinking As Boolean
+	Dim timeBlinking As String
 	Dim timeAnimation As String
 	Dim timeAnimationDuration As Int
 	Dim showSeconds As Boolean
@@ -78,7 +78,7 @@ Public Sub Initialize() As String
 	options.Put("ShowWeekday", newOption("Show Week|Display week day as 7 dots", OPTION_BOOL, True))
 	options.Put("TimeAnimation", newOption("Time animation", OPTION_SELECT, Array As String ("scroll", "fade", "none")))
 	options.Put("12hrFormat", newOption("Switch from 24hr to 12h timeformat", OPTION_BOOL, False))
-	options.Put("DisableBlinking", newOption("Disable the colon blinking", OPTION_BOOL, False))
+	options.Put("TimeBlinking", newOption("Colon animation", OPTION_SELECT, Array As String ("blink", "fade", "none")))
 	options.Put("StartsSunday", newOption("Week begins on sunday", OPTION_BOOL, False))
 	options.Put("SecondsColor", newOption("Seconds progress color", OPTION_COLOR, "0"))
 	options.Put("SecondsBackgroundColor", newOption("Seconds background color", OPTION_COLOR, "#555555"))
@@ -150,7 +150,7 @@ Sub App_Started
 	End If
 
 	widgetsScroll.Initialize(App.duration, widgets.Size)
-	disableBlinking = App.get("DisableBlinking")
+	timeBlinking = App.get("TimeBlinking")
 	timeAnimation = App.get("TimeAnimation")
 	Select Case timeAnimation
 		Case "scroll"
@@ -258,7 +258,30 @@ Private Sub drawTime
 		millis = DateTime.Time(now) + DateTime.GetSecond(now) * 1000
 	End If
 	
-	Dim separator As String = IIf(Not(disableBlinking) And DateTime.GetSecond(now) Mod 2 > 0, " ", ":")
+	Dim separator As String = ":"
+	Dim separatorColor() As Int = Null
+	Select Case timeBlinking
+		Case "blink"
+			If DateTime.GetSecond(now) Mod 2 > 0 Then
+				separator = " "
+			End If
+
+		Case "fade"
+			DateTime.TimeFormat = "S"
+			Dim sepduration As Int = 2 * App.tick
+			Dim sepms As Int = DateTime.Time(now)
+			Dim odd As Boolean = DateTime.GetSecond(now) Mod 2 > 0
+			Dim separatorColor() As Int = IIf(odd, Array As Int(0,0,0), Null)
+			If sepms < sepduration Then
+				Dim seppct As Float = IIf(odd, 1 - sepms / sepduration, sepms / sepduration)
+				separatorColor = Array As Int(App.AppColor(0) * seppct, App.AppColor(1) * seppct, App.AppColor(2) * seppct)
+			End If
+
+		Case Else ' "none"
+			separatorColor = Null
+	End Select
+	
+	
 	DateTime.TimeFormat = IIf(ampmFormat,"KK", "HH")&"mm"
 	Dim timeString As String = DateTime.Time(now)
 	
@@ -291,7 +314,7 @@ Private Sub drawTime
 						App.drawText(timeString.CharAt(i), xpos, 1+ypos-8, Null)
 						App.drawText(previous.CharAt(i), xpos, 1+ypos, Null)
 						
-					Case Else "fade"
+					Case Else ' "fade"
 						If animationPct < 0.5 Then
 							Dim pct As Float = 1 - 2 * animationPct
 							App.drawText(previous.CharAt(i),xpos, 1,Array As Int(App.AppColor(0) * pct, App.AppColor(1) * pct, App.AppColor(2) * pct))
@@ -318,7 +341,9 @@ Private Sub drawTime
 		Next
 	Else
 		' No animation
-		App.drawText(timeString.CharAt(0)&timeString.CharAt(1)&separator&timeString.CharAt(2)&timeString.CharAt(3),xpos, 1,Null)
+		App.drawText(timeString.CharAt(0)&timeString.CharAt(1),xpos, 1,Null)
+		App.drawText(separator,xpos + 8 , 1,separatorColor)
+		App.drawText(timeString.CharAt(2)&timeString.CharAt(3),xpos + 10, 1,Null)
 	End If
 	
 	
@@ -603,7 +628,7 @@ Sub App_CustomSetupScreen As String
 	appendOption(sb, "TimeAnimation")
 	appendOption(sb, "ShowSeconds")
 	appendOption(sb, "12hrFormat")
-	appendOption(sb, "DisableBlinking")
+	appendOption(sb, "TimeBlinking")
 	
 	sb.Append($"</div>"$)
 	sb.Append($"<div class="row">"$)
