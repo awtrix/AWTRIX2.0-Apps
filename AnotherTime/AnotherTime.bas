@@ -17,7 +17,7 @@ Sub Class_Globals
 	Dim timeBlinking As String
 	Dim timeAnimation As String
 	Dim timeAnimationDuration As Int
-	Dim showSeconds As Boolean
+	Dim secondsStyle As String
 	Dim secondsColor() As Int
 	Dim secondsBackgroundColor() As Int
 	Dim showWeekDay As Boolean
@@ -74,7 +74,7 @@ Public Sub Initialize() As String
 	
 
 	options.Initialize
-	options.Put("ShowSeconds", newOption("Show seconds|Display seconds as a progress bar", OPTION_BOOL, True))
+	options.Put("SecondsStyle", newOption("Show seconds|Display seconds as a progress bar, or other fun stuff", OPTION_SELECT, Array As String("progress","k2000","none")))
 	options.Put("ShowWeekday", newOption("Show Week|Display week day as 7 dots", OPTION_BOOL, True))
 	options.Put("TimeAnimation", newOption("Time animation", OPTION_SELECT, Array As String ("scroll", "fade", "none")))
 	options.Put("12hrFormat", newOption("Switch from 24hr to 12h timeformat", OPTION_BOOL, False))
@@ -163,7 +163,7 @@ Sub App_Started
 	
 	
 	
-	showSeconds = App.get("ShowSeconds")
+	secondsStyle = App.get("SecondsStyle")
 	showWeekDay = App.get("ShowWeekday")
 	startsSunday = App.get("StartsSunday")
 	ampmFormat = App.get("12hrFormat")
@@ -232,7 +232,7 @@ Sub App_genFrame
 		widgetsScroll.update
 	End If	
 
-	If showSeconds Then
+	If Not(secondsStyle.EqualsIgnoreCase("none")) Then
 		drawSeconds
 	End If
 	
@@ -351,15 +351,54 @@ Private Sub drawTime
 End Sub
 
 Private Sub drawSeconds
-	
-	Dim second As Int = DateTime.GetSecond(DateTime.Now)
+
 	Dim secondsProgressSize As Int = 17
-	If Not(secondsBackgroundColor = Null) Then
-		App.drawLine(0, 7, secondsProgressSize - 1, 7, secondsBackgroundColor)
-	End If
-	If second > 0 Then
-		App.drawLine(0, 7, Floor(second * secondsProgressSize / 60), 7, secondsColor)
-	End If
+		
+	Select Case secondsStyle
+		Case "progress"
+			Dim second As Int = DateTime.GetSecond(DateTime.Now)
+			If Not(secondsBackgroundColor = Null) Then
+				App.drawLine(0, 7, secondsProgressSize - 1, 7, secondsBackgroundColor)
+			End If
+			If second > 0 Then
+				App.drawLine(0, 7, Floor(second * secondsProgressSize / 60), 7, secondsColor)
+			End If
+			
+		Case "k2000"
+			Dim now As Long = DateTime.Now
+			DateTime.TimeFormat = "S"
+			Dim duration As Int = 2 * 1000
+			Dim millis As Int = (DateTime.Time(now) + DateTime.GetSecond(now) * 1000) Mod duration
+			Dim pct As Float = millis / duration
+
+			Dim nb As Int = 12
+			Dim pos As Int = IIf(pct < 0.5, secondsProgressSize * 2 * pct, secondsProgressSize * 2 * (1 - pct))
+	
+			Dim leds As List
+			leds.Initialize
+			For i = 0 To secondsProgressSize - 1
+				leds.Add(secondsBackgroundColor)
+			Next
+	
+			For i = -nb To 0
+				Dim x As Int
+				If pct < 0.5 Then
+					x = Abs(i + pos)
+				Else
+					x = pos - i
+					If x >= secondsProgressSize Then
+						x = 2 * (secondsProgressSize-1) - x
+					End If
+				End If
+				Dim f As Float = (nb + i)  / nb
+				leds.Set(x,interpolateColor(f, secondsColor, secondsBackgroundColor))
+			Next
+	
+			For i = 0 To secondsProgressSize - 1
+				App.drawPixel(i, 7, leds.Get(i))
+			Next
+
+	End Select
 	
 End Sub
 
@@ -626,12 +665,12 @@ Sub App_CustomSetupScreen As String
 	sb.Append("<h4>Time</h4>")
 	sb.Append($"<div class="row">"$)
 	appendOption(sb, "TimeAnimation")
-	appendOption(sb, "ShowSeconds")
 	appendOption(sb, "12hrFormat")
 	appendOption(sb, "TimeBlinking")
 	
 	sb.Append($"</div>"$)
 	sb.Append($"<div class="row">"$)
+	appendOption(sb, "SecondsStyle")
 	appendOption(sb, "SecondsColor")
 	appendOption(sb, "SecondsBackgroundColor")
 	sb.Append($"</div>"$)
@@ -784,4 +823,8 @@ End Sub
 
 Sub App_buttonPush
 	middleButton.push()
+End Sub
+
+Sub interpolateColor(pct As Float, color1() As Int, color2() As Int) As Int()
+	Return Array As Int(color2(0) + (color1(0) - color2(0)) * pct, color2(1) + (color1(1) - color2(1)) * pct, color2(2) + (color1(2) - color2(2)) * pct)
 End Sub
