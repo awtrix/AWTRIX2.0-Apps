@@ -54,7 +54,7 @@ Public Sub Initialize() As String
 	App.Name="AnotherTime"
 	
 	'Version of the App
-	App.Version="1.1"
+	App.Version="1.2"
 	
 	'Description of the App. You can use HTML to format it
 	App.Description="Shows time with temperature and date, maybe more..."
@@ -173,7 +173,7 @@ Sub App_Started
 	humidityIcon = App.get("HumidityIcon")
 	humidityIconId = App.get("HumidityIconID")
 	
-	secondsColor = parseColor(App.get("SecondsColor"), Null)
+	secondsColor = parseColor(App.get("SecondsColor"), App.AppColor)
 	secondsBackgroundColor = parseColor(App.get("SecondsBackgroundColor"), Array As Int(80,80,80))
 	
 	WeekdaysColor = parseColor(App.get("WeekdaysColor"), Array As Int(80,80,80))
