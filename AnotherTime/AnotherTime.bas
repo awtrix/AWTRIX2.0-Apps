@@ -11,10 +11,13 @@ Sub Class_Globals
 	Dim weekdaysStyle As String
 	Dim temperatureIcon As Boolean
 	Dim temperatureIconId As Int
+	Dim humidityIcon As Boolean
+	Dim humidityIconId As Int
 	Dim widgetsScroll As Scroll
-	Dim disableBlinking As Boolean
-	Dim animateTime As Boolean
-	Dim showSeconds As Boolean
+	Dim timeBlinking As String
+	Dim timeAnimation As String
+	Dim timeAnimationDuration As Int
+	Dim secondsStyle As String
 	Dim secondsColor() As Int
 	Dim secondsBackgroundColor() As Int
 	Dim showWeekDay As Boolean
@@ -44,13 +47,14 @@ End Sub
 'Initializes the object. You can NOT add parameters to this method!
 Public Sub Initialize() As String
 	
+
 	App.Initialize(Me,"App")
 	
 	'change plugin name (must be unique, avoid spaces)
 	App.Name="AnotherTime"
 	
 	'Version of the App
-	App.Version="1.0"
+	App.Version="1.1"
 	
 	'Description of the App. You can use HTML to format it
 	App.Description="Shows time with temperature and date, maybe more..."
@@ -67,13 +71,14 @@ Public Sub Initialize() As String
 	
 	' duration = 0 to capture the pression in one Tick, but could be longer to keep the pression registered as as timer
 	middleButton.Initialize(0, 2, 500)
+	
 
 	options.Initialize
-	options.Put("ShowSeconds", newOption("Show seconds|Display seconds as a progress bar", OPTION_BOOL, True))
+	options.Put("SecondsStyle", newOption("Show seconds|Display seconds as a progress bar, or other fun stuff", OPTION_SELECT, Array As String("progress","k2000","none")))
 	options.Put("ShowWeekday", newOption("Show Week|Display week day as 7 dots", OPTION_BOOL, True))
-	options.Put("AnimateTime", newOption("Time animations", OPTION_BOOL, True))
+	options.Put("TimeAnimation", newOption("Time animation", OPTION_SELECT, Array As String ("scroll", "fade", "none")))
 	options.Put("12hrFormat", newOption("Switch from 24hr to 12h timeformat", OPTION_BOOL, False))
-	options.Put("DisableBlinking", newOption("Disable the colon blinking", OPTION_BOOL, False))
+	options.Put("TimeBlinking", newOption("Colon animation", OPTION_SELECT, Array As String ("blink", "fade", "none")))
 	options.Put("StartsSunday", newOption("Week begins on sunday", OPTION_BOOL, False))
 	options.Put("SecondsColor", newOption("Seconds progress color", OPTION_COLOR, "0"))
 	options.Put("SecondsBackgroundColor", newOption("Seconds background color", OPTION_COLOR, "#555555"))
@@ -83,6 +88,8 @@ Public Sub Initialize() As String
 	options.Put("Fahrenheit", newOption("Display temperature as Fahrenheit", OPTION_BOOL, False))
 	options.Put("TemperatureIcon", newOption("Temperature icon|Won't be displayed if temperature &gt; 100°", OPTION_BOOL, True))
 	options.Put("TemperatureIconID", newOption("Temperature icon ID|Default value : 1738", OPTION_TEXT, 1738))
+	options.Put("HumidityIcon", newOption("Humidity icon", OPTION_BOOL, True))
+	options.Put("HumidityIconID", newOption("Humidity icon ID|Default value : 1746", OPTION_TEXT, 1746))
 	options.Put("CalendarTextColor", newOption("Calendar text color", OPTION_COLOR, "#000000"))
 	options.Put("CalendarHeadColor", newOption("Calendar head color", OPTION_COLOR, "#0000ff"))
 	options.Put("CalendarBodyColor", newOption("Calendar body color", OPTION_COLOR, "#ffffff"))
@@ -90,6 +97,7 @@ Public Sub Initialize() As String
 	options.Put("CalendarIconID", newOption("Calendar icon ID|Default value : 1740", OPTION_TEXT, 1740))
 	options.Put("WidgetCalendar", newOption("Enable calendar", OPTION_BOOL, True))
 	options.Put("WidgetTemperature", newOption($"Enable temperature|<a target="_blank" href="https://awtrixdocs.blueforcer.de/#/en-en/hardware?id=temperature-and-humidity-sensor-optional">Temperature sensor</a> required"$, OPTION_BOOL, True))
+	options.Put("WidgetHumidity", newOption($"Enable humidity|<a target="_blank" href="https://awtrixdocs.blueforcer.de/#/en-en/hardware?id=temperature-and-humidity-sensor-optional">Humidity sensor</a> required"$, OPTION_BOOL, True))
 	options.Put("WidgetIcon", newOption("Enable custom icon", OPTION_BOOL, False))
 	options.Put("IconIconID", newOption("Custom icon ID", OPTION_TEXT, "6"))
 	options.Put("IconXpos", newOption("Custom icon x position|Between 17 and 31", OPTION_TEXT, 20))
@@ -134,20 +142,36 @@ Sub App_Started
 	If (App.get("WidgetTemperature")) Then
 		widgets.Add("temperature")
 	End If
+	If (App.get("WidgetHumidity")) Then
+		widgets.Add("humidity")
+	End If
 	If (App.get("WidgetIcon")) Then
 		widgets.Add("icon")
 	End If
 
 	widgetsScroll.Initialize(App.duration, widgets.Size)
-	disableBlinking = App.get("DisableBlinking")
-	animateTime = App.get("AnimateTime")
-	showSeconds = App.get("ShowSeconds")
+	timeBlinking = App.get("TimeBlinking")
+	timeAnimation = App.get("TimeAnimation")
+	Select Case timeAnimation
+		Case "scroll"
+			timeAnimationDuration = 8 * App.tick
+		Case "fade"
+			timeAnimationDuration = 16 * App.tick
+		Case Else
+			timeAnimationDuration = 0
+	End Select
+	
+	
+	
+	secondsStyle = App.get("SecondsStyle")
 	showWeekDay = App.get("ShowWeekday")
 	startsSunday = App.get("StartsSunday")
 	ampmFormat = App.get("12hrFormat")
 	temperatureIcon = App.get("TemperatureIcon")
 	temperatureIconId = App.get("TemperatureIconID")
 	fahrenheit = App.get("Fahrenheit")
+	humidityIcon = App.get("HumidityIcon")
+	humidityIconId = App.get("HumidityIconID")
 	
 	secondsColor = parseColor(App.get("SecondsColor"), Null)
 	secondsBackgroundColor = parseColor(App.get("SecondsBackgroundColor"), Array As Int(80,80,80))
@@ -170,14 +194,14 @@ End Sub
 
 'this sub is called right before AWTRIX will display your App
 Sub App_iconRequest
-	App.Icons = Array As Int(App.get("TemperatureIconID"), App.get("CalendarIconID"), App.get("IconIconID"))
+	App.Icons = Array As Int(App.get("TemperatureIconID"), App.get("HumidityIconID"), App.get("CalendarIconID"), App.get("IconIconID"))
 End Sub
 
 Sub App_genFrame
 
 	middleButton.update
 
-	' double press = toggle date (1 hour pax)
+	' double press = toggle date (1 hour max)
 	If middleButton.DoublePressed Then
 		If DateTime.Now < drawDateEndTime Then
 			drawDateEndTime = 0
@@ -208,7 +232,7 @@ Sub App_genFrame
 		widgetsScroll.update
 	End If	
 
-	If showSeconds Then
+	If Not(secondsStyle.EqualsIgnoreCase("none")) Then
 		drawSeconds
 	End If
 	
@@ -227,57 +251,99 @@ End Sub
 Private Sub drawTime
 	Dim now As Long = DateTime.Now
 
-	' number of ms since the beginning of this second
+	' number of ms since the beginning of this minute
 	Dim millis As Int
-	If animateTime Then
+	If timeAnimationDuration > 0 Then
 		DateTime.TimeFormat = "S"
 		millis = DateTime.Time(now) + DateTime.GetSecond(now) * 1000
 	End If
 	
-	Dim separator As String = IIf(Not(disableBlinking) And DateTime.GetSecond(now) Mod 2 > 0, " ", ":")
-	DateTime.TimeFormat = IIf(ampmFormat,"KK", "HH")&separator&"mm"
+	Dim separator As String = ":"
+	Dim separatorColor() As Int = Null
+	Select Case timeBlinking
+		Case "blink"
+			If DateTime.GetSecond(now) Mod 2 > 0 Then
+				separator = " "
+			End If
+
+		Case "fade"
+			DateTime.TimeFormat = "S"
+			Dim sepduration As Int = 2 * App.tick
+			Dim sepms As Int = DateTime.Time(now)
+			Dim odd As Boolean = DateTime.GetSecond(now) Mod 2 > 0
+			Dim separatorColor() As Int = IIf(odd, Array As Int(0,0,0), Null)
+			If sepms < sepduration Then
+				Dim seppct As Float = IIf(odd, 1 - sepms / sepduration, sepms / sepduration)
+				separatorColor = Array As Int(App.AppColor(0) * seppct, App.AppColor(1) * seppct, App.AppColor(2) * seppct)
+			End If
+
+		Case Else ' "none"
+			separatorColor = Null
+	End Select
+	
+	
+	DateTime.TimeFormat = IIf(ampmFormat,"KK", "HH")&"mm"
 	Dim timeString As String = DateTime.Time(now)
+	
 		
-	Dim ypos As Int = 0
 	Dim xpos As Int = IIf(widgets.Size > 0, -1, 6)
 	
-	' Animation during the first App.tick * 8 ms of the first minute
-	If animateTime And millis < App.tick * 8 Then
-		
-		' every tick, change ypos
-		ypos = millis / App.tick
+	' Animation during the first animationDuration in ms of the first minute
+	If millis < timeAnimationDuration Then
 
-		Dim previous As String = DateTime.Time(now - 8 * App.tick)
+		' percentage of the animation (0 = started, 1 = finished)
+		Dim animationPct As Float = millis / timeAnimationDuration
+		
+		Dim previous As String = DateTime.Time(now - timeAnimationDuration)
 		
 		' calculate which digits changed
-		Dim o() As Int = Array As Int(0,0,0,0,0)
-		For i = 0 To 4
-			If Not(timeString.CharAt(i) = previous.CharAt(i)) Then
-				o(i) = ypos
-			End If
+		Dim o() As Boolean = Array As Boolean(False,False,False,False)
+		For i = 0 To 3
+			o(i) = Not(timeString.CharAt(i) = previous.CharAt(i))
 		Next
-
+		
 		' animate only digits that changed		
-		For i = 0 To 4
+		For i = 0 To 3
 			
-			If (o(i) > 0) Then
-				' digit changed : draw next on top of previous
-				App.drawText(timeString.CharAt(i),xpos , 1+ypos-8,Null)
-				App.drawText(previous.CharAt(i),xpos, 1+ypos,Null)
+			' digit changed
+			If o(i) Then
+				' draw next on top of previous
+				Select Case timeAnimation
+					Case "scroll"
+						Dim ypos As Int = animationPct * 8
+						App.drawText(timeString.CharAt(i), xpos, 1+ypos-8, Null)
+						App.drawText(previous.CharAt(i), xpos, 1+ypos, Null)
+						
+					Case Else ' "fade"
+						If animationPct < 0.5 Then
+							Dim pct As Float = 1 - 2 * animationPct
+							App.drawText(previous.CharAt(i),xpos, 1,Array As Int(App.AppColor(0) * pct, App.AppColor(1) * pct, App.AppColor(2) * pct))
+						Else
+							Dim pct As Float = 2 * animationPct - 1
+							App.drawText(timeString.CharAt(i),xpos , 1,Array As Int(App.AppColor(0) * pct, App.AppColor(1) * pct, App.AppColor(2) * pct))
+						End If
+
+				End Select
+
 			Else
 				' digit did not change : draw previous one
 				App.drawText(previous.CharAt(i),xpos , 1,Null)
 			End If
-			' shift 4 characters for a digit, 2 only for the separator ':' or ' '
-			If i = 2 Then
+
+			' shift 4 characters after drawing for a digit
+			xpos = xpos + 4
+		
+			' add the separator after the second digit
+			If i = 1 Then
+				App.drawText(separator,xpos , 1,Null)
 				xpos = xpos + 2
-			Else
-				xpos = xpos + 4
 			End If
 		Next
 	Else
 		' No animation
-		App.drawText(timeString,xpos, 1,Null)
+		App.drawText(timeString.CharAt(0)&timeString.CharAt(1),xpos, 1,Null)
+		App.drawText(separator,xpos + 8 , 1,separatorColor)
+		App.drawText(timeString.CharAt(2)&timeString.CharAt(3),xpos + 10, 1,Null)
 	End If
 	
 	
@@ -285,15 +351,54 @@ Private Sub drawTime
 End Sub
 
 Private Sub drawSeconds
-	
-	Dim second As Int = DateTime.GetSecond(DateTime.Now)
+
 	Dim secondsProgressSize As Int = 17
-	If Not(secondsBackgroundColor = Null) Then
-		App.drawLine(0, 7, secondsProgressSize - 1, 7, secondsBackgroundColor)
-	End If
-	If second > 0 Then
-		App.drawLine(0, 7, Floor(second * secondsProgressSize / 60), 7, secondsColor)
-	End If
+		
+	Select Case secondsStyle
+		Case "progress"
+			Dim second As Int = DateTime.GetSecond(DateTime.Now)
+			If Not(secondsBackgroundColor = Null) Then
+				App.drawLine(0, 7, secondsProgressSize - 1, 7, secondsBackgroundColor)
+			End If
+			If second > 0 Then
+				App.drawLine(0, 7, Floor(second * secondsProgressSize / 60), 7, secondsColor)
+			End If
+			
+		Case "k2000"
+			Dim now As Long = DateTime.Now
+			DateTime.TimeFormat = "S"
+			Dim duration As Int = 2 * 1000
+			Dim millis As Int = (DateTime.Time(now) + DateTime.GetSecond(now) * 1000) Mod duration
+			Dim pct As Float = millis / duration
+
+			Dim nb As Int = 12
+			Dim pos As Int = IIf(pct < 0.5, secondsProgressSize * 2 * pct, secondsProgressSize * 2 * (1 - pct))
+	
+			Dim leds As List
+			leds.Initialize
+			For i = 0 To secondsProgressSize - 1
+				leds.Add(secondsBackgroundColor)
+			Next
+	
+			For i = -nb To 0
+				Dim x As Int
+				If pct < 0.5 Then
+					x = Abs(i + pos)
+				Else
+					x = pos - i
+					If x >= secondsProgressSize Then
+						x = 2 * (secondsProgressSize-1) - x
+					End If
+				End If
+				Dim f As Float = (nb + i)  / nb
+				leds.Set(x,interpolateColor(f, secondsColor, secondsBackgroundColor))
+			Next
+	
+			For i = 0 To secondsProgressSize - 1
+				App.drawPixel(i, 7, leds.Get(i))
+			Next
+
+	End Select
 	
 End Sub
 
@@ -389,6 +494,29 @@ Private Sub widget_temperature(offset As Int)
 	If Not(temperatureIcon) Or tooLarge Then
 		App.drawPixel(31, 1+offset, Null)
 	End If
+End Sub
+
+Private Sub widget_humidity(offset As Int)
+	If outboundOffset(offset) Then
+		Return
+	End If
+	
+	Dim xpos As Int = 19
+
+	' Won't manage 100%, cap to 99%
+	Dim hum As Int = Min(NumberFormat(getHumidity,0,0),99)
+
+	If hum < 10 Then
+		xpos = xpos + 4
+	End If
+	
+	If humidityIcon Then
+		App.drawBMP(xpos,offset,App.getIcon(humidityIconId),8,8)
+		App.drawText(hum,xpos + 5,1+offset,Null)
+	Else
+		App.drawText(hum&"%",xpos+1,1+offset,Null)
+	End If
+	
 End Sub
 
 Private Sub widget_calendar(offset As Int)
@@ -487,6 +615,21 @@ Private Sub getTemperature As Double
 	Return IIf(fahrenheit, celciusToFahrenheit(temp), temp)
 End Sub
 
+Private Sub getHumidity As Double
+	Dim hum As Double = 0
+	If App.matrix.Get("Hum") = Null Then
+		' temporary workaround
+		For Each value As Map In App.matrix.Values
+			hum = value.GetDefault("Hum", 0)
+			Exit
+		Next
+	Else
+		hum = App.matrix.GetDefault("Hum", 0)
+	End If
+	Return hum
+End Sub
+
+
 Private Sub parseColor(color As String, default() As Int) As Int()
 	If color = Null Then
 		Return default
@@ -516,18 +659,18 @@ Sub App_CustomSetupScreen As String
 	sb.Initialize
 	
 	sb.Append($"
-		<p class="text-info">When choosing colors, type '0' to use system or application default</p>
+		<p class="text-info">When choosing colors, type '0' to use system or application default. Middle button 1 click : show date with month during 5 seconds, 2 clicks shows it during 1 hour</p>
 	 "$)
 	
 	sb.Append("<h4>Time</h4>")
 	sb.Append($"<div class="row">"$)
-	appendOption(sb, "AnimateTime")
-	appendOption(sb, "ShowSeconds")
+	appendOption(sb, "TimeAnimation")
 	appendOption(sb, "12hrFormat")
-	appendOption(sb, "DisableBlinking")
+	appendOption(sb, "TimeBlinking")
 	
 	sb.Append($"</div>"$)
 	sb.Append($"<div class="row">"$)
+	appendOption(sb, "SecondsStyle")
 	appendOption(sb, "SecondsColor")
 	appendOption(sb, "SecondsBackgroundColor")
 	sb.Append($"</div>"$)
@@ -550,6 +693,13 @@ Sub App_CustomSetupScreen As String
 	appendOption(sb, "TemperatureIcon")
 	appendOption(sb, "TemperatureIconID")
 	appendOption(sb, "Fahrenheit")
+	sb.Append($"</div>"$)
+
+	sb.Append("<h4>Humidity Widget</h4>")
+	sb.Append($"<div class="row">"$)
+	appendOption(sb, "WidgetHumidity")
+	appendOption(sb, "HumidityIcon")
+	appendOption(sb, "HumidityIconID")
 	sb.Append($"</div>"$)
 	
 	sb.Append("<h4>Calendar Widget</h4>")
@@ -673,4 +823,8 @@ End Sub
 
 Sub App_buttonPush
 	middleButton.push()
+End Sub
+
+Sub interpolateColor(pct As Float, color1() As Int, color2() As Int) As Int()
+	Return Array As Int(color2(0) + (color1(0) - color2(0)) * pct, color2(1) + (color1(1) - color2(1)) * pct, color2(2) + (color1(2) - color2(2)) * pct)
 End Sub
