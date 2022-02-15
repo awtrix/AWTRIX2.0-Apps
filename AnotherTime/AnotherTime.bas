@@ -42,6 +42,7 @@ Sub Class_Globals
 	Dim iconYpos As Int
 	Dim middleButton As Button
 	Dim drawDateEndTime As Long
+	Dim k2000Animation As List
 End Sub
 
 'Initializes the object. You can NOT add parameters to this method!
@@ -54,7 +55,7 @@ Public Sub Initialize() As String
 	App.Name="AnotherTime"
 	
 	'Version of the App
-	App.Version="1.2"
+	App.Version="1.3"
 	
 	'Description of the App. You can use HTML to format it
 	App.Description="Shows time with temperature and date, maybe more..."
@@ -161,8 +162,6 @@ Sub App_Started
 			timeAnimationDuration = 0
 	End Select
 	
-	
-	
 	secondsStyle = App.get("SecondsStyle")
 	showWeekDay = App.get("ShowWeekday")
 	startsSunday = App.get("StartsSunday")
@@ -175,6 +174,8 @@ Sub App_Started
 	
 	secondsColor = parseColor(App.get("SecondsColor"), App.AppColor)
 	secondsBackgroundColor = parseColor(App.get("SecondsBackgroundColor"), Array As Int(80,80,80))
+	' force recalculation of K2000 animation because settings could have changed
+	k2000Animation = Null
 	
 	WeekdaysColor = parseColor(App.get("WeekdaysColor"), Array As Int(80,80,80))
 	CurrentDayColor = parseColor(App.get("CurrentDayColor"), Null)
@@ -365,39 +366,19 @@ Private Sub drawSeconds
 			End If
 			
 		Case "k2000"
+
+			If Not(k2000Animation.IsInitialized) Then
+				k2000Animation = makeK2000Animation(secondsProgressSize, 12, secondsColor, secondsBackgroundColor)
+			End If
+
 			Dim now As Long = DateTime.Now
 			DateTime.TimeFormat = "S"
 			Dim duration As Int = 2 * 1000
 			Dim millis As Int = (DateTime.Time(now) + DateTime.GetSecond(now) * 1000) Mod duration
 			Dim pct As Float = millis / duration
-
-			Dim nb As Int = 12
-			Dim pos As Int = IIf(pct < 0.5, secondsProgressSize * 2 * pct, secondsProgressSize * 2 * (1 - pct))
-	
-			Dim leds As List
-			leds.Initialize
-			For i = 0 To secondsProgressSize - 1
-				leds.Add(secondsBackgroundColor)
-			Next
-	
-			For i = -nb To 0
-				Dim x As Int
-				If pct < 0.5 Then
-					x = Abs(i + pos)
-				Else
-					x = pos - i
-					If x >= secondsProgressSize Then
-						x = 2 * (secondsProgressSize-1) - x
-					End If
-				End If
-				Dim f As Float = (nb + i)  / nb
-				leds.Set(x,interpolateColor(f, secondsColor, secondsBackgroundColor))
-			Next
-	
-			For i = 0 To secondsProgressSize - 1
-				App.drawPixel(i, 7, leds.Get(i))
-			Next
-
+			Dim frame As Int = secondsProgressSize * 2 * pct
+			App.drawBMP(0,7,k2000Animation.Get(frame),secondsProgressSize,1)
+			
 	End Select
 	
 End Sub
@@ -827,4 +808,37 @@ End Sub
 
 Sub interpolateColor(pct As Float, color1() As Int, color2() As Int) As Int()
 	Return Array As Int(color2(0) + (color1(0) - color2(0)) * pct, color2(1) + (color1(1) - color2(1)) * pct, color2(2) + (color1(2) - color2(2)) * pct)
+End Sub
+
+Sub colorTo565(color() As Int) As Short
+	Return Bit.Or(Bit.Or(Bit.ShiftLeft(Bit.ShiftRight(color(0), 3), 11),Bit.ShiftLeft(Bit.ShiftRight(color(1), 2), 5)),Bit.ShiftRight(color(2), 3))
+End Sub
+
+Sub makeK2000Animation(size As Int, nbTrails As Int, foregroundColor() As Int, backgroundColor() As Int) As List
+	Dim animCache As List
+	animCache.Initialize
+	For pos = 0 To size - 1
+		Dim leds(size) As Short
+		Dim secondsBackgroundColor565 As Short = colorTo565(backgroundColor)
+		For i = 0 To size - 1
+			leds(i) = secondsBackgroundColor565
+		Next
+		For i = -nbTrails To 0
+			Dim x As Int
+			x = Abs(i + pos)
+			Dim f As Float = (nbTrails + i)  / nbTrails
+			leds(x) = colorTo565(interpolateColor(f, foregroundColor, backgroundColor))
+		Next
+		animCache.Add(leds)
+	Next
+	For pos = size To size * 2 - 1
+		Dim a() As Short = animCache.Get(pos - size)
+		Dim mirror(size) As Short
+		For i = 0 To size - 1
+			mirror(i) = a((size-1) - i)
+		Next
+		animCache.Add(mirror)
+	Next
+	
+	Return animCache
 End Sub
