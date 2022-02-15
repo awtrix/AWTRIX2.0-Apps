@@ -43,6 +43,7 @@ Sub Class_Globals
 	Dim middleButton As Button
 	Dim drawDateEndTime As Long
 	Dim k2000Animation As List
+	Dim lastSystemColor As Short
 End Sub
 
 'Initializes the object. You can NOT add parameters to this method!
@@ -172,10 +173,8 @@ Sub App_Started
 	humidityIcon = App.get("HumidityIcon")
 	humidityIconId = App.get("HumidityIconID")
 	
-	secondsColor = parseColor(App.get("SecondsColor"), App.AppColor)
+	secondsColor = parseColor(App.get("SecondsColor"), Null)
 	secondsBackgroundColor = parseColor(App.get("SecondsBackgroundColor"), Array As Int(80,80,80))
-	' force recalculation of K2000 animation because settings could have changed
-	k2000Animation = Null
 	
 	WeekdaysColor = parseColor(App.get("WeekdaysColor"), Array As Int(80,80,80))
 	CurrentDayColor = parseColor(App.get("CurrentDayColor"), Null)
@@ -191,6 +190,19 @@ Sub App_Started
 	iconXpos = App.get("IconXpos")
 	iconYpos = App.get("IconYpos")
 	
+	If Not(lastSystemColor = colorTo565(App.AppColor)) Then
+		' force recalculation of K2000 animation if system color changed
+		' only effective after next application cycle
+		k2000Animation = Null
+		lastSystemColor = colorTo565(App.AppColor)
+	End If
+
+	
+End Sub
+
+Sub App_SettingsChanged
+		' force recalculation of K2000 animation because settings could have changed
+	k2000Animation = Null
 End Sub
 
 'this sub is called right before AWTRIX will display your App
@@ -807,6 +819,12 @@ Sub App_buttonPush
 End Sub
 
 Sub interpolateColor(pct As Float, color1() As Int, color2() As Int) As Int()
+	If color1 = Null Then
+		color1 = App.AppColor
+	End If
+	If color2 = Null Then
+		color2 = App.AppColor
+	End If
 	Return Array As Int(color2(0) + (color1(0) - color2(0)) * pct, color2(1) + (color1(1) - color2(1)) * pct, color2(2) + (color1(2) - color2(2)) * pct)
 End Sub
 
