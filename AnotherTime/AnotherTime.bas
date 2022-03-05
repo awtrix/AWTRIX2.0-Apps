@@ -56,7 +56,7 @@ Public Sub Initialize() As String
 	App.Name="AnotherTime"
 	
 	'Version of the App
-	App.Version="1.3"
+	App.Version="1.4"
 	
 	'Description of the App. You can use HTML to format it
 	App.Description="Shows time with temperature and date, maybe more..."
@@ -190,7 +190,7 @@ Sub App_Started
 	iconXpos = App.get("IconXpos")
 	iconYpos = App.get("IconYpos")
 	
-	If Not(lastSystemColor = colorTo565(App.AppColor)) Then
+	If Not(App.AppColor.Length = 0) And Not(lastSystemColor = colorTo565(App.AppColor)) Then
 		' force recalculation of K2000 animation if system color changed
 		' only effective after next application cycle
 		k2000Animation = Null
