@@ -13,8 +13,8 @@ Sub Class_Globals
 	Dim iconID As Int=141
 	Dim userID As String
 	
-	Dim ClientID As String = "XXXXXXXXXXXX"
-	Dim ClientSecret As String ="XXXXXXXXXXXXX"
+	Dim ClientID As String = "uoj1i0i21jd1kywi5xc3doa530na64"
+	Dim ClientSecret As String ="hb35h6ieqsr7kph32r39sxs308pgop"
 End Sub
 ' Config your App
 Public Sub Initialize() As String
@@ -25,7 +25,7 @@ Public Sub Initialize() As String
 	App.Name="Twitch"
 	
 	'Version of the App
-	App.Version="1.1"
+	App.Version="1.2"
 	
 	'Description of the App. You can use HTML to format it
 	App.Description="Shows your Twitch subscriber count or your live viewers while youre streaming"

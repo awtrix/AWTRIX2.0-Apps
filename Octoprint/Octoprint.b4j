@@ -9,7 +9,7 @@ Module2=Octoprint
 NumberOfFiles=0
 NumberOfLibraries=3
 NumberOfModules=2
-Version=8.1
+Version=9.1
 @EndOfDesignText@
 'Non-UI application (console / server application)
 #Region Project Attributes 

@@ -4,16 +4,16 @@ Group=Default Group
 Library1=jcore
 Library2=json
 Library3=jrandomaccessfile
-Module1=BME280
-Module2=AWTRIX
+Module1=AWTRIX
+Module2=EnvSensor
 NumberOfFiles=0
 NumberOfLibraries=3
 NumberOfModules=2
-Version=7.51
+Version=9
 @EndOfDesignText@
 'Draws a Rectangle'Non-UI application (console / server application)
 #Region Project Attributes 
-#LibraryName:BME280
+#LibraryName:EnvSensor
 #End Region
 
 Sub Process_Globals

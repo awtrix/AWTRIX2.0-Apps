@@ -20,7 +20,7 @@ Public Sub Initialize() As String
 	App.Name="UpdateNotifier"
 	
 	'Version of the App
-	App.Version="1.2"
+	App.Version="1.3"
 	
 	'Description of the App. You can use HTML to format it
 	App.Description="Notifies you when a new AWTRIX update is available"
@@ -59,7 +59,11 @@ End Sub
 Sub App_startDownload(jobNr As Int)
 	Select jobNr
 		Case 1
-			App.Download("https://blueforcer.de/awtrix/stable/version")
+			If App.server.ToLowerCase.Contains("beta") Then
+				App.Download("https://blueforcer.de/awtrix/beta/version")
+			Else
+				App.Download("https://blueforcer.de/awtrix/stable/version")
+			End If	
 	End Select
 End Sub
 

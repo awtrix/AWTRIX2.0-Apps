@@ -34,13 +34,13 @@ Public Sub Initialize() As String
 	App.version="1.0"
 	
 	'Description of the App. You can use HTML to format it
-	App.description="This App shows the temperature, humidity and airpressure of your connected BME280 or HTU21"
+	App.description="Displays the Values of a connected BME280, BMP280 or HTU21"
 		
 	'Setup Instructions. You can use HTML to format it
 	App.setupDescription = $"
 	<b>Choose wich value you want to show.<br/>
 	<b>You can also set an offset for each value.<br/>
-	<b>If you have different Controllers, you can show all of them by enter "all" in Setting "Matrix, or you can enter the name a specific controller.<br/>
+	<b>If you have many Controllers, you can show all of them by enter "all" in setting "Controller", or you can enter the name of a specific controller.<br/>
 	"$
 		
 	App.author="Blueforcer"
@@ -86,7 +86,7 @@ Sub App_Started
 		If App.get("Controller") = "all" Then
 			For Each IP As String In App.matrix.Keys
 				m=App.matrix.Get(IP)
-				genMatrixInfos(m,True)
+				genMatrixInfos(m,App.matrix.Size>1)
 			Next
 		Else
 			For Each IP As String In App.matrix.Keys

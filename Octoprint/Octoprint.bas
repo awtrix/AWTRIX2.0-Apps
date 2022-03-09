@@ -24,7 +24,7 @@ Public Sub Initialize() As String
 	App.Name="Octoprint"
 	
 	'Version of the App
-	App.Version="1.3"
+	App.Version="1.4"
 	
 	'Description of the App. You can use HTML to format it
 	App.Description=$"
@@ -87,10 +87,9 @@ End Sub
 'to generate the code automaticly
 'https://json.blueforcer.de/ 
 Sub App_evalJobResponse(Resp As JobResponse)
-	If Resp.Success=False Then
-		isOnline = False
-		Return
-	End If
+	
+	isOnline = Resp.Success
+	App.ShouldShow=isOnline
 	Try
 		If Resp.success Then
 			Select Resp.jobNr
@@ -118,29 +117,26 @@ End Sub
 'Generates the frame to be displayed.
 'this function is called every tick
 Sub App_genFrame
-	If isOnline Then
-		If printTimeLeft == "null" Then
-			App.genText("wait..",True,1,Null,True)
-		Else
-			
-	
-			If App.startedAt<DateTime.Now-App.duration*1000/2 Then
-				If day > 0 Then
-					App.genText(day&":"&hour,True,scroll-8,Null,True)
-					
-				Else
-					App.genText(hour&":"&minute,True,scroll-8,Null,True)
-					
-				End If
-				If scroll<9 Then
-					scroll=scroll+1
-				End If
-			Else
-				App.genText(Round2(completion,0)&"%",True,scroll,Null,True)
-			End If
-		End If
+
+	If printTimeLeft == "null" Then
+		App.genText("wait..",True,1,Null,True)
 	Else
-		App.genText("zZz",True,1,Null,True)
+			
+		If App.startedAt<DateTime.Now-App.duration*1000/2 Then
+			If day > 0 Then
+				App.genText(day&":"&hour,True,scroll-8,Null,True)
+					
+			Else
+				App.genText(hour&":"&minute,True,scroll-8,Null,True)
+					
+			End If
+			If scroll<9 Then
+				scroll=scroll+1
+			End If
+		Else
+			App.genText(Round2(completion,0)&"%",True,scroll,Null,True)
+		End If
 	End If
+
 	App.drawBMP(0,0,App.getIcon(1014),8,8)
 End Sub
