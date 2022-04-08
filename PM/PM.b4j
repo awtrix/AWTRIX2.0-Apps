@@ -9,7 +9,7 @@ Module2=PM
 NumberOfFiles=0
 NumberOfLibraries=3
 NumberOfModules=2
-Version=9.1
+Version=9.3
 @EndOfDesignText@
 'Non-UI application (console / server application)
 #Region Project Attributes 
