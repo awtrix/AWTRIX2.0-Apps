@@ -102,7 +102,7 @@ End Sub
 
 Sub App_genFrame
 	If App.get("12hrFormat") Then
-		DateTime.TimeFormat="kk:mm a"
+		DateTime.TimeFormat="hh:mm a"
 		Dim xpos As Int =2
 	Else
 		If  App.get("ShowSeconds") Then
