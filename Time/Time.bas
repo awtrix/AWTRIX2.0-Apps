@@ -21,7 +21,7 @@ Public Sub Initialize() As String
 	App.Name="Time"
 	
 	'Version of the App
-	App.Version="1.3"
+	App.Version="1.5"
 	
 	'Description of the App. You can use HTML to format it
 	App.Description="Shows Time, Date and the day of the week."
@@ -102,7 +102,7 @@ End Sub
 
 Sub App_genFrame
 	If App.get("12hrFormat") Then
-		DateTime.TimeFormat="KK:mm a"
+		DateTime.TimeFormat="hh:mm a"
 		Dim xpos As Int =1
 	Else
 		If  App.get("ShowSeconds") Then

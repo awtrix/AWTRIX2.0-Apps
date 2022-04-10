@@ -5,15 +5,15 @@ Library1=jcore
 Library2=json
 Library3=jrandomaccessfile
 Module1=AWTRIX
-Module2=UpdateNotifier
+Module2=Crypto
 NumberOfFiles=0
 NumberOfLibraries=3
 NumberOfModules=2
-Version=8.95
+Version=9
 @EndOfDesignText@
-'Draws a Rectangle'Non-UI application (console / server application)
+'Non-UI application (console / server application)
 #Region Project Attributes 
-#LibraryName:UpdateNotifier
+#LibraryName:Crypto
 #End Region
 
 Sub Process_Globals

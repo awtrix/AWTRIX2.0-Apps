@@ -18,7 +18,7 @@ Public Sub Initialize() As String
 	App.Name="PM"
 	
 	'Version of the App
-	App.Version="1.0"
+	App.Version="1.1"
 	
 	'Description of the App. You can use HTML to format it
 	App.Description="Shows the atmospheric particulate matter (PM2.5)"
@@ -85,7 +85,9 @@ Sub App_evalJobResponse(Resp As JobResponse)
 					For Each colresults As Map In results
 						Dim measurements As List = colresults.Get("measurements")
 						For Each colmeasurements As Map In measurements
-							pmValue = colmeasurements.Get("value")
+							If colmeasurements.Get("parameter") = "pm25" Then
+								pmValue = colmeasurements.Get("value")
+							End If
 						Next
 					Next
 			End Select

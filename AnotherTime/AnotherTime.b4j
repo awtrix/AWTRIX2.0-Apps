@@ -2,18 +2,20 @@
 Build1=Default,b4j.example
 Group=Default Group
 Library1=jcore
-Library2=json
-Library3=jrandomaccessfile
-Module1=Crypto
+Library2=jrandomaccessfile
+Library3=json
+Module1=AnotherTime
 Module2=AWTRIX
+Module3=Button
+Module4=Scroll
 NumberOfFiles=0
 NumberOfLibraries=3
-NumberOfModules=2
-Version=7.51
+NumberOfModules=4
+Version=9.3
 @EndOfDesignText@
 'Non-UI application (console / server application)
 #Region Project Attributes 
-#LibraryName:Crypto
+#LibraryName:AnotherTime
 #End Region
 
 Sub Process_Globals
@@ -21,7 +23,7 @@ Sub Process_Globals
 End Sub
 
 Sub AppStart (Args() As String)
-	
+	StartMessageLoop
 End Sub
 
 'Return true to allow the default exceptions handler to handle the uncaught exception.
