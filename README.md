@@ -5,4 +5,4 @@ https://awtrixdocs.blueforcer.de/#/
 
 You need the B4J IDE to compile it to a library (JDK 8)
 Use the Template project to start coding your own app.
-Documentation will follow!
+
