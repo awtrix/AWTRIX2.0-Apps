@@ -33,7 +33,7 @@ Public Sub Initialize() As String
 	App.Name="Crypto"
 	
 	'Version of the App
-	App.Version="1.2"
+	App.Version="1.3"
 	
 	'Description of the App. You can use HTML to format it
 	App.Description=$"
@@ -67,18 +67,18 @@ Public Sub Initialize() As String
 	App.setupDescription = $"
 	<b>CryptoPairs:</b>  Conversion pairs in format base1/currency1,base2/currency2 ... e.g. (BTC/USD,ETH/EUR ...).<br/>
 	<b>CryptoIcons:</b>  Icons for base values in format base1/icon1,base2/icon2 ... e.g. (BTC/1538,ETH/1507 ...).<br/>
-	<b>TextColor:</b>  <br/>
+	<b>TextColor:</b>  Text color (R,G,B)<br/>
 	<b>ShowBaseTarget:</b>  Show description of conversion pairs.<br/><br/>
-	<b>ShowToday:</b>  <br/>
-	<b>ShowAsk:</b>  <br/>
-	<b>ShowBid:</b>  <br/>
-	<b>ShowLastTradeClosed:</b>  <br/>
-	<b>ShowVolume:</b>  <br/>
-	<b>ShowAveragePrice:</b>  <br/>
-	<b>ShowNumerOfTrades:</b>  <br/>
-	<b>ShowLow:</b>  <br/>
-	<b>ShowHigh:</b>  <br/>
-	<b>ShowOpeningPrice:</b>  <br/>
+	<b>ShowToday:</b>  Show today's data instead of the last 24h<br/>
+	<b>ShowAsk:</b>  Ask price<br/>
+	<b>ShowBid:</b>  Bid price<br/>
+	<b>ShowLastTradeClosed:</b>  Last trade closed price<br/>
+	<b>ShowVolume:</b>  Volume (today / 24h)<br/>
+	<b>ShowAveragePrice:</b>  Volume weighted average price (today / 24h)<br/>
+	<b>ShowNumerOfTrades:</b>  Number of trades (today / 24h)<br/>
+	<b>ShowLow:</b>  Low price (today / 24h)<br/>
+	<b>ShowHigh:</b>  High price (today / 24h)<br/>
+	<b>ShowOpeningPrice:</b>  Today's opening price<br/>
 	For possible coins and currencies visit <a target="_blank" rel="noopener noreferrer" href="https://api.kraken.com/0/public/AssetPairs">https://api.kraken.com/0/public/AssetPairs</a>.
 	"$
 	
@@ -221,111 +221,128 @@ Sub App_evalJobResponse(Resp As JobResponse)
 			End If
 			If root.ContainsKey("result")  Then
 				Dim result As Map = root.Get("result")
-				Dim resultKeys As List = result.Keys
-				If resultKeys.Size <> 1 Then
-					Dim key As String = result.GetKeyAt(0)
+				Dim resultKeys As List = CastMapKeysToList(result)
+				If resultKeys.Size = 1 Then
+					Dim key As String = resultKeys.Get(0)
 					Dim firstPair As Map = result.Get(key)
 					'Ask
-					If firstPair.ContainsKey("a") And App.get("ShowAsk") Then
-						Dim ask As List = firstPair.Get("a")
-						Dim askPrice As Double = ask.Get(0)						
-						'Dim askWholeLotVolume As Double = ask.Get(1)						
-						'Dim askLotVolume As Double = ask.Get(2)
-						textResult.Add("Ask " & FormatNumber(askPrice))
-					Else
-						textResult.Add("Error")
+					If App.get("ShowAsk") Then
+						If firstPair.ContainsKey("a") Then
+							Dim ask As List = firstPair.Get("a")
+							Dim askPrice As Double = ask.Get(0)
+							'Dim askWholeLotVolume As Double = ask.Get(1)
+							'Dim askLotVolume As Double = ask.Get(2)
+							textResult.Add("Ask " & FormatNumber(askPrice))
+						Else
+							textResult.Add("Error")
+						End If
 					End If
 					'Bid
-					If firstPair.ContainsKey("b") And App.get("ShowBid") Then
-						Dim bid As List = firstPair.Get("b")
-						Dim bidPrice As Double = bid.Get(0)
-						'Dim bidWholeLotVolume As Double = bid.Get(1)
-						'Dim bidLotVolume As Double = bid.Get(2)
-						textResult.Add("Bid " & FormatNumber(bidPrice))
-					Else
-						textResult.Add("Error")
-					End If
+					If App.get("ShowBid") Then
+						If firstPair.ContainsKey("b") Then
+							Dim bid As List = firstPair.Get("b")
+							Dim bidPrice As Double = bid.Get(0)
+							'Dim bidWholeLotVolume As Double = bid.Get(1)
+							'Dim bidLotVolume As Double = bid.Get(2)
+							textResult.Add("Bid " & FormatNumber(bidPrice))
+						Else
+							textResult.Add("Error")
+						End If						
+					End If			
 					'Last trade closed
-					If firstPair.ContainsKey("c") And App.get("ShowLastTradeClosed") Then
-						Dim lastTradeClosed As List = firstPair.Get("c")
-						'Dim lastTradeClosedPrice As Double = lastTradeClosed.Get(0)
-						'Dim lastTradeClosedLotVolume As Double = lastTradeClosed.Get(1)
-						textResult.Add("Last " & FormatNumber(lastTradeClosed))
-					Else
-						textResult.Add("Error")
+					If App.get("ShowLastTradeClosed") Then
+						If firstPair.ContainsKey("c") Then
+							Dim lastTradeClosed As List = firstPair.Get("c")
+							Dim lastTradeClosedPrice As Double = lastTradeClosed.Get(0)
+							'Dim lastTradeClosedLotVolume As Double = lastTradeClosed.Get(1)
+							textResult.Add("Last " & FormatNumber(lastTradeClosedPrice))
+						Else
+							textResult.Add("Error")
+						End If
 					End If
 					'Volume
-					If firstPair.ContainsKey("v") And App.get("ShowVolume") Then
-						Dim volume As List = firstPair.Get("v")
-						Dim volumeToday As Double = volume.Get(0)
-						Dim volume24 As Double = volume.Get(1)
-						If App.get("ShowToday") Then
-							textResult.Add("Vol " & FormatNumber(volumeToday))
+					If App.get("ShowVolume") Then
+						If firstPair.ContainsKey("v") Then
+							Dim volume As List = firstPair.Get("v")
+							Dim volumeToday As Double = volume.Get(0)
+							Dim volume24 As Double = volume.Get(1)
+							If App.get("ShowToday") Then
+								textResult.Add("Vol " & FormatNumber(volumeToday))
+							Else
+								textResult.Add("Vol " & FormatNumber(volume24))
+							End If
 						Else
-							textResult.Add("Vol " & FormatNumber(volume24))
+							textResult.Add("Error")
 						End If
-					Else
-						textResult.Add("Error")
 					End If
 					'Volume weighted average price
-				If firstPair.ContainsKey("p") And App.get("ShowAveragePrice") Then 
-						Dim volumeWeightedAveragePrice As List = firstPair.Get("p")
-						Dim volumeWeightedAveragePriceToday As Double = volumeWeightedAveragePrice.Get(0)
-						Dim volumeWeightedAveragePrice24 As Double = volumeWeightedAveragePrice.Get(1)
-						If App.get("ShowToday") Then
-							textResult.Add("Avg " & FormatNumber(volumeWeightedAveragePriceToday))
+					If App.get("ShowAveragePrice") Then
+						If firstPair.ContainsKey("p") Then
+							Dim volumeWeightedAveragePrice As List = firstPair.Get("p")
+							Dim volumeWeightedAveragePriceToday As Double = volumeWeightedAveragePrice.Get(0)
+							Dim volumeWeightedAveragePrice24 As Double = volumeWeightedAveragePrice.Get(1)
+							If App.get("ShowToday") Then
+								textResult.Add("Avg " & FormatNumber(volumeWeightedAveragePriceToday))
+							Else
+								textResult.Add("Avg " & FormatNumber(volumeWeightedAveragePrice24))
+							End If
 						Else
-							textResult.Add("Avg " & FormatNumber(volumeWeightedAveragePrice24))
-						End If	
-					Else
-						textResult.Add("Error")
+							textResult.Add("Error")
+						End If
 					End If
 					'Number of trades
-					If firstPair.ContainsKey("t") And App.get("ShowNumerOfTrades") Then
-						Dim numberOfTrades As List = firstPair.Get("t")
-						Dim numberOfTradesToday As Double = numberOfTrades.Get(0)
-						Dim numberOfTrades24 As Double = numberOfTrades.Get(1)
-						If App.get("ShowToday") Then
-							textResult.Add("Trades " & FormatNumber(numberOfTradesToday))
+					If App.get("ShowNumerOfTrades") Then
+						If firstPair.ContainsKey("t") Then
+							Dim numberOfTrades As List = firstPair.Get("t")
+							Dim numberOfTradesToday As Double = numberOfTrades.Get(0)
+							Dim numberOfTrades24 As Double = numberOfTrades.Get(1)
+							If App.get("ShowToday") Then
+								textResult.Add("Trades " & FormatNumber(numberOfTradesToday))
+							Else
+								textResult.Add("Trades " & FormatNumber(numberOfTrades24))
+							End If
 						Else
-							textResult.Add("Trades " & FormatNumber(numberOfTrades24))
+							textResult.Add("Error")
 						End If
-					Else
-						textResult.Add("Error")
 					End If
 					'Low
-					If firstPair.ContainsKey("l") And App.get("ShowLow") Then
-						Dim Low As List = firstPair.Get("l")
-						Dim LowToday As Double = Low.Get(0)
-						Dim Low24 As Double = Low.Get(1)
-						If App.get("ShowToday") Then
-							textResult.Add("Low " & FormatNumber(LowToday))
+					If App.get("ShowLow") Then
+						If firstPair.ContainsKey("l") Then
+							Dim Low As List = firstPair.Get("l")
+							Dim LowToday As Double = Low.Get(0)
+							Dim Low24 As Double = Low.Get(1)
+							If App.get("ShowToday") Then
+								textResult.Add("Low " & FormatNumber(LowToday))
+							Else
+								textResult.Add("Low " & FormatNumber(Low24))
+							End If
 						Else
-							textResult.Add("Low " & FormatNumber(Low24))
+							textResult.Add("Error")
 						End If
-					Else
-						textResult.Add("Error")
 					End If
 					'High
-					If firstPair.ContainsKey("h") And App.get("ShowHigh") Then
-						Dim High As List = firstPair.Get("h")
-						Dim HighToday As Double = High.Get(0)
-						Dim High24 As Double = High.Get(1)
-						If App.get("ShowToday") Then
-							textResult.Add("High " & FormatNumber(HighToday))
+					If App.get("ShowHigh") Then
+						If firstPair.ContainsKey("h") Then
+							Dim High As List = firstPair.Get("h")
+							Dim HighToday As Double = High.Get(0)
+							Dim High24 As Double = High.Get(1)
+							If App.get("ShowToday") Then
+								textResult.Add("High " & FormatNumber(HighToday))
+							Else
+								textResult.Add("High " & FormatNumber(High24))
+							End If
 						Else
-							textResult.Add("High " & FormatNumber(High24))
+							textResult.Add("Error")
 						End If
-					Else
-						textResult.Add("Error")
 					End If
 					'Today's opening price
-					If firstPair.ContainsKey("o") And App.get("ShowOpeningPrice") Then
-						Dim TodaysOpeningPrice As List = firstPair.Get("o")
-						Dim TodaysOpeningPriceToday As Double = TodaysOpeningPrice.Get(0)
-						textResult.Add("Open " & FormatNumber(TodaysOpeningPriceToday))
-					Else
-						textResult.Add("Error")
+					If App.get("ShowOpeningPrice") Then
+						If firstPair.ContainsKey("o") Then
+							Dim TodaysOpeningPrice As Double = firstPair.Get("o")
+							textResult.Add("Open " & FormatNumber(TodaysOpeningPrice))
+						Else
+							textResult.Add("Error")
+						End If
 					End If
 				Else
 					textResult.Add("Error")
@@ -342,6 +359,15 @@ Sub App_evalJobResponse(Resp As JobResponse)
 		Log("Error in: "& App.Name & CRLF & LastException)
 		Log("API response: " & CRLF & Resp.ResponseString)
 	End Try
+End Sub
+
+Private Sub CastMapKeysToList(theMap As Map) As List
+	Dim lst As List
+	lst.Initialize
+   	For Each s As String In theMap.Keys
+		lst.Add(s)
+	Next   
+	Return lst
 End Sub
 
 Sub FormatNumber(number As Double) As String
