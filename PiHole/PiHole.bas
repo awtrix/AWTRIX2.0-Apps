@@ -32,7 +32,7 @@ Public Sub Initialize() As String
 	App.name = "PiHole"
 	
 	'Version of the App
-	App.version = "1.0"
+	App.version = "1.1"
 	
 	'Description of the App. You can use HTML to format it
 	App.description = $"
@@ -46,11 +46,12 @@ Public Sub Initialize() As String
 	App.coverIcon = 759
 	
 	'needed Settings for this App (Wich can be configurate from user via webinterface)
-	App.settings = CreateMap("PiHole":"")
+	App.settings = CreateMap("PiHole":"", "Token":"")
 		
 	'Setup Instructions. You can use HTML to format it
 	App.setupDescription = $"
 	<b>PiHole:</b>IP-Adress of your Pi-Hole<br/>
+	<b>Token:</b>Token of your Pi-Hole. You can get the token from Settings/API/Show API token<br/>
 	"$
 	
 	'How many downloadhandlers should be generated
@@ -107,7 +108,7 @@ End Sub
 Sub App_startDownload(jobNr As Int)
 	Select jobNr
 		Case 1
-			App.Download("http://"&App.get("PiHole")&"/admin/api.php")
+			App.Download("http://"&App.get("PiHole")&"/admin/api.php?summaryRaw&auth="&App.get("Token"))
 	End Select
 End Sub
 
