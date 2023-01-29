@@ -70,6 +70,9 @@ Sub App_Started
 	weekday=GetWeekNumber(DateTime.Now)
 	If App.get("StartsSunday") Then
 		weekday=weekday+1
+		If weekday > 6 Then
+			weekday = 1
+		End If			
 	End If
 	
 	Dim weekcolor As String = App.get("WeekdaysColor")
